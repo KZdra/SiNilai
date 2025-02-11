@@ -1,0 +1,2 @@
+Field nya:
+Id, nama siswa, nilai harian, nilai sts, nilai sas, nilai rata2
