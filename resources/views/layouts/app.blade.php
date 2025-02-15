@@ -59,6 +59,8 @@
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <a href="/" class="brand-link">
+            <img src="{{asset('images/flut.png')}}" alt="SiNilai Logo" class="brand-image  elevation-3"
+            style="opacity: .8">
             <span class="brand-text font-weight-light">{{ config('app.name', 'Laravel') }}</span>
         </a>
 
@@ -85,10 +87,10 @@
     <footer class="main-footer">
         <!-- To the right -->
         <div class="float-right d-none d-sm-inline">
-            Anything you want
+            SiNilai 2K25
         </div>
         <!-- Default to the left -->
-        <strong>Copyright &copy; 2014-2021 <a href="https://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+        <strong>Copyright &copy; {{\Carbon\Carbon::now()->format('Y')}} <a href="https://github.com/KZdra" target="blank">KZdra</a>.</strong>
     </footer>
 </div>
 <!-- ./wrapper -->

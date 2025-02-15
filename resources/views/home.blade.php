@@ -20,9 +20,13 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <p class="card-text">
-                                {{ __('You are logged in!') }}
-                            </p>
+                            <h5 class="card-text text-center">
+                                Statistik Murid/Kelas
+                            </h5>
+                            <div class="d-flex justify-content-center">
+                                <canvas id="myChart"></canvas>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -31,4 +35,49 @@
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
+@endsection
+@section('scripts')
+    <script type="module">
+        // Chart Example Helper
+        var konmt = @json($classNames);
+        var siswapk = @json($studentCounts);
+        const chart = {
+            data: {
+                labels: konmt,
+                datasets: [{
+                    label: 'Jumlah Siswa',
+                    data: siswapk,
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)'
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            config: {
+                chartId: 'myChart',
+                type: 'doughnut',
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Agar chart menyesuaikan dengan ukuran kontainer
+                }
+            }
+        };
+
+
+        @if (session('success'))
+            Swal.fire({
+                icon: "success",
+                title: "Selamat Datang, {{ Auth::user()->name }}!",
+                showConfirmButton: false,
+                timer: 1500
+            });
+        @endif
+        $(document).ready(function() {
+            $('#myTable').DataTable();
+            MakeChart(chart);
+
+        });
+    </script>
 @endsection

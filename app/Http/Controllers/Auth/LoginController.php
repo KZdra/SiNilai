@@ -26,6 +26,7 @@ class LoginController extends Controller
      * @var string
      */
     protected $redirectTo = '/';
+    //->with('success', 'Login berhasil! Selamat datang.')
 
     /**
      * Create a new controller instance.
