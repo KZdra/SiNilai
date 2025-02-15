@@ -19,6 +19,11 @@
         "vite": "^6.0.11"
     },
     "dependencies": {
-        "@popperjs/core": "^2.11.8"
+        "@popperjs/core": "^2.11.8",
+        "chart.js": "^4.4.7",
+        "datatables.net-bs4": "^2.2.2",
+        "datatables.net-buttons-bs4": "^3.2.2",
+        "datatables.net-responsive-bs4": "^3.0.4",
+        "sweetalert2": "^11.16.1"
     }
 }

@@ -1,6 +1,7 @@
 import Popper from '@popperjs/core/dist/umd/popper.js';
 import jQuery from 'jquery';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import 'bootstrap';
 
 /**
@@ -11,6 +12,7 @@ import 'bootstrap';
 
 window.Popper = Popper;
 window.$ = window.jQuery = jQuery;
+window.Swal = Swal;
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests
