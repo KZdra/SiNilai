@@ -170,7 +170,8 @@
                                 });
 
                                 setTimeout(function() {
-                                    location.reload(); // Refresh halaman setelah berhasil
+                                    location
+                                .reload(); // Refresh halaman setelah berhasil
                                 }, 2000);
                             },
                             error: function(r) {

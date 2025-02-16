@@ -7,6 +7,8 @@
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Input Nilai') }}</h1>
+                    <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas</button>
+                    <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV Nilai Siswa</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -18,14 +20,29 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card">
+                    <div class="card" id="pickClass" style="display: none">
+                        <div class="card-body p-2">
+                            <form id="filterForm">
+                                <div class="form-group">
+                                    <label for="class_id">Kelas</label>
+                                    <select name="class_id" id="class_id" class="form-control">
+                                        <option value="" selected disabled>Pilih Kelas</option>
+                                        @foreach ($classList as $index => $class)
+                                            <option value="{{ $class->id }}">{{ $class->class_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card" id="resultTable" style="display: none">
                         <div class="card-body p-2">
 
                             <table class="table table-striped table-bordered" id="valueTable">
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Nis</th>
                                         <th>Siswa</th>
                                         <th>Kelas</th>
                                         <th>Nilai Harian</th>
@@ -35,71 +52,44 @@
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-{{--                                     
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $student->nis }}</td>
-                                            <td>{{ $student->nama }}</td>
-                                            <td>{{ $student->class_name ?? 'Belum Di Set' }}</td>
-                                            <td> <button class="btn btn-primary editStudentBtn"
-                                                    data-id="{{ $student->id }}" data-nis="{{ $student->nis }}"
-                                                    data-student_name="{{ $student->nama }}"
-                                                    data-class_id="{{ $student->class_id }}">Edit</button> <button
-                                                    class="btn btn-danger delBtn"
-                                                    data-id="{{ $student->id }}">Delete</button></td>
-                                        </tr>
-                                 --}}
-                                 <tr>
-                                    <td>1</td>
-                                    <td>2</td>
-                                    <td>3</td>
-                                    <td>4</td>
-                                    <td>5</td>
-                                    <td>6</td>
-                                    <td>7</td>
-                                    <td>8</td>
-                                 </tr>
-                                </tbody>
+                                <tbody></tbody>
                             </table>
                         </div>
                     </div>
+
 
                 </div>
             </div>
             <!-- /.row -->
         </div><!-- /.container-fluid -->
-        <!-- Modal Tambah & Edit Siswa -->
-        <div class="modal fade" id="studentModal" tabindex="-1" role="dialog" aria-labelledby="studentModalLabel"
+        <!-- Modal Tambah & Edit Nilai -->
+        <div class="modal fade" id="valueModal" tabindex="-1" role="dialog" aria-labelledby="valueModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="studentModalLabel">Tambah Siswa</h5>
+                        <h5 class="modal-title" id="valueModalLabel">Input Nilai</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form id="studentForm">
+                    <form id="valueForm">
                         <div class="modal-body">
+                            <input type="hidden" id="value_id">
                             <input type="hidden" id="student_id">
                             <div class="form-group">
-                                <label for="nis">Nis</label>
-                                <input type="text" class="form-control" id="nis" name="nis" required>
+                                <label for="value_daily">Nilai Harian</label>
+                                <input type="number" class="form-control" id="value_daily" name="value_daily" required>
                             </div>
                             <div class="form-group">
-                                <label for="student_name">Nama Siswa</label>
-                                <input type="text" class="form-control" id="student_name" name="student_name" required>
+                                <label for="value_sts">Nilai STS</label>
+                                <input type="number" class="form-control" id="value_sts" name="value_sts" required>
                             </div>
                             <div class="form-group">
-                                <label for="class_id">Kelas</label>
-                                <select class="form-control" id="class_id" name="class_id">
-                                    <option value="" selected disabled>Pilih Kelas</option>
-                                    @foreach ($classList as $index => $class)
-                                        <option value="{{ $class->id }}">{{ $class->class_name }}</option>
-                                    @endforeach
-                                </select>
+                                <label for="value_sas">Nilai SAS</label>
+                                <input type="number" class="form-control" id="value_sas" name="value_sas" required>
                             </div>
+
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -115,7 +105,7 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="upCsvModalLabel">Upload CSV Siswa</h5>
+                        <h5 class="modal-title" id="upCsvModalLabel">Upload CSV Nilai Siswa</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -123,7 +113,8 @@
                     <form id="csvForm" enctype="multipart/form-data">
                         <div class="modal-body">
                             <h5>Klik Dibawah Ini Untuk Download Template Nya</h5>
-                            <a href="{{route('student.download')}}" class="btn btn-success mt-2 mb-2" target="blank"><i class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
+                            <a href="{{ route('value.download') }}" class="btn btn-success mt-2 mb-2" target="blank"><i
+                                    class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
                             <h5>Upload CSV:</h5>
                             <div class="form-group">
                                 <label for="csv">File CSV</label>
@@ -146,33 +137,127 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
+            $('#upCsvBtn').hide()
+            // NIlai Section (Filter)
+
+            $('#pickClassBtn').click(function() {
+                $("#pickClass").slideToggle(300);
+            })
+            $('#filterForm').submit(function(e) {
+                e.preventDefault();
+                let class_id = $('#class_id').val();
+
+                if ($.fn.DataTable.isDataTable('#valueTable')) {
+                    $('#valueTable').DataTable()
+                        .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
+                }
+                $('#valueTable').DataTable({
+                    "responsive": true,
+                    "ajax": {
+                        "url": "{{ route('value.getByClass') }}", // Ganti dengan URL API Anda
+                        "type": "GET",
+                        "data": {
+                            class_id: class_id
+                        },
+                        "dataSrc": 'data'
+                    },
+                    "columns": [{
+                            "data": null,
+                            "render": function(data, type, row, meta) {
+                                return meta.row + 1; // Index + 1
+                            }
+                        },
+                        {
+                            "data": "student_name"
+                        },
+                        {
+                            "data": "class_name"
+                        },
+                        {
+                            "data": "value_daily",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_sts",
+                            "render": function(data) {
+                                return data ? Math.round(data) : '-';
+                            }
+                        },
+                        {
+                            "data": "value_sas",
+                            "render": function(data) {
+                                return data ? Math.round(data) : '-';
+                            }
+                        },
+                        {
+                            "data": "average_value",
+                            "render": function(data) {
+                                return data ? Math.round(data) : '-';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function(data, type, row) {
+                                if (row.value_id) {
+                                    return `
+                        <div class="btn-group">
+                                                <button type="button" class="btn btn-info dropdown-toggle"
+                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    Aksi
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right">
+                                                    <button class="dropdown-item editNilaiBtn" data-id='${row.value_id}' data-student_id='${row.student_id}' data-value_daily='${Math.round(row.value_daily)}' data-value_sts='${Math.round(row.value_sts)}' data-value_sas='${Math.round(row.value_sas)}' ><i
+                                                            class="fas fa-pen text-info"></i>&nbsp;Edit</button>
+                                                    <div class="dropdown-divider"></div>
+                                                    <button class="dropdown-item text-danger delNilaiBtn" data-id='${row.value_id}'><i
+                                                            class="fas fa-trash text-danger"></i>&nbsp;Delete</button>
+                                                </div>
+                                            </div>
+                    `;
+                                } else {
+                                    return `<button class="btn btn-success inputNilaiBtn" data-student_id='${row.student_id}'>Input</button>`
+                                }
+
+                            }
+                        }
+                    ]
+                });
+                $('#upCsvBtn').show()
+                $("#resultTable").show(300);
+                $("#pickClass").hide(300);
+            })
             // Init
-            $('#studentTable').DataTable();
             ///
-            // Tampilkan Modal Tambah Kelas
-            $('#addStudentBtn').click(function() {
-                $('#student_id').val('');
-                $('#nis').val('');
-                $('#student_name').val('');
-                $('#class_id').val('');
-                $('#studentModalLabel').text('Tambah Siswa');
-                $('#studentModal').modal('show');
+            // Tampilkan Modal Input Nilai
+            $("#valueTable").on("click", ".inputNilaiBtn", function() {
+                let student_id = $(this).data('student_id');
+                $('#value_id').val('');
+                $('#student_id').val(student_id);
+                $('#value_daily').val('');
+                $('#value_sts').val('');
+                $('#value_sas').val('');
+                $('#valueModalLabel').text('Input Nilai');
+                $('#valueModal').modal('show');
             });
 
-            // Simpan atau Update Kelas
-            $('#studentForm').submit(function(e) {
+            // Simpan atau Update Input
+            $('#valueForm').submit(function(e) {
                 e.preventDefault();
-                let id = $('#student_id').val();
-                let url = id ? `/siswa/${id}` : "{{ route('student.store') }}";
+                let id = $('#value_id').val();
+                let url = id ? `/nilai/${id}` : "{{ route('value.store') }}";
                 let method = id ? "PUT" : "POST";
 
                 $.ajax({
                     url: url,
                     method: method,
                     data: {
-                        nis: $('#nis').val(),
-                        student_name: $('#student_name').val(),
-                        class_id: $('#class_id').val(),
+                        student_id: $('#student_id').val(),
+                        value_daily: $('#value_daily').val(),
+                        value_sts: $('#value_sts').val(),
+                        value_sas: $('#value_sas').val(),
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -183,8 +268,8 @@
                             timer: 1500
                         });
                         setTimeout(function() {
-                            $('#studentModal').modal('hide');
-                            location.reload(); // Refresh halaman setelah berhasil
+                            $('#valueModal').modal('hide');
+                            $('#valueTable').DataTable().ajax.reload(null, false);
                         }, 2000);
 
                     },
@@ -195,23 +280,26 @@
                 });
             });
 
-            // Tampilkan Modal Edit Kelas
-            $('.editStudentBtn').click(function() {
+            // Tampilkan Modal Edit Nilai
+            $("#valueTable").on("click", ".editNilaiBtn", function() {
                 let id = $(this).data('id');
-                let nis = $(this).data('nis');
-                let student_name = $(this).data('student_name');
-                let class_id = $(this).data('class_id');
+                let student_id = $(this).data('student_id');
+                let value_daily = $(this).data('value_daily');
+                let value_sts = $(this).data('value_sts');
+                let value_sas = $(this).data('value_sas');
 
-                $('#student_id').val(id);
-                $('#nis').val(nis);
-                $('#student_name').val(student_name);
-                $('#class_id').val(class_id);
-                $('#studentModalLabel').text('Edit Siswa');
-                $('#studentModal').modal('show');
+
+                $('#value_id').val(id);
+                $('#student_id').val(student_id);
+                $('#value_daily').val(value_daily);
+                $('#value_sts').val(value_sts);
+                $('#value_sas').val(value_sas);
+                $('#valueModalLabel').text('Edit Nilai');
+                $('#valueModal').modal('show');
             });
 
             // Delete Action
-            $('.delBtn').click(function() {
+            $("#valueTable").on("click", ".delNilaiBtn", function() {
                 let id = $(this).data('id');
                 Swal.fire({
                     title: "Are you sure?",
@@ -224,7 +312,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: `/siswa/${id}`,
+                            url: `/nilai/${id}`,
                             method: "DELETE",
                             data: {
                                 _token: "{{ csrf_token() }}"
@@ -239,8 +327,8 @@
                                 });
 
                                 setTimeout(function() {
-                                    location
-                                        .reload(); // Refresh halaman setelah berhasil
+                                    $('#valueTable').DataTable().ajax.reload(
+                                        null, false);
                                 }, 2000);
                             },
                             error: function(r) {
@@ -263,7 +351,7 @@
                 let formData = new FormData(this);
 
                 $.ajax({
-                    url: "{{ route('student.import') }}",
+                    url: "{{ route('value.import') }}",
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}",
                         '_method': 'post'
@@ -282,7 +370,7 @@
                         });
                         setTimeout(function() {
                             $('#upCsvModal').modal('hide');
-                            location.reload(); // Refresh halaman setelah berhasil
+                            $('#valueTable').DataTable().ajax.reload(null, false);
                         }, 2000);
                     },
                     error: function(xhr) {
