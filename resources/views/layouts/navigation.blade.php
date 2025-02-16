@@ -31,7 +31,7 @@
                 </a>
             </li>
             <li class="nav-item ">
-                <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('hasil*') ? 'active' : '' }} ">
+                <a href="{{ route('value.index') }}" class="nav-link {{ request()->is('nilai*') ? 'active' : '' }} ">
                     <i class="nav-icon fas fa-pen"></i>
                     <p>
                         {{ __('Input Nilai') }}

@@ -39,7 +39,7 @@
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $student->nis }}</td>
                                             <td>{{ $student->nama }}</td>
-                                            <td>{{ $student->class_name }}</td>
+                                            <td>{{ $student->class_name ?? 'Belum Di Set' }}</td>
                                             <td> <button class="btn btn-primary editStudentBtn"
                                                     data-id="{{ $student->id }}" data-nis="{{ $student->nis }}"
                                                     data-student_name="{{ $student->nama }}"

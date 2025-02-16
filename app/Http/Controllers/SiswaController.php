@@ -88,7 +88,6 @@ class SiswaController extends Controller
         }
 
         $header = array_shift($csvData); // Ambil header
-
         foreach ($csvData as $row) {
             if (count($row) >= 2) { // Pastikan minimal ada NIS & Nama
                 $nis = $row[0];

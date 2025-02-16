@@ -20,6 +20,35 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{$classNames->count()}}</h3>
+                                  <p>Jumlah Kelas</p>
+                                </div>
+                                <div class="icon">
+                                  <i class="fas fa-school"></i>
+                                </div>
+                                <a href="#" class="small-box-footer">
+                                  Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                </a>
+                              </div>
+                              <div class="small-box bg-gradient-success">
+                                <div class="inner">
+                                  <h3>{{$allstudentCounts}}</h3>
+                                  <p>Jumlah Siswa</p>
+                                </div>
+                                <div class="icon">
+                                  <i class="fas fa-user-graduate"></i>
+                                </div>
+                                <a href="#" class="small-box-footer">
+                                  Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                </a>
+                              </div>
+
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
                             <h5 class="card-text text-center">
                                 Statistik Murid/Kelas
                             </h5>
