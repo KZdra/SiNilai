@@ -79,15 +79,15 @@
                             <input type="hidden" id="student_id">
                             <div class="form-group">
                                 <label for="value_daily">Nilai Harian</label>
-                                <input type="number" class="form-control" id="value_daily" name="value_daily" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_daily" name="value_daily" required>
                             </div>
                             <div class="form-group">
                                 <label for="value_sts">Nilai STS</label>
-                                <input type="number" class="form-control" id="value_sts" name="value_sts" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_sts" name="value_sts" required>
                             </div>
                             <div class="form-group">
                                 <label for="value_sas">Nilai SAS</label>
-                                <input type="number" class="form-control" id="value_sas" name="value_sas" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_sas" name="value_sas" required>
                             </div>
 
                         </div>
@@ -201,6 +201,8 @@
                         {
                             "data": null,
                             "render": function(data, type, row) {
+                                let exportUrl = "{{ route('value.exportPDF', ['student_id' => '__STUDENT_ID__', 'value_id' => '__VALUE_ID__']) }}";
+                                exportUrl = exportUrl.replace('__STUDENT_ID__', row.student_id).replace('__VALUE_ID__', row.value_id);
                                 if (row.value_id) {
                                     return `
                         <div class="btn-group">
@@ -209,6 +211,8 @@
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
+                                                    <a class="dropdown-item " href="${exportUrl}"  ><i
+                                                            class="fas fa-print text-primary"></i>&nbsp;Print</a>
                                                     <button class="dropdown-item editNilaiBtn" data-id='${row.value_id}' data-student_id='${row.student_id}' data-value_daily='${Math.round(row.value_daily)}' data-value_sts='${Math.round(row.value_sts)}' data-value_sas='${Math.round(row.value_sas)}' ><i
                                                             class="fas fa-pen text-info"></i>&nbsp;Edit</button>
                                                     <div class="dropdown-divider"></div>

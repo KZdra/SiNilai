@@ -23,14 +23,6 @@
             </li>
 
             <li class="nav-item ">
-                <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('hasil*') ? 'active' : '' }} ">
-                    <i class="nav-icon fas fa-award"></i>
-                    <p>
-                        {{ __('Hasil Nilai') }}
-                    </p>
-                </a>
-            </li>
-            <li class="nav-item ">
                 <a href="{{ route('value.index') }}" class="nav-link {{ request()->is('nilai*') ? 'active' : '' }} ">
                     <i class="nav-icon fas fa-pen"></i>
                     <p>

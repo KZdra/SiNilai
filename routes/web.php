@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 Auth::routes();
 
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get('nilai/get',[NilaiController::class,'getData']);
+
 Route::middleware('auth')->group(function () {
 
     // Begin Useless
@@ -27,16 +27,17 @@ Route::middleware('auth')->group(function () {
     // SISWA
     Route::get('siswa', [SiswaController::class, 'index'])->name('student.index');
     Route::post('siswa', [SiswaController::class, 'store'])->name('student.store');
-    route::get('siswa/template',[SiswaController::class, 'downloadTemplate'])->name('student.download');
+    route::get('siswa/template', [SiswaController::class, 'downloadTemplate'])->name('student.download');
     Route::post('siswa/import', [SiswaController::class, 'import'])->name('student.import');
     Route::put('siswa/{id}', [SiswaController::class, 'update'])->name('student.update');
     Route::delete('siswa/{id}', [SiswaController::class, 'destroy'])->name('student.destroy');
     // Nilai
-    Route::get('nilai',[NilaiController::class,'index'])->name('value.index');
-    Route::post('nilai',[NilaiController::class,'store'])->name('value.store');
-    Route::get('nilai/get',[NilaiController::class,'getData'])->name('value.getByClass');
-    route::get('nilai/template',[NilaiController::class, 'downloadTemplate'])->name('value.download');
+    Route::get('nilai', [NilaiController::class, 'index'])->name('value.index');
+    Route::post('nilai', [NilaiController::class, 'store'])->name('value.store');
+    Route::get('nilai/get', [NilaiController::class, 'getData'])->name('value.getByClass');
+    route::get('nilai/template', [NilaiController::class, 'downloadTemplate'])->name('value.download');
+    Route::get('nilai/export', [NilaiController::class, 'exportPDF'])->name('value.exportPDF');
     Route::post('nilai/import', [NilaiController::class, 'import'])->name('value.import');
-    Route::put('nilai/{id}',[NilaiController::class,'update'])->name('value.update');
-    Route::delete('nilai/{id}',[NilaiController::class,'destroy'])->name('value.destroy');
+    Route::put('nilai/{id}', [NilaiController::class, 'update'])->name('value.update');
+    Route::delete('nilai/{id}', [NilaiController::class, 'destroy'])->name('value.destroy');
 });
