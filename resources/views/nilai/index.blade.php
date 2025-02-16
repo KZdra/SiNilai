@@ -6,9 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">{{ __('Master Siswa') }}</h1>
-                    <button class="mt-2 btn btn-success" id="addStudentBtn">Tambah Siswa</button>
-                    <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV SISWA</button>
+                    <h1 class="m-0">{{ __('Input Nilai') }}</h1>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -23,18 +21,22 @@
                     <div class="card">
                         <div class="card-body p-2">
 
-                            <table class="table table-striped table-bordered" id="studentTable">
+                            <table class="table table-striped table-bordered" id="valueTable">
                                 <thead>
                                     <tr>
                                         <th>No</th>
                                         <th>Nis</th>
                                         <th>Siswa</th>
                                         <th>Kelas</th>
+                                        <th>Nilai Harian</th>
+                                        <th>Nilai STS</th>
+                                        <th>Nilai SAS</th>
+                                        <th>Rata Rata</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($data as $index => $student)
+{{--                                     
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $student->nis }}</td>
@@ -47,8 +49,17 @@
                                                     class="btn btn-danger delBtn"
                                                     data-id="{{ $student->id }}">Delete</button></td>
                                         </tr>
-                                    @endforeach
-
+                                 --}}
+                                 <tr>
+                                    <td>1</td>
+                                    <td>2</td>
+                                    <td>3</td>
+                                    <td>4</td>
+                                    <td>5</td>
+                                    <td>6</td>
+                                    <td>7</td>
+                                    <td>8</td>
+                                 </tr>
                                 </tbody>
                             </table>
                         </div>

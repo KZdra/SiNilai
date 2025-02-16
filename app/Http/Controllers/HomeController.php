@@ -32,7 +32,7 @@ class HomeController extends Controller
             ->get();
         $classNames = $studentsPerClass->pluck('class_name');
         $studentCounts = $studentsPerClass->pluck('student_count');
-
-        return view('home',compact('classNames','studentCounts'));
+        $allstudentCounts = DB::table('students')->get()->count();
+        return view('home',compact('classNames','studentCounts','allstudentCounts'));
     }
 }
