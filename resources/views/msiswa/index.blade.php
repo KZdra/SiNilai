@@ -22,7 +22,15 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body p-2">
-
+                            <div class="form-group">
+                                <label for="class_filter"> Filter Kelas</label>
+                                <select class="form-control" id="class_filter" name="class_filter">
+                                    <option value="" selected >Semua Kelas</option>
+                                    @foreach ($classList as $index => $class)
+                                        <option value="{{ $class->class_name }}">{{ $class->class_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <table class="table table-striped table-bordered" id="studentTable">
                                 <thead>
                                     <tr>
@@ -112,7 +120,8 @@
                     <form id="csvForm" enctype="multipart/form-data">
                         <div class="modal-body">
                             <h5>Klik Dibawah Ini Untuk Download Template Nya</h5>
-                            <a href="{{route('student.download')}}" class="btn btn-success mt-2 mb-2" target="blank"><i class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
+                            <a href="{{ route('student.download') }}" class="btn btn-success mt-2 mb-2" target="blank"><i
+                                    class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
                             <h5>Upload CSV:</h5>
                             <div class="form-group">
                                 <label for="csv">File CSV</label>
@@ -136,7 +145,7 @@
     <script type="module">
         $(document).ready(function() {
             // Init
-            $('#studentTable').DataTable();
+           let table= $('#studentTable').DataTable();
             ///
             // Tampilkan Modal Tambah Kelas
             $('#addStudentBtn').click(function() {
@@ -282,6 +291,10 @@
                         });
                     }
                 });
+            });
+            $('#class_filter').on('change', function() {
+                var val = this.value;
+                table.column(3).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw(); // Ganti angka 2 dengan index kolom kelas
             });
         });
     </script>

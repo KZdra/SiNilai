@@ -211,7 +211,7 @@
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
-                                                    <a class="dropdown-item " href="${exportUrl}"  ><i
+                                                    <a class="dropdown-item " href="${exportUrl}" target='blank' ><i
                                                             class="fas fa-print text-primary"></i>&nbsp;Print</a>
                                                     <button class="dropdown-item editNilaiBtn" data-id='${row.value_id}' data-student_id='${row.student_id}' data-value_daily='${Math.round(row.value_daily)}' data-value_sts='${Math.round(row.value_sts)}' data-value_sas='${Math.round(row.value_sas)}' ><i
                                                             class="fas fa-pen text-info"></i>&nbsp;Edit</button>
