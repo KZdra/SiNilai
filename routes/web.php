@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClassController;
+use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SiswaController;
 use Illuminate\Support\Facades\Route;
@@ -35,9 +36,15 @@ Route::middleware('auth')->group(function () {
     Route::get('nilai', [NilaiController::class, 'index'])->name('value.index');
     Route::post('nilai', [NilaiController::class, 'store'])->name('value.store');
     Route::get('nilai/get', [NilaiController::class, 'getData'])->name('value.getByClass');
-    route::get('nilai/template', [NilaiController::class, 'downloadTemplate'])->name('value.download');
+    Route::get('nilai/template', [NilaiController::class, 'downloadTemplate'])->name('value.download');
     Route::get('nilai/export', [NilaiController::class, 'exportPDF'])->name('value.exportPDF');
     Route::post('nilai/import', [NilaiController::class, 'import'])->name('value.import');
     Route::put('nilai/{id}', [NilaiController::class, 'update'])->name('value.update');
     Route::delete('nilai/{id}', [NilaiController::class, 'destroy'])->name('value.destroy');
+
+    Route::get('mapel', [MapelController::class, 'index'])->name('mapel.index');
+    Route::post('mapel', [MapelController::class, 'store'])->name('mapel.store');
+    Route::get('mapel/all', [MapelController::class, 'getAll'])->name('mapel.getAll');
+    Route::put('mapel/{id}', [MapelController::class, 'update'])->name('mapel.update');
+    Route::delete('mapel/{id}', [MapelController::class, 'destroy'])->name('mapel.destroy');
 });

@@ -57,6 +57,13 @@
                             <p>Data Siswa</p>
                         </a>
                     </li>
+                    <li class="nav-item ">
+                        <a href="{{ route('mapel.index') }}"
+                            class="nav-link {{ request()->is('mapel*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>Data Mata Pelajaran</p>
+                        </a>
+                    </li>
 
                 </ul>
             </li>
