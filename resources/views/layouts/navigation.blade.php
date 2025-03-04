@@ -3,8 +3,8 @@
     <!-- Sidebar user panel (optional) -->
     <div class="user-panel mt-3 pb-3 mb-3 d-flex">
         <div class="image">
-            <img src="{{asset('images/user.jpg')}}" class="img-circle elevation-2" alt="User Image">
-          </div>
+            <img src="{{ asset('images/user.jpg') }}" class="img-circle elevation-2" alt="User Image">
+        </div>
         <div class="info">
             <a href="{{ route('profile.show') }}" class="d-block">{{ Auth::user()->name }}</a>
         </div>
@@ -23,10 +23,27 @@
             </li>
 
             <li class="nav-item ">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-graduation-cap"></i>
+                    <p>
+                        {{ __('Nilai Akhir') }}
+                    </p>
+                </a>
+            </li>
+            <li class="nav-item ">
                 <a href="{{ route('value.index') }}" class="nav-link {{ request()->is('nilai*') ? 'active' : '' }} ">
                     <i class="nav-icon fas fa-pen"></i>
                     <p>
-                        {{ __('Input Nilai') }}
+                        {{ __('Input Nilai Per Mapel') }}
+                    </p>
+                </a>
+            </li> 
+            <li class="nav-item ">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-book-open
+                    "></i>
+                    <p>
+                        {{ __('Tujuan Pembelajaran') }}
                     </p>
                 </a>
             </li>

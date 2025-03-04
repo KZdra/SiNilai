@@ -7,7 +7,7 @@
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Input Nilai') }}</h1>
-                    <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas</button>
+                    <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
                     <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV Nilai Siswa</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -36,7 +36,27 @@
                             </form>
                         </div>
                     </div>
+                    <div class="card" id="pickMapel" style="display: none;">
+                        <div class="card-body p-2">
+                            <form id="mapelForm">
+                                <div class="form-group">
+                                    <label for="mapel_id">Mata Pelajaran</label>
+                                    <select name="mapel_id" id="mapel_id" class="form-control">
+                                        <option value="" selected disabled>Pilih Mata Pelajaran</option>
+                                        @foreach ($mapelList as $index => $mapel)
+                                            <option value="{{ $mapel->id }}">{{ $mapel->nama_mapel }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
                     <div class="card" id="resultTable" style="display: none">
+                        <div class="card-header">
+                            <h5>Kelas: <span id="ClassSel"></span></h5>
+                            <h5>Mata Pelajaran: <span id="MapelSel"></span></h5>
+                        </div>
                         <div class="card-body p-2">
 
                             <table class="table table-striped table-bordered" id="valueTable">
@@ -77,6 +97,7 @@
                         <div class="modal-body">
                             <input type="hidden" id="value_id">
                             <input type="hidden" id="student_id">
+                            <input type="hidden" id="mapel_id">
                             <div class="form-group">
                                 <label for="value_daily">Nilai Harian</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
@@ -120,6 +141,7 @@
                                     class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
                             <h5>Upload CSV:</h5>
                             <div class="form-group">
+                                <input type="hidden" id="mapel_id">
                                 <label for="csv">File CSV</label>
                                 <input type="file" class="form-control" id="csv" name="csv" required>
                             </div>
@@ -140,6 +162,12 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
+            // State
+            let class_id = null;
+            let mapel_id = null;
+            let class_name = ''; // Simpan nama kelas
+            let mapel_name = ''; // Simpan nama mapel
+            // End Of State
             $('#upCsvBtn').hide()
             // NIlai Section (Filter)
             $('#pickClassBtn').click(function() {
@@ -147,19 +175,35 @@
             })
             $('#filterForm').submit(function(e) {
                 e.preventDefault();
-                let class_id = $('#class_id').val();
+                class_id = $('#class_id').val();
+                class_name = $('#class_id option:selected').text();
+                $("#pickClass").hide(300);
+                $("#pickMapel").show(300);
+            })
+            $('#mapelForm').submit(function(e) {
+                e.preventDefault();
+                mapel_id = $('#mapel_id').val();
+                mapel_name = $('#mapel_id option:selected').text();
+
+                if (!class_id) {
+                    SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
+                    return;
+                }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
-                    $('#valueTable').DataTable()
-                        .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
+                    $('#valueTable').DataTable().destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
+                $("#MapelSel").text(mapel_name); 
+                $("#ClassSel").text(class_name); 
+
                 $('#valueTable').DataTable({
                     "responsive": true,
                     "ajax": {
                         "url": "{{ route('value.getByClass') }}", // Ganti dengan URL API Anda
                         "type": "GET",
                         "data": {
-                            class_id: class_id
+                            class_id: class_id,
+                            mapel_id: mapel_id
                         },
                         "dataSrc": 'data'
                     },
@@ -215,8 +259,6 @@
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
-                                                    <a class="dropdown-item " href="${exportUrl}" target='blank' ><i
-                                                            class="fas fa-print text-primary"></i>&nbsp;Print</a>
                                                     <button class="dropdown-item editNilaiBtn" data-id='${row.value_id}' data-student_id='${row.student_id}' data-value_daily='${Math.round(row.value_daily)}' data-value_sts='${Math.round(row.value_sts)}' data-value_sas='${Math.round(row.value_sas)}' ><i
                                                             class="fas fa-pen text-info"></i>&nbsp;Edit</button>
                                                     <div class="dropdown-divider"></div>
@@ -233,9 +275,10 @@
                         }
                     ]
                 });
-                $('#upCsvBtn').show()
+                $('#upCsvBtn').show();
+                $("#pickMapel").hide(300);
+
                 $("#resultTable").show(300);
-                $("#pickClass").hide(300);
             })
             // Init
             ///
@@ -243,6 +286,7 @@
             $("#valueTable").on("click", ".inputNilaiBtn", function() {
                 let student_id = $(this).data('student_id');
                 $('#value_id').val('');
+                $('#mapel_id').val(mapel_id);
                 $('#student_id').val(student_id);
                 $('#value_daily').val('');
                 $('#value_sts').val('');
@@ -262,6 +306,7 @@
                     url: url,
                     method: method,
                     data: {
+                        mapel_id: $('#mapel_id').val(),
                         student_id: $('#student_id').val(),
                         value_daily: $('#value_daily').val(),
                         value_sts: $('#value_sts').val(),
@@ -298,6 +343,7 @@
 
 
                 $('#value_id').val(id);
+                $('#mapel_id').val(mapel_id);
                 $('#student_id').val(student_id);
                 $('#value_daily').val(value_daily);
                 $('#value_sts').val(value_sts);
@@ -351,12 +397,14 @@
             //
             $('#upCsvBtn').click(function() {
                 $('#csv').val(null);
+                $('#mapel_id').val(mapel_id);
                 $('#upCsvModal').modal('show');
             });
             $('#csvForm').on('submit', function(e) {
                 e.preventDefault();
-
                 let formData = new FormData(this);
+                formData.append('mapel_id', mapel_id);
+
 
                 $.ajax({
                     url: "{{ route('value.import') }}",
