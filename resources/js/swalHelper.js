@@ -16,7 +16,7 @@ export function showError(message = 'Terjadi kesalahan!', title = 'Error') {
         icon: "error",
         title: title,
         text: message,
-        footer: '<p>Why do I have this issue? Hubungi Admin</p>'
+        footer: '<p>Ada Masalah? Hubungi Admin</p>'
       });
 }
 
