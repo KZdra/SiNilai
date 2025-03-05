@@ -177,6 +177,10 @@
                 e.preventDefault();
                 class_id = $('#class_id').val();
                 class_name = $('#class_id option:selected').text();
+                if (!class_id) {
+                    SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
+                    return;
+                }
                 $("#pickClass").hide(300);
                 $("#pickMapel").show(300);
             })
@@ -185,16 +189,16 @@
                 mapel_id = $('#mapel_id').val();
                 mapel_name = $('#mapel_id option:selected').text();
 
-                if (!class_id) {
-                    SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
+                if (!mapel_id) {
+                    SwalHelper.showError('Silahkan Pilih Mata Pelajaran Terlebih Dahulu');
                     return;
                 }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
                     $('#valueTable').DataTable().destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
-                $("#MapelSel").text(mapel_name); 
-                $("#ClassSel").text(class_name); 
+                $("#MapelSel").text(mapel_name);
+                $("#ClassSel").text(class_name);
 
                 $('#valueTable').DataTable({
                     "responsive": true,

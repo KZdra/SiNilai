@@ -23,7 +23,7 @@
             </li>
 
             <li class="nav-item ">
-                <a href="#" class="nav-link">
+                <a href="{{ route('nilaiakhir.index') }}" class="nav-link {{ request()->is('akhir*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-graduation-cap"></i>
                     <p>
                         {{ __('Nilai Akhir') }}
@@ -35,15 +35,6 @@
                     <i class="nav-icon fas fa-pen"></i>
                     <p>
                         {{ __('Input Nilai Per Mapel') }}
-                    </p>
-                </a>
-            </li> 
-            <li class="nav-item ">
-                <a href="#" class="nav-link">
-                    <i class="nav-icon fas fa-book-open
-                    "></i>
-                    <p>
-                        {{ __('Tujuan Pembelajaran') }}
                     </p>
                 </a>
             </li>
