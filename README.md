@@ -11,6 +11,8 @@
 
 ![Screenshot (14)](https://github.com/user-attachments/assets/f7661c28-d04b-46a4-a5b2-58707f619ed1)
 
+![Screenshot (22)](https://github.com/user-attachments/assets/c7d6382e-2d52-484a-a69c-e2ab6c29eefe)
+
 
 ## Learning Laravel
 
