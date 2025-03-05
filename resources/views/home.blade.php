@@ -20,33 +20,47 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="small-box bg-info">
-                                <div class="inner">
-                                    <h3>{{$classNames->count()}}</h3>
-                                  <p>Jumlah Kelas</p>
+                            <div class="d-flex flex-row justify-content-between w-100">
+                                <div class="small-box bg-info mx-2 flex-fill">
+                                    <div class="inner">
+                                        <h3>{{$classNames->count()}}</h3>
+                                        <p>Jumlah Kelas</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-school"></i>
+                                    </div>
+                                    <a href="#" class="small-box-footer">
+                                        Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
                                 </div>
-                                <div class="icon">
-                                  <i class="fas fa-school"></i>
+                                <div class="small-box bg-gradient-success mx-2 flex-fill">
+                                    <div class="inner">
+                                        <h3>{{$allstudentCounts}}</h3>
+                                        <p>Jumlah Siswa</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                    <a href="#" class="small-box-footer">
+                                        Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
                                 </div>
-                                <a href="#" class="small-box-footer">
-                                  Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
-                                </a>
-                              </div>
-                              <div class="small-box bg-gradient-success">
-                                <div class="inner">
-                                  <h3>{{$allstudentCounts}}</h3>
-                                  <p>Jumlah Siswa</p>
+                                <div class="small-box bg-gradient-primary mx-2 flex-fill">
+                                    <div class="inner">
+                                        <h3>{{$allMapelCounts}}</h3>
+                                        <p>Jumlah Mata Pelajaran</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                    <a href="#" class="small-box-footer">
+                                        Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                    </a>
                                 </div>
-                                <div class="icon">
-                                  <i class="fas fa-user-graduate"></i>
-                                </div>
-                                <a href="#" class="small-box-footer">
-                                  Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
-                                </a>
-                              </div>
-
+                            </div>
                         </div>
                     </div>
+
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-text text-center">
