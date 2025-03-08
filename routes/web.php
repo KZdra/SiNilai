@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+
 Route::middleware('auth')->group(function () {
 
     // Begin Useless
@@ -48,7 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::put('mapel/{id}', [MapelController::class, 'update'])->name('mapel.update');
     Route::delete('mapel/{id}', [MapelController::class, 'destroy'])->name('mapel.destroy');
 
-    Route::get('akhir', [NilaiAkhirController::class,'index'])->name('nilaiakhir.index');
-    Route::get('akhir/siswa', [NilaiAkhirController::class,'detailNilaiAkhir'])->name('nilaiakhir.detailNilaiAkhir');
-    Route::get('akhir/getAVG', [NilaiAkhirController::class,'getAllStudentAveragesOnly'])->name('nilaiakhir.getAllStudentAVG');
+    Route::get('akhir', [NilaiAkhirController::class, 'index'])->name('nilaiakhir.index');
+    Route::get('akhir/siswa', [NilaiAkhirController::class, 'detailNilaiAkhir'])->name('nilaiakhir.detailNilaiAkhir');
+    Route::get('akhir/getAVG', [NilaiAkhirController::class, 'getAllStudentAveragesOnly'])->name('nilaiakhir.getAllStudentAVG');
+    Route::get('akhir/print',[NilaiAkhirController::class,'exportPDF'])->name('nilaiakhir.print');
 });

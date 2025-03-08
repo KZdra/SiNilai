@@ -128,9 +128,10 @@
                                     "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__']) }}";
                                 exportUrl = exportUrl.replace('__STUDENT_ID__', row
                                     .student_id).replace('__VALUE_ID__', row.class_id);
+
                                 let exportUrl2 =
-                                    "{{ route('value.exportPDF', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__']) }}";
-                                exportUrl2 = exportUrl.replace('__STUDENT_ID__', row
+                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__']) }}";
+                                exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row
                                     .student_id).replace('__VALUE_ID__', row.class_id);
                                 return `
                         <div class="btn-group">
@@ -142,9 +143,8 @@
                                                     <a class="dropdown-item " href="${exportUrl}"><i
                                                             class="fas fa-info-circle text-primary"></i>&nbsp;Detail</a>
                                                     <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item "><i
+                                                    <a class="dropdown-item " href="${exportUrl2}"><i
                                                             class="fas fa-print text-success"></i>&nbsp;Print</a>
-
                                                 </div>
                                             </div>
                     `;

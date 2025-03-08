@@ -31,7 +31,12 @@
                                 <h5 class="mb-1">Rata Rata Nilai Semua Pelajaran: <span
                                         class="font-weight-bold">{{ $formattedStudents[0]['avg_nilai_semua_mapel'] }}</span>
                                 </h5>
+                                <div>
+                                    <a href="{{ route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id']]) }}" class="btn btn-success"><i class="fas fa-print"></i> Cetak Raport</a>
+
+                                </div>
                             </div>
+
                         </div>
 
                         <div class="card-body p-2">
