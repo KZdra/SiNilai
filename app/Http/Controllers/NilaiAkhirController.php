@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -144,5 +145,36 @@ class NilaiAkhirController extends Controller
     {
         $data = $this->getStudentAvgScores($request->class_id);
         return response()->json(["data" => $data], 200);
+    }
+
+    public function exportPDF(Request $request)
+    {
+
+        $students = $this->getStudentAllScores($request->class_id, $request->student_id); // Ambil data berdasarkan filter class_id (jika ada)
+
+        $formattedStudents = [];
+
+        foreach ($students as $student) {
+            $studentArray = (array) $student;
+
+            // Informasi siswa
+            $studentInfo = [
+                'student_id' => $studentArray['student_id'],
+                'class_id' => $studentArray['class_id'],
+                'student_name' => $studentArray['student_name'],
+                'class_name' => $studentArray['class_name'],
+                'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'],
+            ];
+
+            // Nilai mata pelajaran (otomatis tanpa hardcoding)
+            $mapelScores = array_diff_key($studentArray, $studentInfo);
+
+            // Gabungkan semua ke dalam satu array
+            $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores]);
+        }
+        // return response()->json($formattedStudents);
+
+        $pdf = Pdf::loadView('docs.nilai',compact('formattedStudents'));
+        return $pdf->stream('Raport_'.$formattedStudents[0]['student_name'].'.pdf');
     }
 }
