@@ -20,8 +20,8 @@
                     <div class="card">
                         <div class="card-header d-flex align-items-center flex-wrap">
                             <div class="mr-3 mb-3 mb-md-0">
-                                <img src="{{ asset('images/user.jpg') }}" alt="" class="img-fluid"
-                                    style="max-width: 100px; height: auto;">
+                                <img src="{{$formattedStudents[0]['foto_siswa_path'] !== null ?asset("storage/".$formattedStudents[0]['foto_siswa_path']) : asset('images/user.jpg')}} " alt="" class="img-fluid"
+                                    style="max-width: 200px; height: auto;">
                             </div>
                             <div>
                                 <h5 class="mb-1">Nama Siswa: <span

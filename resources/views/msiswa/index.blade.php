@@ -25,7 +25,7 @@
                             <div class="form-group">
                                 <label for="class_filter"> Filter Kelas</label>
                                 <select class="form-control" id="class_filter" name="class_filter">
-                                    <option value="" selected >Semua Kelas</option>
+                                    <option value="" selected>Semua Kelas</option>
                                     @foreach ($classList as $index => $class)
                                         <option value="{{ $class->class_name }}">{{ $class->class_name }}</option>
                                     @endforeach
@@ -38,6 +38,7 @@
                                         <th>Nis</th>
                                         <th>Siswa</th>
                                         <th>Kelas</th>
+                                        <th>Foto</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -48,6 +49,15 @@
                                             <td>{{ $student->nis }}</td>
                                             <td>{{ $student->nama }}</td>
                                             <td>{{ $student->class_name ?? 'Belum Di Set' }}</td>
+                                            <td>
+                                                @if ($student->foto_siswa_path)
+                                                    <img src="{{ asset('storage/' . $student->foto_siswa_path) }}"
+                                                        alt="" class="img-fluid img-thumbnail"
+                                                       style="width: 200px;height:300px;">
+                                                @else
+                                                    Belum Ada Foto
+                                                @endif
+                                            </td>
                                             <td> <button class="btn btn-primary editStudentBtn"
                                                     data-id="{{ $student->id }}" data-nis="{{ $student->nis }}"
                                                     data-student_name="{{ $student->nama }}"
@@ -97,6 +107,10 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label for="foto_siswa" class="form-label">Upload Foto</label>
+                                <input class="form-control" type="file" id="foto_siswa">
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -120,8 +134,8 @@
                     <form id="csvForm" enctype="multipart/form-data">
                         <div class="modal-body">
                             <h5>Klik Dibawah Ini Untuk Download Template Nya</h5>
-                            <a href="{{ route('student.download') }}" class="btn btn-success mt-2 mb-2" target="blank"><i
-                                    class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
+                            <a href="{{ route('student.download') }}" class="btn btn-success mt-2 mb-2"
+                                target="blank"><i class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
                             <h5>Upload CSV:</h5>
                             <div class="form-group">
                                 <label for="csv">File CSV</label>
@@ -145,7 +159,9 @@
     <script type="module">
         $(document).ready(function() {
             // Init
-           let table= $('#studentTable').DataTable();
+            let table = $('#studentTable').DataTable({
+                responsive: true
+            });
             ///
             // Tampilkan Modal Tambah Kelas
             $('#addStudentBtn').click(function() {
@@ -153,6 +169,7 @@
                 $('#nis').val('');
                 $('#student_name').val('');
                 $('#class_id').val('');
+                $('#foto_siswa').val(null);
                 $('#studentModalLabel').text('Tambah Siswa');
                 $('#studentModal').modal('show');
             });
@@ -162,17 +179,29 @@
                 e.preventDefault();
                 let id = $('#student_id').val();
                 let url = id ? `/siswa/${id}` : "{{ route('student.store') }}";
-                let method = id ? "PUT" : "POST";
+                // let method = id ? "POST" : "POST";
 
+                let formData = new FormData(this);
+                formData.append('nis', $('#nis').val())
+                formData.append('student_name', $('#student_name').val())
+                formData.append('class_id', $('#class_id').val())
+                if (id) {
+                    formData.append('_method', 'PUT');
+                }
+                // Menambahkan file gambar jika ada
+                let fotoSiswa = $('#foto_siswa')[0].files[0];
+                if (fotoSiswa) {
+                    formData.append('foto_siswa', fotoSiswa);
+                }
                 $.ajax({
                     url: url,
-                    method: method,
-                    data: {
-                        nis: $('#nis').val(),
-                        student_name: $('#student_name').val(),
-                        class_id: $('#class_id').val(),
-                        _token: "{{ csrf_token() }}"
+                    method: "POST",
+                    headers: {
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}",
                     },
+                    data: formData,
+                    processData: false, // Penting untuk FormData
+                    contentType: false, // Penting untuk FormData
                     success: function(response) {
                         Swal.fire({
                             icon: 'success',
@@ -194,7 +223,7 @@
             });
 
             // Tampilkan Modal Edit Kelas
-            $('.editStudentBtn').click(function() {
+            $(document).on('click','.editStudentBtn',function() {
                 let id = $(this).data('id');
                 let nis = $(this).data('nis');
                 let student_name = $(this).data('student_name');
@@ -204,12 +233,27 @@
                 $('#nis').val(nis);
                 $('#student_name').val(student_name);
                 $('#class_id').val(class_id);
+                $('#foto_siswa').val(null);
                 $('#studentModalLabel').text('Edit Siswa');
                 $('#studentModal').modal('show');
-            });
+            })
+            // $('.editStudentBtn').click(function() {
+            //     let id = $(this).data('id');
+            //     let nis = $(this).data('nis');
+            //     let student_name = $(this).data('student_name');
+            //     let class_id = $(this).data('class_id');
+
+            //     $('#student_id').val(id);
+            //     $('#nis').val(nis);
+            //     $('#student_name').val(student_name);
+            //     $('#class_id').val(class_id);
+            //     $('#foto_siswa').val(null);
+            //     $('#studentModalLabel').text('Edit Siswa');
+            //     $('#studentModal').modal('show');
+            // });
 
             // Delete Action
-            $('.delBtn').click(function() {
+            $(document).on('click','.delBtn',function() {
                 let id = $(this).data('id');
                 Swal.fire({
                     title: "Are you sure?",
@@ -294,7 +338,8 @@
             });
             $('#class_filter').on('change', function() {
                 var val = this.value;
-                table.column(3).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw(); // Ganti angka 2 dengan index kolom kelas
+                table.column(3).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true,
+                    false).draw(); // Ganti angka 2 dengan index kolom kelas
             });
         });
     </script>

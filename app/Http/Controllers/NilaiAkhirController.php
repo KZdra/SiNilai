@@ -31,6 +31,7 @@ class NilaiAkhirController extends Controller
                 s.id AS student_id,
                 s.class_id,
                 s.nama AS student_name,
+                s.foto_siswa_path,
                 c.class_name,
                 " . implode(', ', $columns) . "
             FROM students AS s
@@ -101,6 +102,7 @@ class NilaiAkhirController extends Controller
                 'class_id' => $studentArray['class_id'],
                 'student_name' => $studentArray['student_name'],
                 'class_name' => $studentArray['class_name'],
+                'foto_siswa_path' => $studentArray['foto_siswa_path'],
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'],
             ];
 

@@ -6,14 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\Storage;
 
 class SiswaController extends Controller
 {
     public function index()
     {
         $data = DB::table('students')
-            ->select('students.id', 'students.nis', 'students.nama', 'students.class_id', 'class.class_name', 'class.id as class_id')
+            ->select('students.id', 'students.nis', 'students.nama', 'students.class_id', 'class.class_name', 'class.id as class_id','students.foto_siswa_path')
             ->leftJoin('class', 'students.class_id', '=', 'class.id')
             ->orderBy('students.nama', 'asc')
             ->get();
@@ -29,11 +29,26 @@ class SiswaController extends Controller
             'class_id' => 'required|integer'
         ]);
 
+        if ($request->hasFile('foto_siswa')) {
+            $student_name = str_replace(' ', '_', strtolower($request->student_name)); // Format nama
+            $folder = "foto-siswa/{$student_name}"; // Path penyimpanan
+
+            $file = $request->file('foto_siswa');
+            $file_name = time() . '_' . $file->getClientOriginalName(); // Buat nama unik
+            $file_path = $file->storeAs($folder, $file_name, 'public'); // Simpan di storage
+
+        } else {
+            $file_name = null;
+            $file_path = null;
+        }
+
         try {
             DB::table('students')->insert([
                 'nis' => $request->nis,
                 'nama' => $request->student_name,
                 'class_id' => $request->class_id,
+                'foto_siswa' => $file_name,
+                'foto_siswa_path' => $file_path,
                 'created_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Siswa berhasil ditambahkan!'], 201);
@@ -43,16 +58,44 @@ class SiswaController extends Controller
     }
     public function update(Request $request, $id)
     {
+        
         $request->validate([
             'nis' => 'required|integer',
             'student_name' => 'required|string|max:255',
             'class_id' => 'required|integer'
         ]);
+        $student = DB::table('students')->where('id', $id)->first();
+        if (!$student) {
+            return response()->json(['message' => 'Siswa tidak ditemukan!'], 404);
+        }
+
+        $file_name = $student->foto_siswa;
+        $file_path = $student->foto_siswa_path;
+
+        if ($request->hasFile('foto_siswa')) {
+            $student_name = str_replace(' ', '_', strtolower($request->student_name)); // Format nama
+            $folder = "foto-siswa/{$student_name}"; // Path penyimpanan
+
+            $file = $request->file('foto_siswa');
+            $new_file_name = time() . '_' . $file->getClientOriginalName(); // Buat nama unik
+            $new_file_path = $file->storeAs($folder, $new_file_name, 'public'); // Simpan di storage
+
+            // Hapus foto lama jika ada
+            if ($file_path) {
+                Storage::disk('public')->delete($file_path);
+            }
+
+            $file_name = $new_file_name;
+            $file_path = $new_file_path;
+        }
+
         try {
             DB::table('students')->where('id', '=', $id)->update([
                 'nis' => $request->nis,
                 'nama' => $request->student_name,
                 'class_id' => $request->class_id,
+                'foto_siswa' => $file_name,
+                'foto_siswa_path' => $file_path,
                 'updated_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Siswa berhasil diUpdate!'], 201);
@@ -62,6 +105,16 @@ class SiswaController extends Controller
     }
     public function destroy(Request $request, $id)
     {
+        $siswa = DB::table('students')->where('id', $id)->first();
+
+        if (!$siswa) {
+            return $this->errorResponse('Students not found', 404);
+        }
+
+        if ($siswa->foto_siswa_path) {
+            Storage::disk('public')->delete($siswa->foto_siswa_path);
+        }
+
         try {
             DB::table('students')->where('id', '=', $id)->delete();
             return response()->json(['message' => 'Siswa berhasil diHapus!'], 201);
@@ -98,7 +151,7 @@ class SiswaController extends Controller
 
                 if (!empty($className)) {
                     // Jika nama kelas ada, cari ID kelasnya
-                    $classId = DB::table('class')->where('class_name','LIKE', $className)->value('id');
+                    $classId = DB::table('class')->where('class_name', 'LIKE', $className)->value('id');
 
                     if (!$classId) {
                         // Jika kelas tidak ditemukan, buat baru
@@ -126,7 +179,8 @@ class SiswaController extends Controller
         return response()->json(['message' => 'Data siswa berhasil diimport!']);
     }
 
-    public function downloadTemplate(){
+    public function downloadTemplate()
+    {
         return response()->download(public_path('down/Template_InputSiswa.xlsx'));
     }
 }

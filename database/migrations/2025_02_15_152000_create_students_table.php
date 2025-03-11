@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('nis');
             $table->string('nama');
             $table->unsignedBigInteger('class_id')->nullable();
+            $table->string('foto_siswa')->nullable();
+            $table->string('foto_siswa_path')->nullable();
             $table->timestamps();
             $table->foreign('class_id')->references('id')->on('class')->onDelete('cascade');
         });
