@@ -21,7 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('users', [\App\Http\Controllers\UserController::class, 'index'])->name('users.index');
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::put('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    //
+    // Kelas
     Route::get('kelas', [ClassController::class, 'index'])->name('class.index');
     Route::post('kelas', [ClassController::class, 'store'])->name('class.store');
     Route::put('kelas/{id}', [ClassController::class, 'update'])->name('class.update');
@@ -48,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('mapel/all', [MapelController::class, 'getAll'])->name('mapel.getAll');
     Route::put('mapel/{id}', [MapelController::class, 'update'])->name('mapel.update');
     Route::delete('mapel/{id}', [MapelController::class, 'destroy'])->name('mapel.destroy');
-
+    //Nilai Akhir
     Route::get('akhir', [NilaiAkhirController::class, 'index'])->name('nilaiakhir.index');
     Route::get('akhir/siswa', [NilaiAkhirController::class, 'detailNilaiAkhir'])->name('nilaiakhir.detailNilaiAkhir');
     Route::get('akhir/getAVG', [NilaiAkhirController::class, 'getAllStudentAveragesOnly'])->name('nilaiakhir.getAllStudentAVG');
