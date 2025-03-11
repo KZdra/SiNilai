@@ -33,6 +33,7 @@ class HomeController extends Controller
         $classNames = $studentsPerClass->pluck('class_name');
         $studentCounts = $studentsPerClass->pluck('student_count');
         $allstudentCounts = DB::table('students')->get()->count();
-        return view('home',compact('classNames','studentCounts','allstudentCounts'));
+        $allMapelCounts = DB::table('mata_pelajarans')->get()->count();
+        return view('home',compact('classNames','studentCounts','allstudentCounts','allMapelCounts'));
     }
 }

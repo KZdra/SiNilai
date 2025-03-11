@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,24 +12,30 @@ class NilaiController extends Controller
     public function index()
     {
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
-
-        return view('nilai.index', compact('classList'));
+        $mapelList = DB::table('mata_pelajarans')->select('id','nama_mapel')->orderBy('id','asc')->get();
+        return view('nilai.index', compact('classList','mapelList'));
     }
     public function getData(Request $request)
     {
         $id = $request->class_id;
+        $mp_id = $request->mapel_id;
         $data = DB::table('students as s')->select(
             's.id as student_id',
             's.nama as student_name',
             'c.class_name',
             'v.id as value_id',
+            'mp.nama_mapel',
+            'v.mapel_id as mapel_id',
             'v.value_daily',
             'v.value_sts',
             'v.value_sas',
             DB::raw('ROUND((COALESCE(v.value_daily, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 3, 2) as average_value')
         )
             ->Join('class as c', 's.class_id', '=', 'c.id')
-            ->leftJoin('values as v', 's.id', '=', 'v.student_id')
+            ->leftJoin('values as v', function ($join) use ($mp_id) {
+                $join->on('s.id', '=', 'v.student_id')
+                     ->where('v.mapel_id', '=', $mp_id); // Dipindahkan ke LEFT JOIN
+            })            ->leftJoin('mata_pelajarans as mp', 'v.mapel_id', '=', 'mp.id')
             ->where('s.class_id', '=', $id)
             ->orderBy('s.nama', 'asc')
             ->get();
@@ -48,6 +53,7 @@ class NilaiController extends Controller
 
         try {
             DB::table('values')->insert([
+                'mapel_id' => $request->mapel_id,
                 'student_id' => $request->student_id,
                 'value_daily' => $request->value_daily,
                 'value_sts' => $request->value_sts,
@@ -70,7 +76,7 @@ class NilaiController extends Controller
         ]);
 
         try {
-            DB::table('values')->where('id', '=', $id)->where('student_id', '=', $request->student_id)->update([
+            DB::table('values')->where('id', '=', $id)->where('student_id', '=', $request->student_id)->where('mapel_id','=',$request->mapel_id)->update([
                 'value_daily' => $request->value_daily,
                 'value_sts' => $request->value_sts,
                 'value_sas' => $request->value_sas,
@@ -129,6 +135,7 @@ class NilaiController extends Controller
                     DB::table('values')->updateOrInsert(
                         ['student_id' => $studentId],
                         [
+                            'mapel_id' => $request->mapel_id,
                             'value_daily' => $value_daily,
                             'value_sts' => $value_sts,
                             'value_sas' => $value_sas,
@@ -145,27 +152,5 @@ class NilaiController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-    public function exportPDF(Request $request)
-    {
-        $s_id= $request->student_id;
-        $v_id= $request->value_id;
-        $data = DB::table('students as s')->select(
-            's.id as student_id',
-            's.nis as student_nis',
-            's.nama as student_name',
-            'c.class_name',
-            'v.id as value_id',
-            'v.value_daily',
-            'v.value_sts',
-            'v.value_sas',
-            DB::raw('ROUND((COALESCE(v.value_daily, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 3, 2) as average_value')
-        )
-            ->Join('class as c', 's.class_id', '=', 'c.id')
-            ->leftJoin('values as v', 's.id', '=', 'v.student_id')
-            ->where('v.id', '=', $v_id)
-            ->where('s.id', '=', $s_id)
-            ->get();
-        $pdf = Pdf::loadView('docs.nilai', compact('data'));
-        return $pdf->stream('Nilai_'.$data[0]->student_name.'.pdf');
-    }
+
 }
