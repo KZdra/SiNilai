@@ -23,7 +23,7 @@
                             <div class="d-flex flex-row justify-content-between w-100">
                                 <div class="small-box bg-info mx-2 flex-fill">
                                     <div class="inner">
-                                        <h3>{{$classNames->count()}}</h3>
+                                        <h3>{{ $classNames->count() }}</h3>
                                         <p>Jumlah Kelas</p>
                                     </div>
                                     <div class="icon">
@@ -35,7 +35,7 @@
                                 </div>
                                 <div class="small-box bg-gradient-success mx-2 flex-fill">
                                     <div class="inner">
-                                        <h3>{{$allstudentCounts}}</h3>
+                                        <h3>{{ $allstudentCounts }}</h3>
                                         <p>Jumlah Siswa</p>
                                     </div>
                                     <div class="icon">
@@ -47,7 +47,7 @@
                                 </div>
                                 <div class="small-box bg-gradient-primary mx-2 flex-fill">
                                     <div class="inner">
-                                        <h3>{{$allMapelCounts}}</h3>
+                                        <h3>{{ $allMapelCounts }}</h3>
                                         <p>Jumlah Mata Pelajaran</p>
                                     </div>
                                     <div class="icon">
@@ -84,17 +84,52 @@
         // Chart Example Helper
         var konmt = @json($classNames);
         var siswapk = @json($studentCounts);
+
+        function getRandomRGBColors(count) {
+            const colors = new Set();
+            const baseColors = ["red", "green", "blue", "yellow", "cyan", "magenta", "orange"];
+
+            while (colors.size < count) {
+                const base = baseColors[Math.floor(Math.random() * baseColors.length)];
+
+                let r = 50,
+                    g = 50,
+                    b = 50; // Set warna dasar gelap dulu
+
+                if (base === "red") r = 255;
+                if (base === "green") g = 255;
+                if (base === "blue") b = 255;
+                if (base === "yellow") {
+                    r = 255;
+                    g = 255;
+                }
+                if (base === "cyan") {
+                    g = 255;
+                    b = 255;
+                }
+                if (base === "magenta") {
+                    r = 255;
+                    b = 255;
+                }
+                if (base === "orange") {
+                    r = 255;
+                    g = Math.floor(Math.random() * 150) + 50;
+                }
+
+                const rgb = `rgb(${r}, ${g}, ${b})`;
+                colors.add(rgb); // Set hanya menyimpan nilai unik
+            }
+
+            return Array.from(colors);
+        }
+
         const chart = {
             data: {
                 labels: konmt,
                 datasets: [{
                     label: 'Jumlah Siswa',
                     data: siswapk,
-                    backgroundColor: [
-                        'rgb(255, 99, 132)',
-                        'rgb(54, 162, 235)',
-                        'rgb(255, 205, 86)'
-                    ],
+                    backgroundColor: getRandomRGBColors(siswapk.length),
                     hoverOffset: 4
                 }]
             },

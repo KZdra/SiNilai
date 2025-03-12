@@ -143,8 +143,8 @@
                                                     <a class="dropdown-item " href="${exportUrl}"><i
                                                             class="fas fa-info-circle text-primary"></i>&nbsp;Detail</a>
                                                     <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item " href="${exportUrl2}"><i
-                                                            class="fas fa-print text-success"></i>&nbsp;Print</a>
+                                                    <a class="dropdown-item btn-print" data-url="${exportUrl2}" href="#"><i
+                                                    class="fas fa-print text-success " ></i>&nbsp;Print</a>
                                                 </div>
                                             </div>
                     `;
@@ -158,8 +158,21 @@
                 $("#resultTable").show(300);
 
             })
-
-
+            $(document).on("click", ".btn-print", function() {
+                let url = $(this).data("url"); // Get PDF URL from button
+                exportpdf(url);
+            })
+            function exportpdf(url) {
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        let newWindow = window.open(data.pdf_url,
+                            '_blank');
+                        setTimeout(() => newWindow.print(),
+                            1000); 
+                        // console.log(data);
+                    });
+            }
         });
     </script>
 @endsection
