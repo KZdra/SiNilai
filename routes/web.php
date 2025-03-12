@@ -56,4 +56,6 @@ Route::middleware('auth')->group(function () {
     Route::get('akhir/print',[NilaiAkhirController::class,'exportPDF'])->name('nilaiakhir.print');
     //DataSekolah
     Route::get('datasekolah',[DataSekolahContoller::class,'index'])->name('datasekolah.index');
+    Route::post('datasekolah',[DataSekolahContoller::class,'store'])->name('datasekolah.store');
+    Route::delete('datasekolah/{id}',[DataSekolahContoller::class,'destroy'])->name('datasekolah.destroy');
 });

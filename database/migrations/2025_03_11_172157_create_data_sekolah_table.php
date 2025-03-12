@@ -14,17 +14,17 @@ return new class extends Migration
         Schema::create('data_sekolah', function (Blueprint $table) {
             $table->id();
             $table->string('nama_sekolah');
-            $table->string('npsn');
-            $table->string('nss');
-            $table->text('alamat_sekolah');
-            $table->integer('kode_pos');
-            $table->string('desa_kelurahan');
-            $table->string('kecamatan');
-            $table->string('kabupaten_kota');
-            $table->string('provinsi');
+            $table->string('npsn')->nullable();
+            $table->string('nss')->nullable();
+            $table->text('alamat_sekolah')->nullable();
+            $table->integer('kode_pos')->nullable();
+            $table->string('desa_kelurahan')->nullable();
+            $table->string('kecamatan')->nullable();
+            $table->string('kabupaten_kota')->nullable();
+            $table->string('provinsi')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();
-            $table->string('nama_kepala_sekolah');
+            $table->string('nama_kepala_sekolah')->nullable();
             $table->string('nip_kepala_sekolah')->nullable();
             $table->timestamps();
         });
