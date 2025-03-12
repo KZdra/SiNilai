@@ -17,13 +17,12 @@ class NilaiAkhirController extends Controller
         $columns = [];
         foreach ($mapels as $mapel) {
             $columns[] = "ROUND(COALESCE(AVG(CASE WHEN v.mapel_id = {$mapel->id} THEN
-                (COALESCE(v.value_daily, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 3 END), 0), 2) AS `{$mapel->nama_mapel}`";
+                (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12 END), 0), 2) AS `{$mapel->nama_mapel}`";
         }
 
         // Tambahkan kolom rata-rata semua nilai
         $columns[] = "ROUND(COALESCE(AVG(
-            (COALESCE(v.value_daily, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 3
-        ), 0), 2) AS avg_nilai_semua_mapel";
+            (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12), 0), 2) AS avg_nilai_semua_mapel";
 
         // Buat query dasar
         $query = "
@@ -46,9 +45,9 @@ class NilaiAkhirController extends Controller
         }
 
         $query .= " GROUP BY s.id, s.nama, c.class_name ORDER BY c.class_name, s.nama";
-// dd($query);
+        // dd($query);
         // Jalankan query
-        $data = DB::select($query, $classId ? ['classId' => $classId, 'studentId'=> $student_id] : []);
+        $data = DB::select($query, $classId ? ['classId' => $classId, 'studentId' => $student_id] : []);
         return $data;
     }
 
@@ -56,8 +55,11 @@ class NilaiAkhirController extends Controller
     {
         $columns = [];
         // Tambahkan kolom rata-rata semua nilai
+        // $columns[] = "ROUND(COALESCE(AVG(
+        //     (COALESCE(v.value_daily, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 3
+        // ), 0), 2) AS avg_nilai_semua_mapel";
         $columns[] = "ROUND(COALESCE(AVG(
-            (COALESCE(v.value_daily, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 3
+            (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12
         ), 0), 2) AS avg_nilai_semua_mapel";
 
         // Buat query dasar
@@ -90,8 +92,9 @@ class NilaiAkhirController extends Controller
 
         return view('nilaiakhir.index', compact('classList'));
     }
-    public function detailNilaiAkhir(Request $request){
-        $data = $this->getStudentAllScores($request->class_id,$request->student_id);
+    public function detailNilaiAkhir(Request $request)
+    {
+        $data = $this->getStudentAllScores($request->class_id, $request->student_id);
         $formattedStudents = [];
         foreach ($data as $student) {
             $studentArray = (array) $student;
@@ -113,7 +116,7 @@ class NilaiAkhirController extends Controller
             $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores]);
         }
 
-        return view('nilaiakhir.detail',compact('formattedStudents'));
+        return view('nilaiakhir.detail', compact('formattedStudents'));
     }
     // Api Sections
     public function getStudentAllAverages(Request $request)
@@ -166,6 +169,7 @@ class NilaiAkhirController extends Controller
                 'student_name' => $studentArray['student_name'],
                 'class_name' => $studentArray['class_name'],
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'],
+                'foto_siswa_path' => $studentArray['foto_siswa_path'],
             ];
 
             // Nilai mata pelajaran (otomatis tanpa hardcoding)
@@ -175,8 +179,8 @@ class NilaiAkhirController extends Controller
             $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores]);
         }
         // return response()->json($formattedStudents);
-
-        $pdf = Pdf::loadView('docs.nilai',compact('formattedStudents'));
-        return $pdf->stream('Raport_'.$formattedStudents[0]['student_name'].'.pdf');
+        // dd($formattedStudents);
+        $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents'));
+        return $pdf->stream('Raport_' . $formattedStudents[0]['student_name'] . '.pdf');
     }
 }

@@ -65,10 +65,19 @@
                                         <th>No</th>
                                         <th>Siswa</th>
                                         <th>Kelas</th>
-                                        <th>Nilai Harian</th>
+                                        <th>Sumatif 1</th>
+                                        <th>Sumatif 2</th>
+                                        <th>Sumatif 3</th>
+                                        <th>Sumatif 4</th>
+                                        <th>Sumatif 5</th>
+                                        <th>Sumatif 6</th>
+                                        <th>Sumatif 7</th>
+                                        <th>Sumatif 8</th>
+                                        <th>Sumatif 9</th>
+                                        <th>Sumatif 10</th>
                                         <th>Nilai STS</th>
                                         <th>Nilai SAS</th>
-                                        <th>Rata Rata</th>
+                                        <th>Nilai Akhir</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -99,19 +108,72 @@
                             <input type="hidden" id="student_id">
                             <input type="hidden" id="mapel_id">
                             <div class="form-group">
-                                <label for="value_daily">Nilai Harian</label>
+                                <label for="value_daily">Sumatif 1</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
                                     id="value_daily" name="value_daily" required>
                             </div>
                             <div class="form-group">
+                                <label for="value_daily_2">Sumatif 2</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_2" name="value_daily_2" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_3">Sumatif3</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_3" name="value_daily_3" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_4">Sumatif 4</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_4" name="value_daily_4" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_5">Sumatif 5</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_5" name="value_daily_5" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_6">Sumatif 6</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_6" name="value_daily_6" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_7">Sumatif 7</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_7" name="value_daily_7" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_8">Sumatif 8</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_8" name="value_daily_8" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_9">Sumatif 9</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_9" name="value_daily_9" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_10">Sumatif 10</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_10" name="value_daily_10" required>
+                            </div>
+                            <div class="form-group">
                                 <label for="value_sts">Nilai STS</label>
-                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_sts"
-                                    name="value_sts" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_sts" name="value_sts" required>
                             </div>
                             <div class="form-group">
                                 <label for="value_sas">Nilai SAS</label>
-                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_sas"
-                                    name="value_sas" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_sas" name="value_sas" required>
                             </div>
 
                         </div>
@@ -195,7 +257,8 @@
                 }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
-                    $('#valueTable').DataTable().destroy(); // Hancurkan DataTables lama sebelum memuat ulang
+                    $('#valueTable').DataTable()
+                        .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
                 $("#MapelSel").text(mapel_name);
                 $("#ClassSel").text(class_name);
@@ -225,6 +288,69 @@
                         },
                         {
                             "data": "value_daily",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_2",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_3",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_4",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_5",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_6",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_7",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_8",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_9",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_10",
                             "render": function(data) {
                                 return data ? Math.round(data) :
                                     '-'; // Jika null, tampilkan "-"
@@ -293,6 +419,15 @@
                 $('#mapel_id').val(mapel_id);
                 $('#student_id').val(student_id);
                 $('#value_daily').val('');
+                $('#value_daily_2').val('');
+                $('#value_daily_3').val('');
+                $('#value_daily_4').val('');
+                $('#value_daily_5').val('');
+                $('#value_daily_6').val('');
+                $('#value_daily_7').val('');
+                $('#value_daily_8').val('');
+                $('#value_daily_9').val('');
+                $('#value_daily_10').val('');
                 $('#value_sts').val('');
                 $('#value_sas').val('');
                 $('#valueModalLabel').text('Input Nilai');
@@ -313,6 +448,15 @@
                         mapel_id: $('#mapel_id').val(),
                         student_id: $('#student_id').val(),
                         value_daily: $('#value_daily').val(),
+                        value_daily_2: $('#value_daily_2').val(),
+                        value_daily_3: $('#value_daily_3').val(),
+                        value_daily_4: $('#value_daily_4').val(),
+                        value_daily_5: $('#value_daily_5').val(),
+                        value_daily_6: $('#value_daily_6').val(),
+                        value_daily_7: $('#value_daily_7').val(),
+                        value_daily_8: $('#value_daily_8').val(),
+                        value_daily_9: $('#value_daily_9').val(),
+                        value_daily_10: $('#value_daily_10').val(),
                         value_sts: $('#value_sts').val(),
                         value_sas: $('#value_sas').val(),
                         _token: "{{ csrf_token() }}"
@@ -342,6 +486,15 @@
                 let id = $(this).data('id');
                 let student_id = $(this).data('student_id');
                 let value_daily = $(this).data('value_daily');
+                let value_daily_2 = $(this).data('value_daily_2');
+                let value_daily_3 = $(this).data('value_daily_3');
+                let value_daily_4 = $(this).data('value_daily_4');
+                let value_daily_5 = $(this).data('value_daily_5');
+                let value_daily_6 = $(this).data('value_daily_6');
+                let value_daily_7 = $(this).data('value_daily_7');
+                let value_daily_8 = $(this).data('value_daily_8');
+                let value_daily_9 = $(this).data('value_daily_9');
+                let value_daily_10 = $(this).data('value_daily_10');
                 let value_sts = $(this).data('value_sts');
                 let value_sas = $(this).data('value_sas');
 
@@ -350,6 +503,15 @@
                 $('#mapel_id').val(mapel_id);
                 $('#student_id').val(student_id);
                 $('#value_daily').val(value_daily);
+                $('#value_daily_2').val(value_daily_2);
+                $('#value_daily_3').val(value_daily_3);
+                $('#value_daily_4').val(value_daily_4);
+                $('#value_daily_5').val(value_daily_5);
+                $('#value_daily_6').val(value_daily_6);
+                $('#value_daily_7').val(value_daily_7);
+                $('#value_daily_8').val(value_daily_8);
+                $('#value_daily_9').val(value_daily_9);
+                $('#value_daily_10').val(value_daily_10);
                 $('#value_sts').val(value_sts);
                 $('#value_sas').val(value_sas);
                 $('#valueModalLabel').text('Edit Nilai');
