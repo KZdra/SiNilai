@@ -15,6 +15,15 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('student_id');
             $table->decimal('value_daily',5,2)->default(0);
+            $table->decimal('value_daily_2',5,2)->default(0);
+            $table->decimal('value_daily_3',5,2)->default(0);
+            $table->decimal('value_daily_4',5,2)->default(0);
+            $table->decimal('value_daily_5',5,2)->default(0);
+            $table->decimal('value_daily_6',5,2)->default(0);
+            $table->decimal('value_daily_7',5,2)->default(0);
+            $table->decimal('value_daily_8',5,2)->default(0);
+            $table->decimal('value_daily_9',5,2)->default(0);
+            $table->decimal('value_daily_10',5,2)->default(0);
             $table->decimal('value_sts',5,2)->default(0);
             $table->decimal('value_sas',5,2)->default(0);
             $table->timestamps();

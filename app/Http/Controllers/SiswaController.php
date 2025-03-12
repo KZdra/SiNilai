@@ -12,10 +12,30 @@ class SiswaController extends Controller
 {
     public function index()
     {
-        $data = DB::table('students')
-            ->select('students.id', 'students.nis', 'students.nama', 'students.class_id', 'class.class_name', 'class.id as class_id','students.foto_siswa_path')
-            ->leftJoin('class', 'students.class_id', '=', 'class.id')
-            ->orderBy('students.nama', 'asc')
+        $data = DB::table('students as s')
+            ->select(
+                's.id',
+                's.nis',
+                's.nisn',
+                's.nama',
+                's.class_id',
+                'class.class_name',
+                'class.id as class_id',
+                's.jenis_kelamin',
+                's.tempat_lahir',
+                's.tanggal_lahir',
+                's.agama',
+                's.pendidikan_sebelumnya',
+                's.alamat',
+                's.nama_ayah',
+                's.nama_ibu',
+                's.pekerjaan_ayah',
+                's.pekerjaan_ibu',
+                's.alamat_orang_tua',
+                's.foto_siswa_path'
+            )
+            ->leftJoin('class', 's.class_id', '=', 'class.id')
+            ->orderBy('s.nama', 'asc')
             ->get();
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
 
@@ -24,9 +44,21 @@ class SiswaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'nis' => 'required|numeric',
             'nis' => 'required|integer',
             'student_name' => 'required|string|max:255',
-            'class_id' => 'required|integer'
+            'class_id' => 'required|integer',
+            'jenis_kelamin' => 'required|string',
+            'tempat_lahir' => 'required|string',
+            'tanggal_lahir' => 'required',
+            'agama' => 'required|string',
+            'pendidikan_sebelumnya' => 'required|string',
+            'alamat' => 'required|string',
+            'nama_ibu' => 'required|string',
+            'nama_ayah' => 'required|string',
+            'pekerjaan_ayah' => 'required|string',
+            'pekerjaan_ibu' => 'required|string',
+            'alamat_orang_tua' => 'required|string',
         ]);
 
         if ($request->hasFile('foto_siswa')) {
@@ -34,7 +66,7 @@ class SiswaController extends Controller
             $folder = "foto-siswa/{$student_name}"; // Path penyimpanan
 
             $file = $request->file('foto_siswa');
-            $file_name = time() . '_' . $file->getClientOriginalName(); // Buat nama unik
+            $file_name = $student_name . '_' . $file->getClientOriginalName(); // Buat nama unik
             $file_path = $file->storeAs($folder, $file_name, 'public'); // Simpan di storage
 
         } else {
@@ -47,6 +79,17 @@ class SiswaController extends Controller
                 'nis' => $request->nis,
                 'nama' => $request->student_name,
                 'class_id' => $request->class_id,
+                'jenis_kelamin' => $request->jenis_kelamin,
+                'tempat_lahir' => $request->tempat_lahir,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'agama' => $request->agama,
+                'pendidikan_sebelumnya' => $request->pendidikan_sebelumnya,
+                'alamat' => $request->alamat,
+                'nama_ayah' => $request->nama_ayah,
+                'nama_ibu' => $request->nama_ibu,
+                'pekerjaan_ayah' => $request->pekerjaan_ayah,
+                'pekerjaan_ibu' => $request->pekerjaan_ibu,
+                'alamat_orang_tua' => $request->alamat_orang_tua,
                 'foto_siswa' => $file_name,
                 'foto_siswa_path' => $file_path,
                 'created_at' => Carbon::now()
@@ -58,11 +101,22 @@ class SiswaController extends Controller
     }
     public function update(Request $request, $id)
     {
-        
         $request->validate([
+            'nis' => 'required|numeric',
             'nis' => 'required|integer',
             'student_name' => 'required|string|max:255',
-            'class_id' => 'required|integer'
+            'class_id' => 'required|integer',
+            'jenis_kelamin' => 'required|string',
+            'tempat_lahir' => 'required|string',
+            'tanggal_lahir' => 'required',
+            'agama' => 'required|string',
+            'pendidikan_sebelumnya' => 'required|string',
+            'alamat' => 'required|string',
+            'nama_ibu' => 'required|string',
+            'nama_ayah' => 'required|string',
+            'pekerjaan_ayah' => 'required|string',
+            'pekerjaan_ibu' => 'required|string',
+            'alamat_orang_tua' => 'required|string',
         ]);
         $student = DB::table('students')->where('id', $id)->first();
         if (!$student) {
@@ -77,7 +131,7 @@ class SiswaController extends Controller
             $folder = "foto-siswa/{$student_name}"; // Path penyimpanan
 
             $file = $request->file('foto_siswa');
-            $new_file_name = time() . '_' . $file->getClientOriginalName(); // Buat nama unik
+            $new_file_name = $student_name . '_' . $file->getClientOriginalName(); // Buat nama unik
             $new_file_path = $file->storeAs($folder, $new_file_name, 'public'); // Simpan di storage
 
             // Hapus foto lama jika ada
@@ -94,6 +148,17 @@ class SiswaController extends Controller
                 'nis' => $request->nis,
                 'nama' => $request->student_name,
                 'class_id' => $request->class_id,
+                'jenis_kelamin' => $request->jenis_kelamin,
+                'tempat_lahir' => $request->tempat_lahir,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'agama' => $request->agama,
+                'pendidikan_sebelumnya' => $request->pendidikan_sebelumnya,
+                'alamat' => $request->alamat,
+                'nama_ayah' => $request->nama_ayah,
+                'nama_ibu' => $request->nama_ibu,
+                'pekerjaan_ayah' => $request->pekerjaan_ayah,
+                'pekerjaan_ibu' => $request->pekerjaan_ibu,
+                'alamat_orang_tua' => $request->alamat_orang_tua,
                 'foto_siswa' => $file_name,
                 'foto_siswa_path' => $file_path,
                 'updated_at' => Carbon::now()
@@ -144,8 +209,20 @@ class SiswaController extends Controller
         foreach ($csvData as $row) {
             if (count($row) >= 2) { // Pastikan minimal ada NIS & Nama
                 $nis = $row[0];
-                $nama = $row[1];
-                $className = $row[2] ?? null;
+                $nisn = $row[1];
+                $nama = $row[2];
+                $className = $row[3] ?? null;
+                $jenis_kelamin = $row[4] ?? null;
+                $tempat_lahir = $row[5] ?? null;
+                $tanggal_lahir = $row[6] ?? null;
+                $agama = $row[7] ?? null;
+                $pendidikan_sebelumnya = $row[8] ?? null;
+                $alamat = $row[9] ?? null;
+                $nama_ayah = $row[10] ?? null;
+                $nama_ibu = $row[11] ?? null;
+                $pekerjaan_ayah = $row[12] ?? null;
+                $pekerjaan_ibu = $row[13] ?? null;
+                $alamat_orang_tua = $row[14] ?? null;
 
                 $classId = null;
 
@@ -167,8 +244,20 @@ class SiswaController extends Controller
                 DB::table('students')->updateOrInsert(
                     ['nis' => $nis], // Cek berdasarkan NIS
                     [
+                        'nisn'=>$nisn,
                         'nama' => $nama,
                         'class_id' => $classId, // NULL jika tidak ada kelas
+                        'jenis_kelamin' => $jenis_kelamin,
+                        'tempat_lahir' => $tempat_lahir,
+                        'tanggal_lahir' => $tanggal_lahir,
+                        'agama' => $agama,
+                        'pendidikan_sebelumnya' => $pendidikan_sebelumnya,
+                        'alamat' => $alamat,
+                        'nama_ayah' => $nama_ayah,
+                        'nama_ibu' => $nama_ibu,
+                        'pekerjaan_ayah' => $pekerjaan_ayah,
+                        'pekerjaan_ibu' => $pekerjaan_ibu,
+                        'alamat_orang_tua' => $alamat_orang_tua,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now()
                     ]
