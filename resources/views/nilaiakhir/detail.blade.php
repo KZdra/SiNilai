@@ -32,7 +32,7 @@
                                         class="font-weight-bold">{{ $formattedStudents[0]['avg_nilai_semua_mapel'] }}</span>
                                 </h5>
                                 <div>
-                                    <a href="{{ route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id']]) }}" class="btn btn-success"><i class="fas fa-print"></i> Cetak Raport</a>
+                                    <a href="#" class="btn btn-success btn-print" data-url="{{ route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id']]) }}" ><i class="fas fa-print"></i> Cetak Raport</a>
 
                                 </div>
                             </div>
@@ -86,14 +86,6 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
-            // let table = $('#nilaiTable').DataTable({
-            //     "responsive": true,
-            //     searching: false,
-            //     paging: false,
-            //     info: false,
-            //     ordering: false,
-            //     "autoWidth": false
-            // });
             let table = $('#nilaiTable').DataTable({
                 "responsive": true,
                 searching: false,
@@ -105,6 +97,21 @@
                     className: 'dt-left'
                 }]
             });
+            $(document).on("click", ".btn-print", function() {
+                let url = $(this).data("url"); // Get PDF URL from button
+                exportpdf(url);
+            })
+            function exportpdf(url) {
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        let newWindow = window.open(data.pdf_url,
+                            '_blank');
+                        setTimeout(() => newWindow.print(),
+                            1000); 
+                        // console.log(data);
+                    });
+            }
         })
     </script>
 @endsection

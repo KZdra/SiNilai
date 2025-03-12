@@ -116,11 +116,6 @@
                     g = Math.floor(Math.random() * 150) + 50;
                 }
 
-                // Acak nilai yang bukan 255 untuk memberikan variasi
-                if (r !== 255) r = Math.floor(Math.random() * 150) + 50;
-                if (g !== 255) g = Math.floor(Math.random() * 150) + 50;
-                if (b !== 255) b = Math.floor(Math.random() * 150) + 50;
-
                 const rgb = `rgb(${r}, ${g}, ${b})`;
                 colors.add(rgb); // Set hanya menyimpan nilai unik
             }

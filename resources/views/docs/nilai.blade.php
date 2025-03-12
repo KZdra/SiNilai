@@ -68,17 +68,23 @@
             <td>Kelas</td>
             <td>: {{ $formattedStudents[0]['class_name'] }}</td>
         </tr>
-
+        <tr>
+            <td>Nis</td>
+            <td>: {{ $formattedStudents[0]['student_nis'] }}</td>
+            <td>Fase</td>
+            <td>: -</td>
+        </tr>
         <tr>
             <td>Sekolah</td>
-            <td>: SMK ICB CINTA TEKNIKA</td>
+            <td>: {{$formattedStudents[0]['school_data']->nama_sekolah ?? "SMK ICB CINTA TEKNIKA" }}</td>
             <td>Semester</td>
             <td>: -</td>
         </tr>
         <tr>
             <td>Alamat</td>
-            <td>: Jalan Atlas Tengah No. 2</td>
-
+            <td>: {{$formattedStudents[0]['school_data']->alamat_sekolah ?? "Jalan Atlas Tengah No. 2" }}</td>
+            <td>Tahun Pembelajaran</td>
+            <td>: -</td>
         </tr>
     </table>
 
@@ -105,13 +111,13 @@
 
 
     </table>
-    <table class="rata-rata-table">
+    {{-- <table class="rata-rata-table">
         <tr>
             <td style="font-weight: bold;">Nilai Rata Rata</td>
             <td style="font-weight: bold;">{{ round($formattedStudents[0]['avg_nilai_semua_mapel']) }}</td>
         </tr>
-    </table>
-
+    </table> --}}
+    {{-- <script type="text/javascript"> try { this.print(true); } catch (e) { window.onload = window.print; } </script> --}}
 </body>
 
 </html>

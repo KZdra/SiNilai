@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class NilaiAkhirController extends Controller
 {
@@ -30,6 +31,7 @@ class NilaiAkhirController extends Controller
                 s.id AS student_id,
                 s.class_id,
                 s.nama AS student_name,
+                s.nis AS student_nis,
                 s.foto_siswa_path,
                 c.class_name,
                 " . implode(', ', $columns) . "
@@ -106,6 +108,7 @@ class NilaiAkhirController extends Controller
                 'student_name' => $studentArray['student_name'],
                 'class_name' => $studentArray['class_name'],
                 'foto_siswa_path' => $studentArray['foto_siswa_path'],
+                'student_nis' => $studentArray['student_nis'],
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'],
             ];
 
@@ -122,7 +125,6 @@ class NilaiAkhirController extends Controller
     public function getStudentAllAverages(Request $request)
     {
         $students = $this->getStudentAllScores($request->class_id, $request->student_id); // Ambil data berdasarkan filter class_id (jika ada)
-
         $formattedStudents = [];
 
         foreach ($students as $student) {
@@ -134,6 +136,7 @@ class NilaiAkhirController extends Controller
                 'class_id' => $studentArray['class_id'],
                 'student_name' => $studentArray['student_name'],
                 'class_name' => $studentArray['class_name'],
+                'student_nis' => $studentArray['student_nis'],
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'],
             ];
 
@@ -156,7 +159,7 @@ class NilaiAkhirController extends Controller
     {
 
         $students = $this->getStudentAllScores($request->class_id, $request->student_id); // Ambil data berdasarkan filter class_id (jika ada)
-
+        $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah')->first();
         $formattedStudents = [];
 
         foreach ($students as $student) {
@@ -169,6 +172,7 @@ class NilaiAkhirController extends Controller
                 'student_name' => $studentArray['student_name'],
                 'class_name' => $studentArray['class_name'],
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'],
+                'student_nis' => $studentArray['student_nis'],
                 'foto_siswa_path' => $studentArray['foto_siswa_path'],
             ];
 
@@ -176,11 +180,19 @@ class NilaiAkhirController extends Controller
             $mapelScores = array_diff_key($studentArray, $studentInfo);
 
             // Gabungkan semua ke dalam satu array
-            $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores]);
+            $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores, 'school_data' => $schoolData]);
         }
         // return response()->json($formattedStudents);
         // dd($formattedStudents);
+        
         $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents'));
-        return $pdf->stream('Raport_' . $formattedStudents[0]['student_name'] . '.pdf');
+        $pdfPath = 'raport/' . $formattedStudents[0]['class_name'] . '/' . $formattedStudents[0]['student_name'] . '.pdf';
+
+        // return $pdf->stream('Raport_' . $formattedStudents[0]['student_name'] . '.pdf');
+        // return view('docs.nilai',compact('formattedStudents'));
+
+        Storage::disk('public')->put($pdfPath, $pdf->output());
+
+        return response()->json(['pdf_url' => asset('storage/' . $pdfPath)]);
     }
 }
