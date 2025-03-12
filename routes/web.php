@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClassController;
+use App\Http\Controllers\DataSekolahContoller;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SiswaController;
@@ -53,4 +54,6 @@ Route::middleware('auth')->group(function () {
     Route::get('akhir/siswa', [NilaiAkhirController::class, 'detailNilaiAkhir'])->name('nilaiakhir.detailNilaiAkhir');
     Route::get('akhir/getAVG', [NilaiAkhirController::class, 'getAllStudentAveragesOnly'])->name('nilaiakhir.getAllStudentAVG');
     Route::get('akhir/print',[NilaiAkhirController::class,'exportPDF'])->name('nilaiakhir.print');
+    //DataSekolah
+    Route::get('datasekolah',[DataSekolahContoller::class,'index'])->name('datasekolah.index');
 });

@@ -72,6 +72,13 @@
                             <p>Data Mata Pelajaran</p>
                         </a>
                     </li>
+                    <li class="nav-item ">
+                        <a href="{{route('datasekolah.index')}}"
+                            class="nav-link {{ request()->is('datasekolah*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-cogs"></i>
+                            <p>Data Sekolah</p>
+                        </a>
+                    </li>
 
                 </ul>
             </li>
