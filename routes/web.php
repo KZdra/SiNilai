@@ -6,6 +6,7 @@ use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\NilaiAkhirController;
+use App\Http\Controllers\TpController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {
@@ -58,4 +59,10 @@ Route::middleware('auth')->group(function () {
     Route::get('datasekolah',[DataSekolahContoller::class,'index'])->name('datasekolah.index');
     Route::post('datasekolah',[DataSekolahContoller::class,'store'])->name('datasekolah.store');
     Route::delete('datasekolah/{id}',[DataSekolahContoller::class,'destroy'])->name('datasekolah.destroy');
+    // Tujuan Pembelajaran
+    Route::get('mastertp',[TpController::class,'index'])->name('mastertp.index');
+    Route::get('mastertp/all',[TpController::class,'getdata'])->name('mastertp.getdata');
+    Route::post('mastertp',[TpController::class,'store'])->name('mastertp.store');
+    Route::put('mastertp/{id}',[TpController::class,'update'])->name('mastertp.update');
+    Route::delete('mastertp/{id}',[TpController::class,'destroy'])->name('mastertp.destroy');
 });

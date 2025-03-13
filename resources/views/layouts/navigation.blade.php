@@ -23,7 +23,8 @@
             </li>
 
             <li class="nav-item ">
-                <a href="{{ route('nilaiakhir.index') }}" class="nav-link {{ request()->is('akhir*') ? 'active' : '' }}">
+                <a href="{{ route('nilaiakhir.index') }}"
+                    class="nav-link {{ request()->is('akhir*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-graduation-cap"></i>
                     <p>
                         {{ __('Nilai Akhir') }}
@@ -31,13 +32,22 @@
                 </a>
             </li>
             <li class="nav-item ">
-                <a href="{{ route('value.index') }}" class="nav-link {{ request()->is('nilai*') ? 'active' : '' }} ">
-                    <i class="nav-icon fas fa-pen"></i>
+                <a href="#" class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
+                    <i class="nav-icon fas fa-tasks"></i>
                     <p>
-                        {{ __('Input Nilai Per Mapel') }}
+                        {{ __('Asesmen Formatif') }}
                     </p>
                 </a>
             </li>
+            <li class="nav-item ">
+                <a href="{{ route('value.index') }}" class="nav-link {{ request()->is('nilai*') ? 'active' : '' }} ">
+                    <i class="nav-icon fas fa-pen"></i>
+                    <p>
+                        {{ __('Asesmen Sumatif') }}
+                    </p>
+                </a>
+            </li>
+
 
 
 
@@ -73,10 +83,16 @@
                         </a>
                     </li>
                     <li class="nav-item ">
-                        <a href="{{route('datasekolah.index')}}"
+                        <a href="{{ route('datasekolah.index') }}"
                             class="nav-link {{ request()->is('datasekolah*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-cogs"></i>
                             <p>Data Sekolah</p>
+                        </a>
+                    </li>
+                    <li class="nav-item ">
+                        <a href="{{route('mastertp.index')}}" class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-th-list"></i>
+                            <p>Tujuan Pembelajaran</p>
                         </a>
                     </li>
 
