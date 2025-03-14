@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
@@ -32,14 +33,21 @@ class SiswaController extends Controller
                 's.pekerjaan_ayah',
                 's.pekerjaan_ibu',
                 's.alamat_orang_tua',
+                DB::raw('COALESCE(s.sakit,0) as sakit'),
+                DB::raw('COALESCE(s.izin,0) as izin'),
+                DB::raw('COALESCE(s.alpa,0) as alpa'),
                 's.foto_siswa_path'
             )
             ->leftJoin('class', 's.class_id', '=', 'class.id')
             ->orderBy('s.nama', 'asc')
             ->get();
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $className = null;
+        if(Auth::user()->class_id !== null){
+            $className = DB::table('class')->value('class_name');
+        }
 
-        return view('msiswa.index', compact('data', 'classList'));
+        return view('msiswa.index', compact('data', 'classList','className'));
     }
     public function store(Request $request)
     {
@@ -92,6 +100,9 @@ class SiswaController extends Controller
                 'alamat_orang_tua' => $request->alamat_orang_tua,
                 'foto_siswa' => $file_name,
                 'foto_siswa_path' => $file_path,
+                'sakit' => $request->sakit ?? 0,
+                'izin' => $request->izin ?? 0,
+                'alpa' => $request->alpa ?? 0,
                 'created_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Siswa berhasil ditambahkan!'], 201);
@@ -161,6 +172,9 @@ class SiswaController extends Controller
                 'alamat_orang_tua' => $request->alamat_orang_tua,
                 'foto_siswa' => $file_name,
                 'foto_siswa_path' => $file_path,
+                'sakit' => $request->sakit,
+                'izin' => $request->izin,
+                'alpa' => $request->alpa,
                 'updated_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Siswa berhasil diUpdate!'], 201);
@@ -223,6 +237,9 @@ class SiswaController extends Controller
                 $pekerjaan_ayah = $row[12] ?? null;
                 $pekerjaan_ibu = $row[13] ?? null;
                 $alamat_orang_tua = $row[14] ?? null;
+                $sakit = $row[15] ?? null;
+                $izin = $row[16] ?? null;
+                $alpa = $row[17] ?? null;
 
                 $classId = null;
 
@@ -244,7 +261,7 @@ class SiswaController extends Controller
                 DB::table('students')->updateOrInsert(
                     ['nis' => $nis], // Cek berdasarkan NIS
                     [
-                        'nisn'=>$nisn,
+                        'nisn' => $nisn,
                         'nama' => $nama,
                         'class_id' => $classId, // NULL jika tidak ada kelas
                         'jenis_kelamin' => $jenis_kelamin,
@@ -258,6 +275,9 @@ class SiswaController extends Controller
                         'pekerjaan_ayah' => $pekerjaan_ayah,
                         'pekerjaan_ibu' => $pekerjaan_ibu,
                         'alamat_orang_tua' => $alamat_orang_tua,
+                        'sakit' => $sakit,
+                        'izin' => $izin,
+                        'alpa' => $alpa,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now()
                     ]

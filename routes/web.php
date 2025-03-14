@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DataSekolahContoller;
+use App\Http\Controllers\FstController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\NilaiAkhirController;
+use App\Http\Controllers\TpController;
+use App\Http\Controllers\UserController;
+use App\Http\Middleware\RoleCheck;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {
@@ -58,4 +62,23 @@ Route::middleware('auth')->group(function () {
     Route::get('datasekolah',[DataSekolahContoller::class,'index'])->name('datasekolah.index');
     Route::post('datasekolah',[DataSekolahContoller::class,'store'])->name('datasekolah.store');
     Route::delete('datasekolah/{id}',[DataSekolahContoller::class,'destroy'])->name('datasekolah.destroy');
+    // Tujuan Pembelajaran
+    Route::get('mastertp',[TpController::class,'index'])->name('mastertp.index');
+    Route::get('mastertp/all',[TpController::class,'getdata'])->name('mastertp.getdata');
+    Route::post('mastertp',[TpController::class,'store'])->name('mastertp.store');
+    Route::put('mastertp/{id}',[TpController::class,'update'])->name('mastertp.update');
+    Route::delete('mastertp/{id}',[TpController::class,'destroy'])->name('mastertp.destroy');
+    // Fase/Semester/Tahun Ajaran
+    Route::get('mfst',[FstController::class,'index'])->name('mfst.index');
+    Route::get('mfst/get',[FstController::class,'getData'])->name('mfst.getData');
+    Route::post('mfst',[FstController::class,'store'])->name('mfst.store');
+    Route::put('mfst/{id}',[FstController::class,'update'])->name('mfst.update');
+    Route::delete('mfst/{id}',[FstController::class,'destroy'])->name('mfst.destroy');
+    // User Management
+    Route::middleware(['roleCheck:1'])->group(function () {
+    Route::get('muser',[UserController::class,'index'])->name('muser.index');
+    Route::post('muser',[UserController::class,'store'])->name('muser.store');
+    Route::put('muser/{id}',[UserController::class,'update'])->name('muser.update');
+    Route::delete('muser/{id}',[UserController::class,'destroy'])->name('muser.destroy');
+    });
 });

@@ -41,8 +41,7 @@ class NilaiController extends Controller
             DB::raw('ROUND((COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12, 2) as average_value'))
             ->Join('class as c', 's.class_id', '=', 'c.id')
             ->leftJoin('values as v', function ($join) use ($mp_id) {
-                $join->on('s.id', '=', 'v.student_id')
-                    ->where('v.mapel_id', '=', $mp_id); // Dipindahkan ke LEFT JOIN
+                $join->on('s.id', '=', 'v.student_id')->where('v.mapel_id', '=', $mp_id);
             })->leftJoin('mata_pelajarans as mp', 'v.mapel_id', '=', 'mp.id')
             ->where('s.class_id', '=', $id)
             ->orderBy('s.nama', 'asc')
