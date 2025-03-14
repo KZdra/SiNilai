@@ -7,7 +7,7 @@
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Master Tujuan Pembelajaran') }}</h1>
-                    <button class="mt-2 btn btn-primary" id="pickMapelBtn">Pilih Mata Pelajaran</button>
+                    <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
                     <button class=" mt-2 btn btn-success " id="inputTpBtn">Input</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -20,6 +20,22 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12">
+                    <div class="card" id="pickClass" style="display: none">
+                        <div class="card-body p-2">
+                            <form id="filterForm">
+                                <div class="form-group">
+                                    <label for="class_id">Kelas</label>
+                                    <select name="class_id" id="class_id" class="form-control">
+                                        <option value="" selected disabled>Pilih Kelas</option>
+                                        @foreach ($classList as $index => $class)
+                                            <option value="{{ $class->id }}">{{ $class->class_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
                     <div class="card" id="pickMapel" style="display: none;">
                         <div class="card-body p-2">
                             <form id="mapelForm">
@@ -36,9 +52,28 @@
                             </form>
                         </div>
                     </div>
+                    <div class="card" id="pickFst" style="display: none;">
+                        <div class="card-body p-2">
+                            <form id="fstForm">
+                                <div class="form-group">
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <select name="fst_id" id="fst_id" class="form-control">
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        @foreach ($fstList as $index => $fst)
+                                            <option value="{{ $fst->id }}">
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
                     <div class="card" id="resultTable" style="display: none">
                         <div class="card-header">
+                            <h5>Kelas: <span id="ClassSel"></span></h5>
                             <h5>Mata Pelajaran: <span id="MapelSel"></span></h5>
+                            <h5>Fase/Semester/Tahun: <span id="FstSel"></span></h5>
                         </div>
                         <div class="card-body p-2">
 
@@ -74,10 +109,11 @@
                     <form id="valueForm">
                         <div class="modal-body">
                             <input type="hidden" id="tp_id">
+                            <input type="hidden" id="class_id">
                             <input type="hidden" id="mapel_id">
                             <div class="form-group">
                                 <label for="tp_deskripsi">Tujuan Pembelajaran</label>
-                                <input type="text" class="form-control" id="tp_deskripsi" name="tp_deskripsi" required>
+                                <input type="textarea" class="form-control" id="tp_deskripsi" name="tp_deskripsi" required>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -99,12 +135,27 @@
         $(document).ready(function() {
             // State
             $('#inputTpBtn').hide();
+            let class_id = null;
             let mapel_id = null;
+            let fst_id = null;
+            let class_name = ''; // Simpan nama kelas
             let mapel_name = ''; // Simpan nama mapel
+            let fst_name = '';
             // End Of State
             // NIlai Section (Filter)
-            $('#pickMapelBtn').click(function() {
-                $("#pickMapel").slideToggle(300);
+            $('#pickClassBtn').click(function() {
+                $("#pickClass").slideToggle(300);
+            })
+            $('#filterForm').submit(function(e) {
+                e.preventDefault();
+                class_id = $('#class_id').val();
+                class_name = $('#class_id option:selected').text();
+                if (!class_id) {
+                    SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
+                    return;
+                }
+                $("#pickClass").hide(300);
+                $("#pickMapel").show(300);
             })
             $('#mapelForm').submit(function(e) {
                 e.preventDefault();
@@ -115,20 +166,36 @@
                     SwalHelper.showError('Silahkan Pilih Mata Pelajaran Terlebih Dahulu');
                     return;
                 }
+                $("#pickMapel").hide(300);
+                $("#pickFst").show();
+
+            })
+            $('#fstForm').submit(function(e) {
+                e.preventDefault();
+                fst_id = $('#fst_id').val();
+                fst_name = $('#fst_id option:selected').text();
+
+                if (!fst_id) {
+                    SwalHelper.showError('Silahkan Pilih Fase/Semester/Tahun Ajaran Terlebih Dahulu');
+                    return;
+                }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
                     $('#valueTable').DataTable()
                         .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
                 $("#MapelSel").text(mapel_name);
-
+                $("#FstSel").text(fst_name);
+                $("#ClassSel").text(class_name);
                 $('#valueTable').DataTable({
                     "responsive": true,
                     "ajax": {
-                        "url": "{{route('mastertp.getdata')}}", 
+                        "url": "{{ route('mastertp.getdata') }}",
                         "type": "GET",
                         "data": {
-                            mapel_id: mapel_id
+                            mapel_id: mapel_id,
+                            class_id: class_id,
+                            fst_id: fst_id
                         },
                         "dataSrc": 'data'
                     },
@@ -140,7 +207,7 @@
                         },
                         {
                             "data": "tp_deskripsi",
-                            "render": function(data,type,row){
+                            "render": function(data, type, row) {
                                 return data ? data : '-'
                             }
                         },
@@ -171,7 +238,7 @@
                         }
                     ]
                 });
-                $("#pickMapel").hide(300);
+                $('#pickFst').hide();
                 $('#inputTpBtn').show();
                 $("#resultTable").show(300);
             })
@@ -180,7 +247,9 @@
             // Tampilkan Modal Input Nilai
             $(document).on("click", "#inputTpBtn", function() {
                 $('#tp_id').val('');
+                $('#fst_id').val(fst_id);
                 $('#mapel_id').val(mapel_id);
+                $('#class_id').val(class_id);
                 $('#tp_deskripsi').val('');
                 $('#tpModalLabel').text('Input Tujuan Pembelajaran');
                 $('#tpModal').modal('show');
@@ -198,6 +267,8 @@
                     method: method,
                     data: {
                         mapel_id: $('#mapel_id').val(),
+                        fst_id: $('#fst_id').val(),
+                        class_id: $('#class_id').val(),
                         tp_deskripsi: $('#tp_deskripsi').val(),
                         _token: "{{ csrf_token() }}"
                     },
@@ -228,7 +299,9 @@
 
 
                 $('#tp_id').val(id);
+                $('#fst_id').val(fst_id);
                 $('#mapel_id').val(mapel_id);
+                $('#class_id').val(class_id);
                 $('#tp_deskripsi').val(tp_deskripsi);
                 $('#tpModalLabel').text('Edit Tujuan Pembelajaran');
                 $('#tpModal').modal('show');

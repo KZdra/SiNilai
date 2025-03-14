@@ -21,16 +21,6 @@
                     </p>
                 </a>
             </li>
-
-            <li class="nav-item ">
-                <a href="{{ route('nilaiakhir.index') }}"
-                    class="nav-link {{ request()->is('akhir*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-graduation-cap"></i>
-                    <p>
-                        {{ __('Nilai Akhir') }}
-                    </p>
-                </a>
-            </li>
             <li class="nav-item ">
                 <a href="#" class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
                     <i class="nav-icon fas fa-tasks"></i>
@@ -47,13 +37,29 @@
                     </p>
                 </a>
             </li>
-
+            <li class="nav-item ">
+                <a href="#" class="nav-link {{ request()->is('peskul*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-pencil-ruler"></i>
+                    <p>
+                        {{ __('Penilaian Ekstrakurikuler') }}
+                    </p>
+                </a>
+            </li>
+            <li class="nav-item ">
+                <a href="{{ route('nilaiakhir.index') }}"
+                    class="nav-link {{ request()->is('akhir*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-graduation-cap"></i>
+                    <p>
+                        {{ __('Nilai Akhir') }}
+                    </p>
+                </a>
+            </li>
 
 
 
             <li class="nav-item">
                 <a href="#" class="nav-link">
-                    <i class="nav-icon fas fa-laptop-code nav-icon"></i>
+                    <i class="nav-icon fas fa-toolbox nav-icon"></i>
                     <p>
                         Data Master
                         <i class="fas fa-angle-left right"></i>
@@ -90,14 +96,32 @@
                         </a>
                     </li>
                     <li class="nav-item ">
-                        <a href="{{route('mastertp.index')}}" class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
+                        <a href="{{route('mfst.index')}}" class="nav-link {{ request()->is('mfst*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-calendar"></i>
+                            <p>Fase/Semester/Tahun Ajaran</p>
+                        </a>
+                    </li>
+                    <li class="nav-item ">
+                        <a href="{{ route('mastertp.index') }}"
+                            class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-th-list"></i>
                             <p>Tujuan Pembelajaran</p>
                         </a>
                     </li>
-
                 </ul>
+
             </li>
+            @if ( Auth::user()->role_id == 1 )
+            <li class="nav-item ">
+                <a href="{{route('muser.index')}}"
+                    class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-cog"></i>
+                    <p>
+                        {{ __('Manajemen User') }}
+                    </p>
+                </a>
+            </li>
+            @endif
         </ul>
     </nav>
     <!-- /.sidebar-menu -->

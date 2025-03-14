@@ -22,6 +22,9 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body p-2">
+                            @if ($className)
+                            <input type="hidden" name="class_filter" value="{{$className}}" id="class_filter">
+                            @else
                             <div class="form-group">
                                 <label for="class_filter"> Filter Kelas</label>
                                 <select class="form-control" id="class_filter" name="class_filter">
@@ -31,6 +34,7 @@
                                     @endforeach
                                 </select>
                             </div>
+                            @endif
                             <table class="table table-striped table-bordered" id="studentTable">
                                 <thead>
                                     <tr>
@@ -97,7 +101,10 @@
                                                     data-nama_ibu="{{ $student->nama_ibu }}"
                                                     data-pekerjaan_ayah="{{ $student->pekerjaan_ayah }}"
                                                     data-pekerjaan_ibu="{{ $student->pekerjaan_ibu }}"
-                                                    data-alamat_orang_tua="{{ $student->alamat_orang_tua }}">Edit</button>
+                                                    data-alamat_orang_tua="{{ $student->alamat_orang_tua }}"
+                                                    data-sakit="{{$student->sakit}}"
+                                                    data-izin="{{$student->izin}}"
+                                                    data-alpa="{{$student->alpa}}">Edit</button>
                                                 <button class="btn btn-danger delBtn"
                                                     data-id="{{ $student->id }}">Delete</button>
                                             </td>
@@ -211,6 +218,21 @@
                                     name="alamat_orang_tua" required>
                             </div>
                             <div class="form-group">
+                                <label for="sakit">Sakit</label>
+                                <input type="number" inputmode="numeric" class="form-control" id="sakit"
+                                    name="sakit">
+                            </div>
+                            <div class="form-group">
+                                <label for="izin">Izin</label>
+                                <input type="number" inputmode="numeric" class="form-control" id="izin"
+                                    name="izin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="alpa">Alpa</label>
+                                <input type="number" inputmode="numeric" class="form-control" id="alpa"
+                                    name="alpa" required>
+                            </div>
+                            <div class="form-group">
                                 <label for="foto_siswa" class="form-label">Upload Foto</label>
                                 <input class="form-control" type="file" id="foto_siswa">
                             </div>
@@ -285,6 +307,9 @@
                 $('#pekerjaan_ibu').val('');
                 $('#alamat_orang_tua').val('');
                 $('#foto_siswa').val(null);
+                $('#sakit').val('');
+                $('#izin').val('');
+                $('#alpa').val('');
                 $('#studentModalLabel').text('Tambah Siswa');
                 $('#studentModal').modal('show');
             });
@@ -311,6 +336,9 @@
                 formData.append('pekerjaan_ayah', $('#pekerjaan_ayah').val());
                 formData.append('pekerjaan_ibu', $('#pekerjaan_ibu').val());
                 formData.append('alamat_orang_tua', $('#alamat_orang_tua').val());
+                formData.append('sakit', $('#sakit').val());
+                formData.append('izin', $('#izin').val());
+                formData.append('alpa', $('#alpa').val());
                 if (id) {
                     formData.append('_method', 'PUT');
                 }
@@ -326,8 +354,8 @@
                         'X-CSRF-TOKEN': "{{ csrf_token() }}",
                     },
                     data: formData,
-                    processData: false, // Penting untuk FormData
-                    contentType: false, // Penting untuk FormData
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
                         Swal.fire({
                             icon: 'success',
@@ -366,6 +394,9 @@
                 let pekerjaan_ayah = $(this).data('pekerjaan_ayah');
                 let pekerjaan_ibu = $(this).data('pekerjaan_ibu');
                 let alamat_orang_tua = $(this).data('alamat_orang_tua');
+                let sakit = $(this).data('sakit');
+                let izin = $(this).data('izin');
+                let alpa = $(this).data('alpa');
                 $('#student_id').val(id);
                 $('#nisn').val(nisn);
                 $('#nis').val(nis);
@@ -383,6 +414,9 @@
                 $('#pekerjaan_ibu').val(pekerjaan_ibu);
                 $('#alamat_orang_tua').val(alamat_orang_tua);
                 $('#foto_siswa').val(null);
+                $('#sakit').val(sakit);
+                $('#izin').val(izin);
+                $('#alpa').val(alpa);
                 $('#studentModalLabel').text('Edit Siswa');
                 $('#studentModal').modal('show');
             })

@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('m_fst_pembelajaran', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->string('fase');
-            $table->string('semester');
-            $table->string('tahun_ajaran');
+            $table->string('role_name');
             $table->timestamps();
         });
     }
@@ -25,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('m_fst_pembelajaran');
+        Schema::dropIfExists('roles');
     }
 };

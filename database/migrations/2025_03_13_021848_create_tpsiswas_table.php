@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('tpsiswas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('siswa_id');
+            $table->unsignedBigInteger('class_id');
             $table->unsignedBigInteger('mapel_id');
             $table->unsignedBigInteger('tp_id');
             $table->boolean('kktp');
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->foreign('mapel_id')->references('id')->on('mata_pelajarans')->onDelete('cascade');
             $table->foreign('siswa_id')->references('id')->on('students')->onDelete('cascade');
             $table->foreign('tp_id')->references('id')->on('m_tp')->onDelete('cascade');
+            $table->foreign('class_id')->references('id')->on('class')->onDelete('cascade');
 
         });
     }

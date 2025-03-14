@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('m_fst_pembelajaran', function (Blueprint $table) {
-            $table->id();
-            $table->string('fase');
-            $table->string('semester');
-            $table->string('tahun_ajaran');
-            $table->timestamps();
+        Schema::table('tpsiswas', function (Blueprint $table) {
+            $table->unsignedBigInteger('fst_id')->after('mapel_id')->nullable();
+            $table->foreign('fst_id')->references('id')->on('m_fst_pembelajaran')->onDelete('cascade');
         });
     }
 
@@ -25,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('m_fst_pembelajaran');
+        Schema::table('tpsiswas', function (Blueprint $table) {
+            //
+        });
     }
 };
