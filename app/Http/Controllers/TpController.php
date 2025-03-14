@@ -33,12 +33,14 @@ class TpController extends Controller
         $sangu = $r->validate([
             'mapel_id' => 'required|integer',
             'class_id' => 'required|integer',
+            'fst_id' => 'required|integer',
             'tp_deskripsi' => 'required|string'
         ]);
         try {
             DB::table('m_tp')->insert([
                 'mapel_id' => $sangu['mapel_id'],
                 'class_id' => $sangu['class_id'],
+                'fst_id' => $sangu['fst_id'],
                 'tp_deskripsi' => $sangu['tp_deskripsi'],
                 'created_at' => Carbon::now()
 

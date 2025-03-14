@@ -9,7 +9,6 @@ use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\NilaiAkhirController;
 use App\Http\Controllers\TpController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\RoleCheck;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {
