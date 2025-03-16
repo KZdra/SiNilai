@@ -13,12 +13,15 @@ class NilaiController extends Controller
     {
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
         $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('id', 'asc')->get();
-        return view('nilai.index', compact('classList', 'mapelList'));
+        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran')->orderBy('id', 'asc')->get();
+
+        return view('nilai.index', compact('classList', 'mapelList', 'fstList'));
     }
     public function getData(Request $request)
     {
         $id = $request->class_id;
         $mp_id = $request->mapel_id;
+        $fst_id = $request->fst_id;
         $data = DB::table('students as s')->select(
             's.id as student_id',
             's.nama as student_name',
@@ -38,10 +41,11 @@ class NilaiController extends Controller
             'v.value_daily_10',
             'v.value_sts',
             'v.value_sas',
-            DB::raw('ROUND((COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12, 2) as average_value'))
+            DB::raw('ROUND((COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12, 2) as average_value')
+        )
             ->Join('class as c', 's.class_id', '=', 'c.id')
-            ->leftJoin('values as v', function ($join) use ($mp_id) {
-                $join->on('s.id', '=', 'v.student_id')->where('v.mapel_id', '=', $mp_id);
+            ->leftJoin('values as v', function ($join) use ($mp_id,$fst_id) {
+                $join->on('s.id', '=', 'v.student_id')->where('v.mapel_id', '=', $mp_id)->where('v.fst_id', '=', $fst_id);
             })->leftJoin('mata_pelajarans as mp', 'v.mapel_id', '=', 'mp.id')
             ->where('s.class_id', '=', $id)
             ->orderBy('s.nama', 'asc')
@@ -55,21 +59,23 @@ class NilaiController extends Controller
             'student_id' => 'required|integer',
             'value_daily' => 'required|numeric|max_digits:3|max:100',
             'value_daily_2' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_3' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_4' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_5' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_6' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_7' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_8' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_9' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_10' => 'required|numeric|max_digits:3|max:100',
+            'value_daily_3' => 'numeric|max_digits:3|max:100',
+            'value_daily_4' => 'numeric|max_digits:3|max:100',
+            'value_daily_5' => 'numeric|max_digits:3|max:100',
+            'value_daily_6' => 'numeric|max_digits:3|max:100',
+            'value_daily_7' => 'numeric|max_digits:3|max:100',
+            'value_daily_8' => 'numeric|max_digits:3|max:100',
+            'value_daily_9' => 'numeric|max_digits:3|max:100',
+            'value_daily_10' => 'numeric|max_digits:3|max:100',
             'value_sts' => 'required|numeric|max_digits:3|max:100',
             'value_sas' => 'required|numeric|max_digits:3|max:100',
         ]);
-
+        DB::beginTransaction();
         try {
             DB::table('values')->insert([
+                'class_id'=> $request->class_id,
                 'mapel_id' => $request->mapel_id,
+                'fst_id' => $request->fst_id,
                 'student_id' => $request->student_id,
                 'value_daily' => $request->value_daily,
                 'value_daily_2' => $request->value_daily_2,
@@ -85,8 +91,10 @@ class NilaiController extends Controller
                 'value_sas' => $request->value_sas,
                 'created_at' => Carbon::now()
             ]);
+            DB::commit();
             return response()->json(['message' => 'Nilai berhasil ditambahkan!'], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
@@ -97,20 +105,20 @@ class NilaiController extends Controller
             'student_id' => 'required|integer',
             'value_daily' => 'required|integer|max_digits:3',
             'value_daily_2' => 'required|integer|max_digits:3',
-            'value_daily_3' => 'required|integer|max_digits:3',
-            'value_daily_4' => 'required|integer|max_digits:3',
-            'value_daily_5' => 'required|integer|max_digits:3',
-            'value_daily_6' => 'required|integer|max_digits:3',
-            'value_daily_7' => 'required|integer|max_digits:3',
-            'value_daily_8' => 'required|integer|max_digits:3',
-            'value_daily_9' => 'required|integer|max_digits:3',
-            'value_daily_10' => 'required|integer|max_digits:3',
+            'value_daily_3' => 'integer|max_digits:3',
+            'value_daily_4' => 'integer|max_digits:3',
+            'value_daily_5' => 'integer|max_digits:3',
+            'value_daily_6' => 'integer|max_digits:3',
+            'value_daily_7' => 'integer|max_digits:3',
+            'value_daily_8' => 'integer|max_digits:3',
+            'value_daily_9' => 'integer|max_digits:3',
+            'value_daily_10' => 'integer|max_digits:3',
             'value_sts' => 'required|integer|max_digits:3',
             'value_sas' => 'required|integer|max_digits:3',
         ]);
-
+        DB::beginTransaction();
         try {
-            DB::table('values')->where('id', '=', $id)->where('student_id', '=', $request->student_id)->where('mapel_id', '=', $request->mapel_id)->update([
+            DB::table('values')->where('id', '=', $id)->where('student_id', '=', $request->student_id)->where('mapel_id', '=', $request->mapel_id)->where('fst_id', $request->fst_id)->where('mapel_id', '=', $request->mapel_id)->where('class_id', $request->class_id)->update([
                 'value_daily' => $request->value_daily,
                 'value_daily_2' => $request->value_daily_2,
                 'value_daily_3' => $request->value_daily_3,
@@ -125,18 +133,23 @@ class NilaiController extends Controller
                 'value_sas' => $request->value_sas,
                 'updated_at' => Carbon::now()
             ]);
+            DB::commit();
             return response()->json(['message' => 'Nilai berhasil diEdit!'], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
     public function destroy(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
             DB::table('values')->where('id', '=', $id)->delete();
+            DB::commit();
             return response()->json(['message' => 'Nilai berhasil diHapus!'], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
@@ -187,7 +200,9 @@ class NilaiController extends Controller
                     DB::table('values')->updateOrInsert(
                         ['student_id' => $studentId],
                         [
+                            'class_id'=> $request->class_id,
                             'mapel_id' => $request->mapel_id,
+                            'fst_id' => $request->fst_id,
                             'value_daily' => $value_daily,
                             'value_daily_2' => $value_daily_2,
                             'value_daily_3' => $value_daily_3,

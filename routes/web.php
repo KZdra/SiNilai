@@ -80,4 +80,10 @@ Route::middleware('auth')->group(function () {
     Route::put('muser/{id}',[UserController::class,'update'])->name('muser.update');
     Route::delete('muser/{id}',[UserController::class,'destroy'])->name('muser.destroy');
     });
+    // INput Formatif
+    Route::get('formatif',[TpController::class,'indexFormatif'])->name('formatif.index');
+    Route::get('formatif/get',[TpController::class,'getDataFormatif'])->name('formatif.getdata');
+    Route::get('formatif/getlist',[TpController::class,'getTPList'])->name('formatif.gettplist');
+    Route::post('formatif',[TpController::class,'storeFormatif'])->name('formatif.store');
+    Route::delete('formatif/{id}',[TpController::class,'destroyFormatif'])->name('formatif.destroy');
 });

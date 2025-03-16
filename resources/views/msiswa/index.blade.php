@@ -54,6 +54,9 @@
                                         <th>Pekerjaan Ayah</th>
                                         <th>Pekerjaan Ibu</th>
                                         <th>Alamat Orang Tua</th>
+                                        <th>Sakit</th>
+                                        <th>Izin</th>
+                                        <th>Alpa</th>
                                         <th>Foto</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -77,6 +80,9 @@
                                             <td>{{ $student->pekerjaan_ayah }}</td>
                                             <td>{{ $student->pekerjaan_ibu }}</td>
                                             <td>{{ $student->alamat_orang_tua }}</td>
+                                            <td>{{ $student->sakit }}</td>
+                                            <td>{{ $student->izin }}</td>
+                                            <td>{{ $student->alpa }}</td>
                                             <td>
                                                 @if ($student->foto_siswa_path)
                                                     <img src="{{ asset('storage/' . $student->foto_siswa_path) }}"

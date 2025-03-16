@@ -6,7 +6,7 @@
             <img src="{{ asset('images/user.jpg') }}" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-            <a href="{{ route('profile.show') }}" class="d-block">{{ Auth::user()->name }}</a>
+            <a href="#" class="d-block">{{ Auth::user()->name }}</a>
         </div>
     </div>
 
@@ -22,7 +22,7 @@
                 </a>
             </li>
             <li class="nav-item ">
-                <a href="#" class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
+                <a href="{{route('formatif.index')}}" class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
                     <i class="nav-icon fas fa-tasks"></i>
                     <p>
                         {{ __('Asesmen Formatif') }}
