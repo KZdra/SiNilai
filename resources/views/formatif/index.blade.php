@@ -258,7 +258,7 @@
                         {
                             "data": null,
                             "render": function(data, type, row) {
-                                if (row.idtp1) {
+                                if (row.tp_isFill) {
                                     return `
                         <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"
@@ -312,16 +312,17 @@
                 let container = $("#tpFormList");
                 container.empty(); // Kosongkan sebelum render ulang
 
-                tpList.forEach(tp => {
+                tpList.forEach((tp,idx) => {
                     let inputHtml = `
             <div class="tp-item form-group" id="tp-${tp.id}">
                 <input type="hidden" name="tp_list[${tp.id}][id]" value="${tp.id}">
                 <input type="hidden" name="tp_list[${tp.id}][tps_id]" id=tps_id value="${tp.tps_id}">
-                <h5>${tp.tp_deskripsi}</h5>
+                <h5>TP-${idx+1} :</h5>
+                <textarea class="form-control" disabled>${tp.tp_deskripsi}</textarea>
                 <label>KKTP:</label>
                 <select name="tp_list[${tp.id}][kktp]" class="form-control">
-                    <option value="1" ${tp.kktp == 1 ? "selected" : ""}>1</option>
-                    <option value="0" ${tp.kktp == 0 ? "selected" : ""}>0</option>
+                    <option value="1" ${tp.kktp == 1 ? "selected" : ""}>Cukup</option>
+                    <option value="0" ${tp.kktp == 0 ? "selected" : ""}>Kurang</option>
                 </select>
 
                 <label>Tampilkan:</label>

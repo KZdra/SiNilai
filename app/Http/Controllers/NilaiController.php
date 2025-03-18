@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class NilaiController extends Controller
 {
@@ -14,8 +15,11 @@ class NilaiController extends Controller
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
         $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('id', 'asc')->get();
         $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran')->orderBy('id', 'asc')->get();
-
-        return view('nilai.index', compact('classList', 'mapelList', 'fstList'));
+        $className = null;
+        if (Auth::user()->class_id !== null) {
+            $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
+        }
+        return view('nilai.index', compact('classList', 'mapelList', 'fstList','className'));
     }
     public function getData(Request $request)
     {

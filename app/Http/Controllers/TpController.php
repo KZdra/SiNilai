@@ -148,6 +148,7 @@ class TpController extends Controller
                 $result[$id] = [
                     "student_id" => $item->student_id,
                     "student_name" => $item->student_name,
+                    "tp_isFill"=>false,
                     "Hasil_Tp_tinggi" => [],
                     "Hasil_Tp_kurang" => [],
                 ];
@@ -161,17 +162,20 @@ class TpController extends Controller
 
             // Tambahkan ke Hasil_Tp_tinggi jika kktp = 1 dan tampilkan = 1
             if ($item->kktp == 1 && $item->tampilkan == 1) {
+                $result[$id]["tp_isFill"] = true;
                 $result[$id]["Hasil_Tp_tinggi"][] = $item->tp_deskripsi;
             }
 
             // Tambahkan ke Hasil_Tp_kurang jika kktp = 0 dan tampilkan = 1
             if ($item->kktp == 0 && $item->tampilkan == 1) {
+                $result[$id]["tp_isFill"] = true;
                 $result[$id]["Hasil_Tp_kurang"][] = $item->tp_deskripsi;
             }
         }
 
         // Ubah array hasil tinggi dan kurang menjadi string dipisahkan koma
         foreach ($result as &$student) {
+            $student["tp_isFill"]= $student["tp_isFill"];
             $student["Hasil_Tp_tinggi"] = $student["student_name"] . " Menunjukan Pemahaman Dalam " . implode(", ", $student["Hasil_Tp_tinggi"]);
             $student["Hasil_Tp_kurang"] = $student["student_name"] . " Membutuhkan Bimbingan Dalam " . implode(", ", $student["Hasil_Tp_kurang"]);
         }

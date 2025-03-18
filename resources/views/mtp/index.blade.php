@@ -119,7 +119,7 @@
                             <input type="hidden" id="mapel_id">
                             <div class="form-group">
                                 <label for="tp_deskripsi">Tujuan Pembelajaran</label>
-                                <input type="textarea" class="form-control" id="tp_deskripsi" name="tp_deskripsi" required>
+                                <textarea  class="form-control" id="tp_deskripsi" name="tp_deskripsi" required></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">

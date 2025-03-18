@@ -43,17 +43,14 @@
         }
 
         .nilai-table td {
-            height: 80px;
+            height: 75px;
         }
 
-        .rata-rata-table {
-            border: solid;
-            margin-top: 2px;
+        .absen-table {
+            margin-top: 15px;
+            width: 50%;
         }
 
-        .rata-rata-table td {
-            height: 70px;
-        }
     </style>
 </head>
 
@@ -72,19 +69,19 @@
             <td>Nis</td>
             <td>: {{ $formattedStudents[0]['student_nis'] }}</td>
             <td>Fase</td>
-            <td>: -</td>
+            <td>: {{ucwords($formattedStudents[0]['fst']->fase ?? "-") }}</td>
         </tr>
         <tr>
             <td>Sekolah</td>
             <td>: {{$formattedStudents[0]['school_data']->nama_sekolah ?? "SMK ICB CINTA TEKNIKA" }}</td>
             <td>Semester</td>
-            <td>: -</td>
+            <td>: {{$formattedStudents[0]['fst']->semester ?? "-" }}</td>
         </tr>
         <tr>
             <td>Alamat</td>
             <td>: {{$formattedStudents[0]['school_data']->alamat_sekolah ?? "Jalan Atlas Tengah No. 2" }}</td>
             <td>Tahun Pembelajaran</td>
-            <td>: -</td>
+            <td>: {{$formattedStudents[0]['fst']->tahun_ajaran ?? "-" }}</td>
         </tr>
     </table>
 
@@ -100,23 +97,46 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $subject }}</td>
-                <td>{{ round($s) }}</td>
-                {{-- <td>
-                    <p>- Menunjukkan pemahaman dalam menganalisis ayat Al-Qur'an dan hadis.</p>
-                    <p>- Menunjukkan pemahaman dalam menganalisis ayat Al-Qur'an dan hadis.</p>
-                </td> --}}
-                <td>-</td>
+                <td style="text-align: center;">{{ round($s) }}</td>
+                <td>
+                    <p>{{ $formattedStudents[0]['TP'][$subject]['Hasil_Tp_tinggi'] }}</p>
+                    <p>{{ $formattedStudents[0]['TP'][$subject]['Hasil_Tp_kurang'] }}</p>
+                </td>
             </tr>
         @endforeach
 
 
     </table>
-    {{-- <table class="rata-rata-table">
+    <table class="eskul-table" style="margin-top: 20px">
         <tr>
-            <td style="font-weight: bold;">Nilai Rata Rata</td>
-            <td style="font-weight: bold;">{{ round($formattedStudents[0]['avg_nilai_semua_mapel']) }}</td>
+            <th>No</th>
+            <th>Ekstrakulikuler</th>
+            <th>Keterangan</th>
         </tr>
-    </table> --}}
+        <tr>
+            <td>
+            1
+            </td>
+            <td>Band</td>
+            <td>Lorem Ipsum dolor sit amet </td>
+        </tr>
+    </table>
+
+    <table class="absen-table">
+        <tr><td colspan="2" style="text-align: center;">Ketidakhadiran</td></tr>
+        <tr>
+            <td style="width: 145px">Sakit</td>
+            <td style="text-align: center">{{ $formattedStudents[0]['sakit'] }} Hari</td>
+        </tr>
+        <tr>
+            <td style="width: 145px">Izin</td>
+            <td  style="text-align: center">{{ $formattedStudents[0]['izin'] }} Hari</td>
+        </tr>
+        <tr>
+            <td style="width: 145px">Tanpa Keterangan</td>
+            <td style="text-align: center">{{ $formattedStudents[0]['alpa'] }} Hari</td>
+        </tr>
+    </table>
     {{-- <script type="text/javascript"> try { this.print(true); } catch (e) { window.onload = window.print; } </script> --}}
 </body>
 
