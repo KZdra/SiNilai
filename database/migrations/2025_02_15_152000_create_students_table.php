@@ -28,9 +28,9 @@ return new class extends Migration
             $table->string('pekerjaan_ayah')->nullable();
             $table->string('pekerjaan_ibu')->nullable();
             $table->text('alamat_orang_tua')->nullable();
-            $table->integer('sakit')->default(0);
-            $table->integer('izin')->default(0);
-            $table->integer('alpa')->default(0);
+            $table->integer('sakit')->nullable(0);
+            $table->integer('izin')->nullable(0);
+            $table->integer('alpa')->nullable(0);
             $table->string('foto_siswa')->nullable();
             $table->string('foto_siswa_path')->nullable();
             $table->timestamps();

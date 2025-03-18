@@ -6,7 +6,7 @@
             <img src="{{ asset('images/user.jpg') }}" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-            <a href="{{ route('profile.show') }}" class="d-block">{{ Auth::user()->name }}</a>
+            <a href="#" class="d-block">{{ Auth::user()->name }}</a>
         </div>
     </div>
 
@@ -22,7 +22,8 @@
                 </a>
             </li>
             <li class="nav-item ">
-                <a href="#" class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
+                <a href="{{ route('formatif.index') }}"
+                    class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
                     <i class="nav-icon fas fa-tasks"></i>
                     <p>
                         {{ __('Asesmen Formatif') }}
@@ -66,62 +67,64 @@
                     </p>
                 </a>
                 <ul class="nav nav-treeview" style="display: none;">
-                    <li class="nav-item ">
-                        <a href="{{ route('class.index') }}"
-                            class="nav-link {{ request()->is('kelas*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-school"></i>
-                            <p>Data Kelas</p>
-                        </a>
-                    </li>
-
-                    <li class="nav-item ">
-                        <a href="{{ route('student.index') }}"
-                            class="nav-link {{ request()->is('siswa*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-user-graduate"></i>
-                            <p>Data Siswa</p>
-                        </a>
-                    </li>
-                    <li class="nav-item ">
-                        <a href="{{ route('mapel.index') }}"
-                            class="nav-link {{ request()->is('mapel*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-book"></i>
-                            <p>Data Mata Pelajaran</p>
-                        </a>
-                    </li>
-                    <li class="nav-item ">
-                        <a href="{{ route('datasekolah.index') }}"
-                            class="nav-link {{ request()->is('datasekolah*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-cogs"></i>
-                            <p>Data Sekolah</p>
-                        </a>
-                    </li>
-                    <li class="nav-item ">
-                        <a href="{{route('mfst.index')}}" class="nav-link {{ request()->is('mfst*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-calendar"></i>
-                            <p>Fase/Semester/Tahun Ajaran</p>
-                        </a>
-                    </li>
-                    <li class="nav-item ">
-                        <a href="{{ route('mastertp.index') }}"
-                            class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-th-list"></i>
-                            <p>Tujuan Pembelajaran</p>
-                        </a>
-                    </li>
-                </ul>
-
-            </li>
-            @if ( Auth::user()->role_id == 1 )
+                @if (Auth::user()->role_id == 1)
+                        <li class="nav-item ">
+                            <a href="{{ route('class.index') }}"
+                                class="nav-link {{ request()->is('kelas*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-school"></i>
+                                <p>Data Kelas</p>
+                            </a>
+                        </li>
+                @endif
             <li class="nav-item ">
-                <a href="{{route('muser.index')}}"
-                    class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">
+                <a href="{{ route('student.index') }}" class="nav-link {{ request()->is('siswa*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-graduate"></i>
+                    <p>Data Siswa</p>
+                </a>
+            </li>
+            @if (Auth::user()->role_id == 1)
+                <li class="nav-item ">
+                    <a href="{{ route('mapel.index') }}"
+                        class="nav-link {{ request()->is('mapel*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-book"></i>
+                        <p>Data Mata Pelajaran</p>
+                    </a>
+                </li>
+                <li class="nav-item ">
+                    <a href="{{ route('datasekolah.index') }}"
+                        class="nav-link {{ request()->is('datasekolah*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-cogs"></i>
+                        <p>Data Sekolah</p>
+                    </a>
+                </li>
+            @endif
+            <li class="nav-item ">
+                <a href="{{ route('mfst.index') }}" class="nav-link {{ request()->is('mfst*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-calendar"></i>
+                    <p>Fase/Semester/Tahun Ajaran</p>
+                </a>
+            </li>
+            <li class="nav-item ">
+                <a href="{{ route('mastertp.index') }}"
+                    class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-th-list"></i>
+                    <p>Tujuan Pembelajaran</p>
+                </a>
+            </li>
+            @if (Auth::user()->role_id == 1)
+            <li class="nav-item ">
+                <a href="{{ route('muser.index') }}" class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-user-cog"></i>
                     <p>
                         {{ __('Manajemen User') }}
                     </p>
                 </a>
             </li>
-            @endif
+        @endif
+        </ul>
+
+        </li>
+       
         </ul>
     </nav>
     <!-- /.sidebar-menu -->

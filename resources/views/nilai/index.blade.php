@@ -25,12 +25,19 @@
                             <form id="filterForm">
                                 <div class="form-group">
                                     <label for="class_id">Kelas</label>
+                                    @if ($className)
+                                    <select name="class_id" id="class_id" class="form-control" disabled>
+                                        <option value="{{ Auth::user()->class_id }}" selected>{{ $className }}
+                                        </option>
+                                    </select>
+                                @else
                                     <select name="class_id" id="class_id" class="form-control">
                                         <option value="" selected disabled>Pilih Kelas</option>
                                         @foreach ($classList as $index => $class)
                                             <option value="{{ $class->id }}">{{ $class->class_name }}</option>
                                         @endforeach
                                     </select>
+                                @endif
                                 </div>
                                 <button type="submit" class="btn btn-success">Submit</button>
                             </form>
@@ -52,10 +59,28 @@
                             </form>
                         </div>
                     </div>
+                    <div class="card" id="pickFst" style="display: none;">
+                        <div class="card-body p-2">
+                            <form id="fstForm">
+                                <div class="form-group">
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <select name="fst_id" id="fst_id" class="form-control">
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        @foreach ($fstList as $index => $fst)
+                                            <option value="{{ $fst->id }}">
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
                     <div class="card" id="resultTable" style="display: none">
                         <div class="card-header">
                             <h5>Kelas: <span id="ClassSel"></span></h5>
                             <h5>Mata Pelajaran: <span id="MapelSel"></span></h5>
+                            <h5>Fase/Semester/Tahun: <span id="FstSel"></span></h5>
                         </div>
                         <div class="card-body p-2">
 
@@ -107,73 +132,74 @@
                             <input type="hidden" id="value_id">
                             <input type="hidden" id="student_id">
                             <input type="hidden" id="mapel_id">
+                            <input type="hidden" id="fst_id">
                             <div class="form-group">
                                 <label for="value_daily">Sumatif 1</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily" name="value_daily" required>
+                                    id="value_daily" name="value_daily" >
                             </div>
                             <div class="form-group">
                                 <label for="value_daily_2">Sumatif 2</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_2" name="value_daily_2" required>
+                                    id="value_daily_2" name="value_daily_2" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_3">Sumatif3</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_3" name="value_daily_3" required>
+                                    id="value_daily_3" name="value_daily_3" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_4">Sumatif 4</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_4" name="value_daily_4" required>
+                                    id="value_daily_4" name="value_daily_4" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_5">Sumatif 5</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_5" name="value_daily_5" required>
+                                    id="value_daily_5" name="value_daily_5" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_6">Sumatif 6</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_6" name="value_daily_6" required>
+                                    id="value_daily_6" name="value_daily_6" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_7">Sumatif 7</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_7" name="value_daily_7" required>
+                                    id="value_daily_7" name="value_daily_7" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_8">Sumatif 8</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_8" name="value_daily_8" required>
+                                    id="value_daily_8" name="value_daily_8" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_9">Sumatif 9</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_9" name="value_daily_9" required>
+                                    id="value_daily_9" name="value_daily_9" >
                             </div>
 
                             <div class="form-group">
                                 <label for="value_daily_10">Sumatif 10</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily_10" name="value_daily_10" required>
+                                    id="value_daily_10" name="value_daily_10" >
                             </div>
                             <div class="form-group">
                                 <label for="value_sts">Nilai STS</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_sts" name="value_sts" required>
+                                    id="value_sts" name="value_sts" >
                             </div>
                             <div class="form-group">
                                 <label for="value_sas">Nilai SAS</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_sas" name="value_sas" required>
+                                    id="value_sas" name="value_sas" >
                             </div>
 
                         </div>
@@ -227,8 +253,10 @@
             // State
             let class_id = null;
             let mapel_id = null;
-            let class_name = ''; // Simpan nama kelas
-            let mapel_name = ''; // Simpan nama mapel
+            let fst_id = null;
+            let class_name = '';
+            let mapel_name = '';
+            let fst_name = '';
             // End Of State
             $('#upCsvBtn').hide()
             // NIlai Section (Filter)
@@ -255,12 +283,26 @@
                     SwalHelper.showError('Silahkan Pilih Mata Pelajaran Terlebih Dahulu');
                     return;
                 }
+                $("#pickMapel").hide(300);
+                $("#pickFst").show();
+
+            })
+            $('#fstForm').submit(function(e) {
+                e.preventDefault();
+                fst_id = $('#fst_id').val();
+                fst_name = $('#fst_id option:selected').text();
+
+                if (!fst_id) {
+                    SwalHelper.showError('Silahkan Pilih Fase/Semester/Tahun Ajaran Terlebih Dahulu');
+                    return;
+                }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
                     $('#valueTable').DataTable()
                         .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
                 $("#MapelSel").text(mapel_name);
+                $("#FstSel").text(fst_name);
                 $("#ClassSel").text(class_name);
 
                 $('#valueTable').DataTable({
@@ -270,7 +312,8 @@
                         "type": "GET",
                         "data": {
                             class_id: class_id,
-                            mapel_id: mapel_id
+                            mapel_id: mapel_id,
+                            fst_id:fst_id,
                         },
                         "dataSrc": 'data'
                     },
@@ -406,8 +449,7 @@
                     ]
                 });
                 $('#upCsvBtn').show();
-                $("#pickMapel").hide(300);
-
+                $('#pickFst').hide();
                 $("#resultTable").show(300);
             })
             // Init
@@ -418,6 +460,7 @@
                 $('#value_id').val('');
                 $('#mapel_id').val(mapel_id);
                 $('#student_id').val(student_id);
+                $('#fst_id').val(fst_id);
                 $('#value_daily').val('');
                 $('#value_daily_2').val('');
                 $('#value_daily_3').val('');
@@ -447,6 +490,7 @@
                     data: {
                         mapel_id: $('#mapel_id').val(),
                         student_id: $('#student_id').val(),
+                        fst_id: $('#fst_id').val(),
                         value_daily: $('#value_daily').val(),
                         value_daily_2: $('#value_daily_2').val(),
                         value_daily_3: $('#value_daily_3').val(),
@@ -501,6 +545,7 @@
 
                 $('#value_id').val(id);
                 $('#mapel_id').val(mapel_id);
+                $('#fst_id').val(fst_id);
                 $('#student_id').val(student_id);
                 $('#value_daily').val(value_daily);
                 $('#value_daily_2').val(value_daily_2);
@@ -564,12 +609,14 @@
             $('#upCsvBtn').click(function() {
                 $('#csv').val(null);
                 $('#mapel_id').val(mapel_id);
+                $('#fst_id').val(fst_id);
                 $('#upCsvModal').modal('show');
             });
             $('#csvForm').on('submit', function(e) {
                 e.preventDefault();
                 let formData = new FormData(this);
                 formData.append('mapel_id', mapel_id);
+                formData.append('fst_id', fst_id);
 
 
                 $.ajax({

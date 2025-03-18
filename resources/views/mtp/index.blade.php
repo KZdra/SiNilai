@@ -25,12 +25,18 @@
                             <form id="filterForm">
                                 <div class="form-group">
                                     <label for="class_id">Kelas</label>
+                                    @if ($className)
+                                    <select name="class_id" id="class_id" class="form-control" disabled>
+                                        <option value="{{Auth::user()->class_id}}" selected >{{$className}}</option>
+                                    </select>
+                                    @else
                                     <select name="class_id" id="class_id" class="form-control">
                                         <option value="" selected disabled>Pilih Kelas</option>
                                         @foreach ($classList as $index => $class)
                                             <option value="{{ $class->id }}">{{ $class->class_name }}</option>
                                         @endforeach
                                     </select>
+                                    @endif
                                 </div>
                                 <button type="submit" class="btn btn-success">Submit</button>
                             </form>
@@ -113,7 +119,7 @@
                             <input type="hidden" id="mapel_id">
                             <div class="form-group">
                                 <label for="tp_deskripsi">Tujuan Pembelajaran</label>
-                                <input type="textarea" class="form-control" id="tp_deskripsi" name="tp_deskripsi" required>
+                                <textarea  class="form-control" id="tp_deskripsi" name="tp_deskripsi" required></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">

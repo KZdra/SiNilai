@@ -44,7 +44,7 @@ class SiswaController extends Controller
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
         $className = null;
         if(Auth::user()->class_id !== null){
-            $className = DB::table('class')->value('class_name');
+            $className = DB::table('class')->where('id',Auth::user()->class_id)->value('class_name');
         }
 
         return view('msiswa.index', compact('data', 'classList','className'));
@@ -237,9 +237,9 @@ class SiswaController extends Controller
                 $pekerjaan_ayah = $row[12] ?? null;
                 $pekerjaan_ibu = $row[13] ?? null;
                 $alamat_orang_tua = $row[14] ?? null;
-                $sakit = $row[15] ?? null;
-                $izin = $row[16] ?? null;
-                $alpa = $row[17] ?? null;
+                $sakit =  $row[15] === '' || $row[15] === null ? 0 : $row[15];
+                $izin = $row[16] ?? 0;
+                $alpa = $row[17] ?? 0;
 
                 $classId = null;
 

@@ -23,10 +23,35 @@
                             <form id="filterForm">
                                 <div class="form-group">
                                     <label for="class_id">Kelas</label>
-                                    <select name="class_id" id="class_id" class="form-control">
-                                        <option value="" selected disabled>Pilih Kelas</option>
-                                        @foreach ($classList as $index => $class)
-                                            <option value="{{ $class->id }}">{{ $class->class_name }}</option>
+                                    @if ($className)
+                                        <select name="class_id" id="class_id" class="form-control" disabled>
+                                            <option value="{{ Auth::user()->class_id }}" selected>{{ $className }}
+                                            </option>
+                                        </select>
+                                    @else
+                                        <select name="class_id" id="class_id" class="form-control">
+                                            <option value="" selected disabled>Pilih Kelas</option>
+                                            @foreach ($classList as $index => $class)
+                                                <option value="{{ $class->id }}">{{ $class->class_name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card" id="pickFst" style="display: none;">
+                        <div class="card-body p-2">
+                            <form id="fstForm">
+                                <div class="form-group">
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <select name="fst_id" id="fst_id" class="form-control">
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        @foreach ($fstList as $index => $fst)
+                                            <option value="{{ $fst->id }}">
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -37,6 +62,7 @@
                     <div class="card" id="resultTable" style="display: none">
                         <div class="card-header">
                             <h5>Kelas: <span id="ClassSel"></span></h5>
+                            <h5>Fase/Semester/Tahun: <span id="FstSel"></span></h5>
                         </div>
                         <div class="card-body p-2">
 
@@ -70,6 +96,8 @@
             // State
             let class_id = null;
             let class_name = ''; // Simpan nama kelas
+            let fst_id = null;
+            let fst_name = '';
             // NIlai Section (Filter)
             $('#pickClassBtn').click(function() {
                 $("#pickClass").slideToggle(300);
@@ -82,12 +110,25 @@
                     SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
                     return;
                 }
+                $("#pickFst").show()
+                $("#pickClass").hide()
 
+            })
+            $('#fstForm').submit(function(e) {
+                e.preventDefault();
+                fst_id = $('#fst_id').val();
+                fst_name = $('#fst_id option:selected').text();
+
+                if (!fst_id) {
+                    SwalHelper.showError('Silahkan Pilih Fase/Semester/Tahun Ajaran Terlebih Dahulu');
+                    return;
+                }
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
                     $('#valueTable').DataTable()
                         .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
                 $("#ClassSel").text(class_name);
+                $("#FstSel").text(fst_name);
 
                 $('#valueTable').DataTable({
                     "responsive": true,
@@ -96,6 +137,7 @@
                         "type": "GET",
                         "data": {
                             class_id: class_id,
+                            fst_id: fst_id
                         },
                         "dataSrc": 'data'
                     },
@@ -125,14 +167,16 @@
                             "data": null,
                             "render": function(data, type, row) {
                                 let exportUrl =
-                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__']) }}";
+                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) }}";
                                 exportUrl = exportUrl.replace('__STUDENT_ID__', row
-                                    .student_id).replace('__VALUE_ID__', row.class_id);
+                                        .student_id).replace('__VALUE_ID__', row.class_id)
+                                    .replace('__FST_ID__', fst_id);
 
                                 let exportUrl2 =
-                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__']) }}";
+                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) }}";
                                 exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row
-                                    .student_id).replace('__VALUE_ID__', row.class_id);
+                                        .student_id).replace('__VALUE_ID__', row.class_id)
+                                    .replace('__FST_ID__', fst_id);
                                 return `
                         <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"
@@ -154,14 +198,17 @@
                         }
                     ]
                 });
-                $("#pickClass").hide(300);
+                $("#pickFst").hide(300);
                 $("#resultTable").show(300);
 
-            })
+            });
+
+
             $(document).on("click", ".btn-print", function() {
                 let url = $(this).data("url"); // Get PDF URL from button
                 exportpdf(url);
             })
+
             function exportpdf(url) {
                 fetch(url)
                     .then(response => response.json())
@@ -169,7 +216,7 @@
                         let newWindow = window.open(data.pdf_url,
                             '_blank');
                         setTimeout(() => newWindow.print(),
-                            1000); 
+                            1000);
                         // console.log(data);
                     });
             }
