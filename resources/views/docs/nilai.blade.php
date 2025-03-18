@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raport_{{ $formattedStudents[0]['student_name']}}</title>
+    <title>Raport_{{ $formattedStudents[0]['student_name'] }}</title>
     <style>
         body {
             font-size: 12px;
-            margin: 1cm;
+            margin: 0.5cm;
         }
 
         @page {
@@ -50,7 +50,9 @@
             margin-top: 15px;
             width: 50%;
         }
-
+        .2con{
+            display:flex;
+        }
     </style>
 </head>
 
@@ -69,19 +71,19 @@
             <td>Nis</td>
             <td>: {{ $formattedStudents[0]['student_nis'] }}</td>
             <td>Fase</td>
-            <td>: {{ucwords($formattedStudents[0]['fst']->fase ?? "-") }}</td>
+            <td>: {{ ucwords($formattedStudents[0]['fst']->fase ?? '-') }}</td>
         </tr>
         <tr>
             <td>Sekolah</td>
-            <td>: {{$formattedStudents[0]['school_data']->nama_sekolah ?? "SMK ICB CINTA TEKNIKA" }}</td>
+            <td>: {{ $formattedStudents[0]['school_data']->nama_sekolah ?? 'SMK ICB CINTA TEKNIKA' }}</td>
             <td>Semester</td>
-            <td>: {{$formattedStudents[0]['fst']->semester ?? "-" }}</td>
+            <td>: {{ $formattedStudents[0]['fst']->semester ?? '-' }}</td>
         </tr>
         <tr>
             <td>Alamat</td>
-            <td>: {{$formattedStudents[0]['school_data']->alamat_sekolah ?? "Jalan Atlas Tengah No. 2" }}</td>
+            <td>: {{ $formattedStudents[0]['school_data']->alamat_sekolah ?? 'Jalan Atlas Tengah No. 2' }}</td>
             <td>Tahun Pembelajaran</td>
-            <td>: {{$formattedStudents[0]['fst']->tahun_ajaran ?? "-" }}</td>
+            <td>: {{ $formattedStudents[0]['fst']->tahun_ajaran ?? '-' }}</td>
         </tr>
     </table>
 
@@ -115,26 +117,79 @@
         </tr>
         <tr>
             <td>
-            1
+                1
             </td>
             <td>Band</td>
             <td>Lorem Ipsum dolor sit amet </td>
         </tr>
     </table>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <!-- Tabel kiri -->
+            <td style="width: 50%;border:none;padding:0;margin:0;">
+                <table class="absen-table" style="width: 100%;">
+                    <tr>
+                        <td colspan="2" style="text-align: center;font-weight: bold">Ketidakhadiran</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 145px">Sakit</td>
+                        <td style="text-align: center;">{{ $formattedStudents[0]['sakit'] }} Hari</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 145px">Izin</td>
+                        <td style="text-align: center;">{{ $formattedStudents[0]['izin'] }} Hari</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 145px">Tanpa Keterangan</td>
+                        <td style="text-align: center;">{{ $formattedStudents[0]['alpa'] }} Hari</td>
+                    </tr>
+                </table>
+            </td>
+    
+            <!-- Tabel kanan -->
+            <td style="width: 50%;border:none;padding:0;margin:0;padding-left:20px">
+                <table class="absen-table" style="width: 100%;">
+                    <tr>
+                        <td colspan="2" style="text-align: center;font-weight: bold">Keputusan</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 145px;text-align:center;font-weight: bold" colspan="2">Berdasarkan pencapaian seluruh kompetensi, peserta didik dinyatakan Naik Kelas ke Kelas XII (Dua belas)</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    
+    
+    <table class="ttd-table" style="border-collapse: collapse; width: 100%;">
+        <tr>
+            <td style="text-align: center;width:50%;border:none"></td>
+            <td style="text-align: center;width:50%;border:none;font-size:14px">Bandung,</td>
+        </tr>
+        <tr>
+            <td style="width:50%;text-align:center;border:none;font-size:14px">Orang Tua</td>
+            <td style="text-align: center;width:50%;border:none;font-size:14px">WaliKelas</td>
+        </tr>
+        <tr>
+            <td style="height: 70px;width:50%;border:none;font-size:14px"></td>
+            <td style="width:50%;border:none;font-size:14px"></td>
+        </tr>
+        <tr>
+            <td style="text-align:center;width:50%;border:none;font-size:14px">…………………………………………</td>
+            <td style="text-align: center;width:50%;border:none;font-size:14px">{{Auth::user()->name}}</td>
+        </tr>
+    </table>
 
-    <table class="absen-table">
-        <tr><td colspan="2" style="text-align: center;">Ketidakhadiran</td></tr>
+    <table class="ttd-table" style="margin-top:10px;border-collapse: collapse; width: 100%;margin-left:auto;margin-right:auto;">
+
         <tr>
-            <td style="width: 145px">Sakit</td>
-            <td style="text-align: center">{{ $formattedStudents[0]['sakit'] }} Hari</td>
+            <td style="text-align: center;width:50%;border:none;font-size:14px">Mengetahui,<br> Kepala Sekolah</td>
         </tr>
         <tr>
-            <td style="width: 145px">Izin</td>
-            <td  style="text-align: center">{{ $formattedStudents[0]['izin'] }} Hari</td>
+            <td style="height: 75px;width:50%;border:none;font-size:14px"></td>
         </tr>
         <tr>
-            <td style="width: 145px">Tanpa Keterangan</td>
-            <td style="text-align: center">{{ $formattedStudents[0]['alpa'] }} Hari</td>
+            <td style="width:50%;border:none;font-size:14px;text-align: center">{{ $formattedStudents[0]['school_data']->nama_kepala_sekolah ?? 'Belum Di Atur' }}<br>Nip: {{ $formattedStudents[0]['school_data']->nip_kepala_sekolah ?? '-' }}</td>
         </tr>
     </table>
     {{-- <script type="text/javascript"> try { this.print(true); } catch (e) { window.onload = window.print; } </script> --}}

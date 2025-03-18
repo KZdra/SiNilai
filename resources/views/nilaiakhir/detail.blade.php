@@ -32,8 +32,8 @@
                                         class="font-weight-bold">{{ $formattedStudents[0]['avg_nilai_semua_mapel'] }}</span>
                                 </h5>
                                 <div>
-                                    {{-- <a href="#" class="btn btn-success btn-print" data-url="{{ route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id'],'fst_id'=>request()->fst_id]) }}" ><i class="fas fa-print"></i> Cetak Raport</a> --}}
-                                    <a href="{{route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id'],'fst_id'=>request()->fst_id]) }}" class="btn btn-success btn-print" ><i class="fas fa-print"></i> Cetak Raport</a>
+                                    <a href="#" class="btn btn-success btn-print" data-url="{{ route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id'],'fst_id'=>request()->fst_id]) }}" ><i class="fas fa-print"></i> Cetak Raport</a>
+                                    {{-- <a href="{{route('nilaiakhir.print', ['student_id' => $formattedStudents[0]['student_id'], 'class_id' => $formattedStudents[0]['class_id'],'fst_id'=>request()->fst_id]) }}" class="btn btn-success btn-print" ><i class="fas fa-print"></i> Cetak Raport</a> --}}
                                 </div>
                             </div>
 

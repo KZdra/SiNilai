@@ -244,7 +244,7 @@ class NilaiAkhirController extends Controller
         $students = $this->getStudentAllScores($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $studentsTP = $this->getStudentAllTp($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $fst= DB::table('m_fst_pembelajaran')->select('fase','semester','tahun_ajaran')->where('id',$request->fst_id)->first();
-        $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah')->first();
+        $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah','nama_kepala_sekolah','nip_kepala_sekolah')->first();
         $formattedStudents = [];
 
         foreach ($students as $student) {
