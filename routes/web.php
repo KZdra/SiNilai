@@ -8,6 +8,7 @@ use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\NilaiAkhirController;
+use App\Http\Controllers\PeskulController;
 use App\Http\Controllers\TpController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-
+Route::get('es',[PeskulController::class,'getdata']);
 Route::middleware('auth')->group(function () {
 
     // Begin Useless
@@ -92,4 +93,10 @@ Route::middleware('auth')->group(function () {
     Route::post('meskul',[EskulController::class,'store'])->name('meskul.store');
     Route::put('meskul/{id}',[EskulController::class,'update'])->name('meskul.update');
     Route::delete('meskul/{id}',[EskulController::class,'destroy'])->name('meskul.destroy');
+    // Penilaian Eskul
+    Route::get('peskul',[PeskulController::class,'index'])->name('peskul.index');
+    Route::get('peskul/get',[PeskulController::class,'getdata'])->name('peskul.getdata');
+    Route::post('peskul',[PeskulController::class,'store'])->name('peskul.store');
+    Route::put('peskul/{id}',[PeskulController::class,'update'])->name('peskul.update');
+    Route::delete('peskul/{id}',[PeskulController::class,'destroy'])->name('peskul.destroy');
 });

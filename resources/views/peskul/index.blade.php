@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">{{ __('Input Asesmen Formatif') }}</h1>
+                    <h1 class="m-0">{{ __('Input Penilaian Ekstrakulikuler') }}</h1>
                     <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
                     {{-- <button class="mt-2 btn btn-info" id="upCsvBtn">Import Excel Asesmen Formatif Siswa</button> --}}
                 </div><!-- /.col -->
@@ -47,11 +47,11 @@
                         <div class="card-body p-2">
                             <form id="mapelForm">
                                 <div class="form-group">
-                                    <label for="mapel_id">Mata Pelajaran</label>
-                                    <select name="mapel_id" id="mapel_id" class="form-control">
-                                        <option value="" selected disabled>Pilih Mata Pelajaran</option>
-                                        @foreach ($mapelList as $index => $mapel)
-                                            <option value="{{ $mapel->id }}">{{ $mapel->nama_mapel }}</option>
+                                    <label for="eskul_id">Ekstrakulikuler</label>
+                                    <select name="eskul_id" id="eskul_id" class="form-control">
+                                        <option value="" selected disabled>Pilih Ekstrakulikuler</option>
+                                        @foreach ($eskulList as $index => $eskul)
+                                            <option value="{{ $eskul->id }}">{{ $eskul->nama_eskul }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -80,7 +80,7 @@
                     <div class="card" id="resultTable" style="display: none">
                         <div class="card-header">
                             <h5>Kelas: <span id="ClassSel"></span></h5>
-                            <h5>Mata Pelajaran: <span id="MapelSel"></span></h5>
+                            <h5>Ekstrakulikuler: <span id="EskulSel"></span></h5>
                             <h5>Fase/Semester/Tahun Ajaran: <span id="FstSel"></span></h5>
                         </div>
                         <div class="card-body p-2">
@@ -90,8 +90,7 @@
                                     <tr>
                                         <th>No</th>
                                         <th>Siswa</th>
-                                        <th>Deskripsi Capaian Tertinggi dalam Rapor</th>
-                                        <th>Deskripsi Capaian Terendah dalam Rapor</th>
+                                        <th>Nilai Eskul</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -111,50 +110,21 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="valueModalLabel">Input Formatif</h5>
+                        <h5 class="modal-title" id="valueModalLabel">Input Penilaian Ekstrakulikuler</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form id="valueForm">
                         <div class="modal-body">
+                            <input type="hidden" id="nilai_eskul_Id" name="nilai_eskul_id">
+                            <input type="hidden" id="eskul_Id" name="nilai_eskul_id">
                             <input type="hidden" id="student_Id" name="student_id">
                             <input type="hidden" id="class_Id" name="class_id">
-                            <input type="hidden" id="mapel_Id" name="mapel_id">
                             <input type="hidden" id="fst_Id" name="fst_id">
-                            <div id="tpFormList">
-
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                            <button type="submit" class="btn btn-primary">Simpan</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {{-- Modal CSV --}}
-        <div class="modal fade" id="upCsvModal" tabindex="-1" role="dialog" aria-labelledby="upCsvModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="upCsvModalLabel">Upload Excel TP Siswa</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <form id="csvForm" enctype="multipart/form-data">
-                        <div class="modal-body">
-                            <h5>Klik Dibawah Ini Untuk Download Template Nya</h5>
-                            <a href="{{ route('value.download') }}" class="btn btn-success mt-2 mb-2" target="blank"><i
-                                    class="fas fa-file-excel"></i>&nbsp;Download Template Untuk Excel</a>
-                            <h5>Upload Excel:</h5>
                             <div class="form-group">
-                                <input type="hidden" id="mapel_Id">
-                                <label for="csv">File Excel</label>
-                                <input type="file" class="form-control" id="csv" name="csv" required>
+                                <label for="penilaian_eskul">Nilai Eskul</label>
+                                <textarea name="penilaian_eskul" id="penilaian_eskul" placeholder="Contoh: Cukup Baik Dalam bermain Alat musik" class="form-control"></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -165,7 +135,6 @@
                 </div>
             </div>
         </div>
-
     </div>
     <!-- /.content -->
 @endsection
@@ -175,12 +144,11 @@
         $(document).ready(function() {
             // State
             let class_id = null;
-            let mapel_id = null;
+            let eskul_id = null;
             let fst_id = null;
             let class_name = '';
-            let mapel_name = '';
+            let eskul_name = '';
             let fst_name = '';
-            let tp_list = [];
             // End Of State
             // $('#upCsvBtn').hide()
             // NIlai Section (Filter)
@@ -200,11 +168,11 @@
             })
             $('#mapelForm').submit(function(e) {
                 e.preventDefault();
-                mapel_id = $('#mapel_id').val();
-                mapel_name = $('#mapel_id option:selected').text();
+                eskul_id = $('#eskul_id').val();
+                eskul_name = $('#eskul_id option:selected').text();
 
-                if (!mapel_id) {
-                    SwalHelper.showError('Silahkan Pilih Mata Pelajaran Terlebih Dahulu');
+                if (!eskul_id) {
+                    SwalHelper.showError('Silahkan Pilih Ekstrakulikuler Terlebih Dahulu');
                     return;
                 }
                 $("#pickMapel").hide(300);
@@ -220,21 +188,20 @@
                     return;
                 }
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
-                    $('#valueTable').DataTable()
-                        .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
+                    $('#valueTable').DataTable().destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
-                $("#MapelSel").text(mapel_name);
+                $("#EskulSel").text(eskul_name);
                 $("#FstSel").text(fst_name);
                 $("#ClassSel").text(class_name);
 
                 $('#valueTable').DataTable({
                     "responsive": true,
                     "ajax": {
-                        "url": "{{ route('formatif.getdata') }}", // Ganti dengan URL API Anda
+                        "url": "{{ route('peskul.getdata') }}", // Ganti dengan URL API Anda
                         "type": "GET",
                         "data": {
                             class_id: class_id,
-                            mapel_id: mapel_id,
+                            eskul_id: eskul_id,
                             fst_id: fst_id
                         },
                         "dataSrc": 'data'
@@ -250,15 +217,12 @@
                         },
 
                         {
-                            "data": "Hasil_Tp_tinggi"
-                        },
-                        {
-                            "data": "Hasil_Tp_kurang"
+                            "data": "nilai_eskul"
                         },
                         {
                             "data": null,
                             "render": function(data, type, row) {
-                                if (row.tp_isFill) {
+                                if (row.nilai_eskul_id) {
                                     return `
                         <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"
@@ -266,101 +230,60 @@
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
-                                                    <button class="dropdown-item editNilaiBtn" data-student_id='${row.student_id}'><i
+                                                    <button class="dropdown-item editNilaiBtn" data-nilai_eskul_id="${row.nilai_eskul_id}" data-student_id='${row.student_id}' data-penilaian_eskul="${row.nilai_eskul}"><i
                                                             class="fas fa-pen text-info"></i>&nbsp;Edit</button>
                                                     <div class="dropdown-divider"></div>
-                                                    <button class="dropdown-item text-danger delNilaiBtn" data-student_id='${row.student_id}'><i
+                                                    <button class="dropdown-item text-danger delNilaiBtn" data-nilai_eskul_id='${row.nilai_eskul_id}' data-student_id="${row.student_id}"><i
                                                             class="fas fa-trash text-danger"></i>&nbsp;Delete</button>
                                                 </div>
                                             </div>
                     `;
                                 } else {
-                                    return `<button class="btn btn-success inputNilaiBtn" data-student_id='${row.student_id}'>Atur TP</button>`
+                                    return `<button class="btn btn-success inputNilaiBtn" data-student_id='${row.student_id}'>input Nilai</button>`
                                 }
 
                             }
                         }
                     ]
                 });
-                // $('#upCsvBtn').show();
                 $('#pickFst').hide();
                 $("#resultTable").show(300);
             })
-            // Init
-            function fetchTPList(student_id) {
 
-                $.ajax({
-                    url: "{{ route('formatif.gettplist') }}",
-                    type: "GET",
-                    data: {
-                        student_id: student_id,
-                        class_id: class_id,
-                        mapel_id: mapel_id,
-                        fst_id: fst_id
-                    },
-                    success: function(response) {
-                        tp_list = response.data
-                        renderTPinput(tp_list)
-                    },
-                    error: function(error) {
-                        console.error("Error fetching TP List:", error);
-                    }
-                });
-            }
 
-            function renderTPinput(tpList) {
-                let container = $("#tpFormList");
-                container.empty(); // Kosongkan sebelum render ulang
-
-                tpList.forEach((tp,idx) => {
-                    let inputHtml = `
-            <div class="tp-item form-group" id="tp-${tp.id}">
-                <input type="hidden" name="tp_list[${tp.id}][id]" value="${tp.id}">
-                <input type="hidden" name="tp_list[${tp.id}][tps_id]" id=tps_id value="${tp.tps_id}">
-                <h5>TP-${idx+1} :</h5>
-                <textarea class="form-control" disabled>${tp.tp_deskripsi}</textarea>
-                <label>KKTP:</label>
-                <select name="tp_list[${tp.id}][kktp]" class="form-control">
-                    <option value="1" ${tp.kktp == 1 ? "selected" : ""}>Cukup</option>
-                    <option value="0" ${tp.kktp == 0 ? "selected" : ""}>Kurang</option>
-                </select>
-
-                <label>Tampilkan:</label>
-                <select name="tp_list[${tp.id}][tampilkan]" class="form-control">
-                    <option value="1" ${tp.tampilkan == 1 ? "selected" : ""}>Ya</option>
-                    <option value="0" ${tp.tampilkan == 0 ? "selected" : ""}>Tidak</option>
-                </select>
-            </div>
-        `;
-                    container.append(inputHtml);
-                });
-            }
             ///
             // Tampilkan Modal Input Nilai
             $("#valueTable").on("click", ".inputNilaiBtn", function() {
-                $('#mapel_Id').val(mapel_id);
+                $('#eskul_Id').val(eskul_id);
                 $('#fst_Id').val(fst_id);
                 $('#class_Id').val(class_id);
                 let student_id = $(this).data('student_id');
                 $('#student_Id').val(student_id);
-                fetchTPList(student_id)
-                $('#valueModalLabel').text('Input Formatif');
+                $('#penilaian_eskul').val('');
+                $('#valueModalLabel').text('Input Nilai Ekstrakulikuler');
                 $('#valueModal').modal('show');
             });
 
             // Simpan atau Update Input
             $('#valueForm').submit(function(e) {
                 e.preventDefault();
-                let url = "{{ route('formatif.store') }}";
-                let method = "POST";
-                let formData = $('#valueForm').serialize();
+                let id = $('#nilai_eskul_Id').val();
+                let url = id ? `/peskul/${id}` : "{{ route('peskul.store') }}";
+                let method = id ? "PUT" : "POST";
+
                 $.ajax({
                     url: url,
                     method: method,
                     headers: {
                         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
                     },
-                    data: formData,
+                    data: {
+                        student_id: $('#student_Id').val(),
+                        eskul_id:eskul_id,
+                        fst_id:fst_id,
+                        class_id:class_id,
+                        nilai:$('#penilaian_eskul').val()
+                    },
                     success: function(response) {
                         Swal.fire({
                             icon: 'success',
@@ -383,19 +306,23 @@
 
             // Tampilkan Modal Edit Nilai
             $("#valueTable").on("click", ".editNilaiBtn", function() {
-                $('#mapel_Id').val(mapel_id);
+                let student_id = $(this).data('student_id');
+                let penilaian_eskul = $(this).data('penilaian_eskul');
+                let nilai_eskul_id = $(this).data('nilai_eskul_id');
+                $('#eskul_Id').val(eskul_id);
                 $('#fst_Id').val(fst_id);
                 $('#class_Id').val(class_id);
-                let student_id = $(this).data('student_id');
                 $('#student_Id').val(student_id);
-                fetchTPList(student_id)
-                $('#valueModalLabel').text('Edit Nilai Formatif');
+                $('#nilai_eskul_Id').val(nilai_eskul_id);
+                $('#penilaian_eskul').val(penilaian_eskul);
+                $('#valueModalLabel').text('Edit Nilai Ekstrakulikuler');
                 $('#valueModal').modal('show');
             });
 
             // Delete Action
             $("#valueTable").on("click", ".delNilaiBtn", function() {
-                let id = $(this).data('student_id');
+                let id = $(this).data('nilai_eskul_id');
+                let sid = $(this).data('student_id');
                 Swal.fire({
                     title: "Are you sure?",
                     text: "You won't be able to revert this!",
@@ -407,12 +334,13 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: `/formatif/${id}`,
+                            url: `/peskul/${id}`,
                             method: "DELETE",
                             data: {
                                 class_id: class_id,
-                                mapel_id: mapel_id,
+                                eskul_id: eskul_id,
                                 fst_id: fst_id,
+                                student_id: sid,
                                 _token: "{{ csrf_token() }}"
                             },
                             success: function(response) {

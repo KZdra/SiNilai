@@ -39,7 +39,7 @@
                 </a>
             </li>
             <li class="nav-item ">
-                <a href="#" class="nav-link {{ request()->is('peskul*') ? 'active' : '' }}">
+                <a href="{{route('peskul.index')}}" class="nav-link {{ request()->is('peskul*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-pencil-ruler"></i>
                     <p>
                         {{ __('Penilaian Ekstrakurikuler') }}
