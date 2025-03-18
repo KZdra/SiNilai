@@ -45,12 +45,12 @@
                         <div class="card-body p-2">
                             <form id="fstForm">
                                 <div class="form-group">
-                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran dan faseSemester</label>
                                     <select name="fst_id" id="fst_id" class="form-control">
-                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran dan faseSemester</option>
                                         @foreach ($fstList as $index => $fst)
                                             <option value="{{ $fst->id }}">
-                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran }}
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran.'/'.ucfirst($fst->ta) }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -63,6 +63,7 @@
                         <div class="card-header">
                             <h5>Kelas: <span id="ClassSel"></span></h5>
                             <h5>Fase/Semester/Tahun: <span id="FstSel"></span></h5>
+                            <h5>Tanggal Print: <input type="date" name="tgl_print" id="tgl_print" class="form-control"></h5>
                         </div>
                         <div class="card-body p-2">
 
@@ -98,7 +99,12 @@
             let class_name = ''; // Simpan nama kelas
             let fst_id = null;
             let fst_name = '';
+            let tgl_print = null;
             // NIlai Section (Filter)
+            $('#tgl_print').change(function () {
+                tgl_print = $('#tgl_print').val()
+                $('#valueTable').DataTable().ajax.reload(null, false);
+            })
             $('#pickClassBtn').click(function() {
                 $("#pickClass").slideToggle(300);
             })
@@ -167,16 +173,16 @@
                             "data": null,
                             "render": function(data, type, row) {
                                 let exportUrl =
-                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) }}";
+                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__','tgl_print' => '__TGL_PR__']) }}";
                                 exportUrl = exportUrl.replace('__STUDENT_ID__', row
                                         .student_id).replace('__VALUE_ID__', row.class_id)
-                                    .replace('__FST_ID__', fst_id);
+                                    .replace('__FST_ID__', fst_id).replace('__TGL_PR__',tgl_print);
 
                                 let exportUrl2 =
-                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) }}";
+                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__','tgl_print' => '__TGL_PR__']) }}";
                                 exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row
                                         .student_id).replace('__VALUE_ID__', row.class_id)
-                                    .replace('__FST_ID__', fst_id);
+                                    .replace('__FST_ID__', fst_id).replace('__TGL_PR__',tgl_print);
                                 return `
                         <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"

@@ -28,7 +28,7 @@
         th,
         td {
             border: 1px solid black;
-            padding: 5px;
+            padding: 3px;
             text-align: left;
         }
 
@@ -50,15 +50,17 @@
             margin-top: 15px;
             width: 50%;
         }
-        .2con{
-            display:flex;
-        }
     </style>
 </head>
 
 <body>
-
+    @if ($formattedStudents[0]['fst']->ta == 'akhir')
+        <h2 style="text-align: center;">LAPORAN HASIL BELAJAR<br>AKHIR SEMESTER</h2>
+    @elseif ($formattedStudents[0]['fst']->ta == 'tengah')
     <h2 style="text-align: center;">LAPORAN HASIL BELAJAR (RAPOR)</h2>
+    @else
+        <h2 style="text-align: center;">LAPORAN HASIL BELAJAR (RAPOR)</h2>
+    @endif
 
     <table class="header-table">
         <tr>
@@ -89,23 +91,25 @@
 
     <table class="nilai-table">
         <tr>
-            <th>No</th>
-            <th>Mata Pelajaran</th>
-            <th>Nilai Akhir</th>
-            <th>Capaian Kompetensi</th>
+            <th style="text-align: center;">No</th>
+            <th style="text-align: center;">Mata Pelajaran</th>
+            <th style="text-align: center;">Nilai Akhir</th>
+            <th style="text-align: center;">Capaian Kompetensi</th>
         </tr>
-
         @foreach ($formattedStudents[0]['nilai_per_mapel'] as $subject => $s)
-            <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td>{{ $subject }}</td>
-                <td style="text-align: center;">{{ round($s) }}</td>
-                <td>
-                    <p>{{ $formattedStudents[0]['TP'][$subject]['Hasil_Tp_tinggi'] }}</p>
-                    <p>{{ $formattedStudents[0]['TP'][$subject]['Hasil_Tp_kurang'] }}</p>
-                </td>
-            </tr>
-        @endforeach
+        @if ($s > 0)  <!-- Hanya tampilkan jika nilai lebih dari 0 -->
+        <tr>
+            <td style="text-align: center;">{{ $loop->iteration }}</td>
+            <td>{{ $subject }}</td>
+            <td style="text-align: center;">{{ round($s) }}</td>
+            <td>
+                <p>{{ $formattedStudents[0]['TP'][$subject]['Hasil_Tp_tinggi'] }}</p>
+                <p>{{ $formattedStudents[0]['TP'][$subject]['Hasil_Tp_kurang'] }}</p>
+            </td>
+        </tr>
+    @endif
+    @endforeach
+
 
 
     </table>
@@ -145,54 +149,62 @@
                     </tr>
                 </table>
             </td>
-    
+
             <!-- Tabel kanan -->
             <td style="width: 50%;border:none;padding:0;margin:0;padding-left:20px">
-                <table class="absen-table" style="width: 100%;">
+                {{-- @if ($) --}}
+
+                {{-- @endif --}}
+                {{-- <table class="absen-table" style="width: 100%;">
                     <tr>
                         <td colspan="2" style="text-align: center;font-weight: bold">Keputusan</td>
                     </tr>
                     <tr>
-                        <td style="width: 145px;text-align:center;font-weight: bold" colspan="2">Berdasarkan pencapaian seluruh kompetensi, peserta didik dinyatakan Naik Kelas ke Kelas XII (Dua belas)</td>
+                        <td style="width: 145px;text-align:center;font-weight: bold" colspan="2">Berdasarkan
+                            pencapaian seluruh kompetensi, peserta didik dinyatakan Naik Kelas ke Kelas XII (Dua belas)
+                        </td>
                     </tr>
-                </table>
+                </table> --}}
             </td>
         </tr>
     </table>
-    
-    
+
+
     <table class="ttd-table" style="border-collapse: collapse; width: 100%;">
         <tr>
             <td style="text-align: center;width:50%;border:none"></td>
-            <td style="text-align: center;width:50%;border:none;font-size:14px">Bandung,</td>
-        </tr>
+            <td style="text-align: center;width:50%;border:none;font-size:14px">Bandung,
+                {{ \Carbon\Carbon::parse(request()->tgl_print == 'null' ? now() : request()->tgl_print)->locale('id')->translatedFormat('d F Y') }}
+            </tr>
         <tr>
             <td style="width:50%;text-align:center;border:none;font-size:14px">Orang Tua</td>
             <td style="text-align: center;width:50%;border:none;font-size:14px">WaliKelas</td>
         </tr>
         <tr>
-            <td style="height: 70px;width:50%;border:none;font-size:14px"></td>
+            <td style="height: 50px;width:50%;border:none;font-size:14px"></td>
             <td style="width:50%;border:none;font-size:14px"></td>
         </tr>
         <tr>
             <td style="text-align:center;width:50%;border:none;font-size:14px">…………………………………………</td>
-            <td style="text-align: center;width:50%;border:none;font-size:14px">{{Auth::user()->name}}</td>
+            <td style="text-align: center;width:50%;border:none;font-size:14px">{{ Auth::user()->name }}</td>
         </tr>
     </table>
 
-    <table class="ttd-table" style="margin-top:10px;border-collapse: collapse; width: 100%;margin-left:auto;margin-right:auto;">
+    <table class="ttd-table"
+        style="margin-top:10px;border-collapse: collapse; width: 100%;margin-left:auto;margin-right:auto;">
 
         <tr>
             <td style="text-align: center;width:50%;border:none;font-size:14px">Mengetahui,<br> Kepala Sekolah</td>
         </tr>
         <tr>
-            <td style="height: 75px;width:50%;border:none;font-size:14px"></td>
+            <td style="height: 50px;width:50%;border:none;font-size:14px"></td>
         </tr>
         <tr>
-            <td style="width:50%;border:none;font-size:14px;text-align: center">{{ $formattedStudents[0]['school_data']->nama_kepala_sekolah ?? 'Belum Di Atur' }}<br>Nip: {{ $formattedStudents[0]['school_data']->nip_kepala_sekolah ?? '-' }}</td>
+            <td style="width:50%;border:none;font-size:14px;text-align: center">
+                {{ $formattedStudents[0]['school_data']->nama_kepala_sekolah ?? 'Belum Di Atur' }}<br>Nip:
+                {{ $formattedStudents[0]['school_data']->nip_kepala_sekolah ?? '-' }}</td>
         </tr>
     </table>
-    {{-- <script type="text/javascript"> try { this.print(true); } catch (e) { window.onload = window.print; } </script> --}}
 </body>
 
 </html>

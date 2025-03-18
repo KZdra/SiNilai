@@ -14,7 +14,7 @@ class FstController extends Controller
     }
     public function getData(Request $request)
     {
-        $data = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran')->get();
+        $data = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->get();
         return response()->json(['data' => $data], 200);
     }
     public function store(Request $request)
@@ -22,13 +22,15 @@ class FstController extends Controller
         $bagong = $request->validate([
             'fase' => 'required|string',
             'semester' => 'required|string',
-            'tahun_ajaran' => 'required|string'
+            'tahun_ajaran' => 'required|string',
+            'ta'=>'required|string'
         ]);
         try {
             DB::table('m_fst_pembelajaran')->insert([
                 'fase' => $bagong['fase'],
                 'semester' => $bagong['semester'],
                 'tahun_ajaran' => $bagong['tahun_ajaran'],
+                'ta' => $bagong['ta'],
                 'created_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Data berhasil ditambahkan!'], 201);
@@ -48,6 +50,7 @@ class FstController extends Controller
                 'fase' => $bagong['fase'],
                 'semester' => $bagong['semester'],
                 'tahun_ajaran' => $bagong['tahun_ajaran'],
+                'ta' => $bagong['ta'],
                 'updated_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Data berhasil diUpdate!'], 201);

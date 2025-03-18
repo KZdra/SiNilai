@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DataSekolahContoller;
+use App\Http\Controllers\EskulController;
 use App\Http\Controllers\FstController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get('kontol',[NilaiAkhirController::class,'getStudentAllTp']);
 
 Route::middleware('auth')->group(function () {
 
@@ -86,4 +86,10 @@ Route::middleware('auth')->group(function () {
     Route::get('formatif/getlist',[TpController::class,'getTPList'])->name('formatif.gettplist');
     Route::post('formatif',[TpController::class,'storeFormatif'])->name('formatif.store');
     Route::delete('formatif/{id}',[TpController::class,'destroyFormatif'])->name('formatif.destroy');
+    // Eskul
+    Route::get('meskul',[EskulController::class,'index'])->name('meskul.index');
+    Route::get('meskul/get',[EskulController::class,'getdata'])->name('meskul.getdata');
+    Route::post('meskul',[EskulController::class,'store'])->name('meskul.store');
+    Route::put('meskul/{id}',[EskulController::class,'update'])->name('meskul.update');
+    Route::delete('meskul/{id}',[EskulController::class,'destroy'])->name('meskul.destroy');
 });

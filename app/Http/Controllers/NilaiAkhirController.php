@@ -164,7 +164,7 @@ class NilaiAkhirController extends Controller
     public function index()
     {
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
-        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran')->orderBy('id', 'asc')->get();
+        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->orderBy('id', 'asc')->get();
 
         $className = null;
         if (Auth::user()->class_id !== null) {
@@ -243,7 +243,7 @@ class NilaiAkhirController extends Controller
 
         $students = $this->getStudentAllScores($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $studentsTP = $this->getStudentAllTp($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
-        $fst= DB::table('m_fst_pembelajaran')->select('fase','semester','tahun_ajaran')->where('id',$request->fst_id)->first();
+        $fst= DB::table('m_fst_pembelajaran')->select('fase','semester','tahun_ajaran','ta')->where('id',$request->fst_id)->first();
         $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah','nama_kepala_sekolah','nip_kepala_sekolah')->first();
         $formattedStudents = [];
 
