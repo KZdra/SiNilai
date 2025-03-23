@@ -8,7 +8,6 @@
     <style>
         body {
             font-size: 12px;
-            margin: 0.5cm;
         }
 
         @page {
@@ -119,13 +118,15 @@
             <th>Ekstrakulikuler</th>
             <th>Keterangan</th>
         </tr>
-        <tr>
-            <td>
-                1
+        @foreach ($formattedStudents[0]['eskul'] as $eskul )
+        <tr> 
+            <td style="width: 10px">
+                {{$loop->iteration}}
             </td>
-            <td>Band</td>
-            <td>Lorem Ipsum dolor sit amet </td>
+            <td>{{ $eskul->nama_eskul}}</td>
+            <td>{{$eskul->nilai_eskul}} </td>
         </tr>
+        @endforeach
     </table>
     <table style="width: 100%; border-collapse: collapse;">
         <tr>
