@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -32,7 +33,11 @@ class HomeController extends Controller
             ->get();
         $classNames = $studentsPerClass->pluck('class_name');
         $studentCounts = $studentsPerClass->pluck('student_count');
-        $allstudentCounts = DB::table('students')->get()->count();
+        if(Auth::user()->class_id !== null){
+            $allstudentCounts = DB::table('students')->where('class_id',Auth::user()->class_id)->get()->count();
+        }else {
+            $allstudentCounts = DB::table('students')->get()->count();
+        }
         $allMapelCounts = DB::table('mata_pelajarans')->get()->count();
         return view('home',compact('classNames','studentCounts','allstudentCounts','allMapelCounts'));
     }

@@ -181,6 +181,7 @@
 
                 $('#valueTable').DataTable({
                     "responsive": true,
+                    "ordering": false,
                     "ajax": {
                         "url": "{{ route('nilaiakhir.getAllStudentAVG') }}", // Ganti dengan URL API Anda
                         "type": "GET",
