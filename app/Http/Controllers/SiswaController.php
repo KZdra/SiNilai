@@ -262,16 +262,16 @@ class SiswaController extends Controller
                     ['nis' => $nis], // Cek berdasarkan NIS
                     [
                         'nisn' => $nisn,
-                        'nama' => $nama,
+                        'nama' => ucwords($nama),
                         'class_id' => $classId, // NULL jika tidak ada kelas
                         'jenis_kelamin' => $jenis_kelamin,
-                        'tempat_lahir' => $tempat_lahir,
+                        'tempat_lahir' => ucwords($tempat_lahir),
                         'tanggal_lahir' => $tanggal_lahir,
                         'agama' => $agama,
                         'pendidikan_sebelumnya' => $pendidikan_sebelumnya,
                         'alamat' => $alamat,
-                        'nama_ayah' => $nama_ayah,
-                        'nama_ibu' => $nama_ibu,
+                        'nama_ayah' => ucwords($nama_ayah),
+                        'nama_ibu' => ucwords($nama_ibu),
                         'pekerjaan_ayah' => $pekerjaan_ayah,
                         'pekerjaan_ibu' => $pekerjaan_ibu,
                         'alamat_orang_tua' => $alamat_orang_tua,

@@ -106,7 +106,7 @@
                             </button>
                         </div>
                         <form id="SetRaportForm">
-                        <div class="modal-body">
+                            <div class="modal-body">
                                 <div class="modal-body">
                                     <div class="mb-3">
                                         <label for="tanggalPrint" class="form-label">Tanggal Print</label>
@@ -224,7 +224,7 @@
                                         tgl_print);
 
                                 let exportUrl2 =
-                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__', 'tgl_print' => '__TGL_PR__','keputusan' => '__KPT__']) }}";
+                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__', 'tgl_print' => '__TGL_PR__', 'keputusan' => '__KPT__']) }}";
                                 exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row
                                         .student_id).replace('__VALUE_ID__', row.class_id)
                                     .replace('__FST_ID__', fst_id).replace('__TGL_PR__',
@@ -271,9 +271,45 @@
                 SwalHelper.showSuccess('Pengaturan Raport Berhasil Disimpan!')
                 setTimeout(function() {
                     $('#SettingRaportCenter').modal('hide');
-                    console.log(tgl_print,keputusan);
+                    console.log(tgl_print, keputusan);
                 }, 2000);
             })
+            $('#expBtn1').on('click', function() {
+                let excelUrl = @json(route('nilaiakhir.exportexcel', ['class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']));
+
+                // Gunakan hasil replace
+                excelUrl = excelUrl.replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
+
+
+                $.ajax({
+                    url: excelUrl,
+                    method: 'GET',
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, _, xhr) {
+                        var contentDisposition = xhr.getResponseHeader('Content-Disposition');
+                        var fileName = `Nilai_Akhir_${class_name}.xlsx`; // Default name
+
+                        if (contentDisposition) {
+                            var matches = /filename="([^"]*)"/.exec(contentDisposition);
+                            if (matches != null && matches[1]) {
+                                fileName = matches[1]; // Extract filename from the header
+                            }
+                        }
+
+                        var a = document.createElement('a');
+                        var url = window.URL.createObjectURL(data);
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.append(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                        SwalHelper.showSuccess('Berhasil DiExport!')
+                    }
+                });
+            });
 
             function exportpdf(url) {
                 fetch(url)
