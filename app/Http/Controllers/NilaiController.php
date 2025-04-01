@@ -14,7 +14,7 @@ class NilaiController extends Controller
     {
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
         $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('id', 'asc')->get();
-        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran')->orderBy('id', 'asc')->get();
+        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->orderBy('id', 'asc')->get();
         $className = null;
         if (Auth::user()->class_id !== null) {
             $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
@@ -63,14 +63,6 @@ class NilaiController extends Controller
             'student_id' => 'required|integer',
             'value_daily' => 'required|numeric|max_digits:3|max:100',
             'value_daily_2' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_3' => 'numeric|max_digits:3|max:100',
-            'value_daily_4' => 'numeric|max_digits:3|max:100',
-            'value_daily_5' => 'numeric|max_digits:3|max:100',
-            'value_daily_6' => 'numeric|max_digits:3|max:100',
-            'value_daily_7' => 'numeric|max_digits:3|max:100',
-            'value_daily_8' => 'numeric|max_digits:3|max:100',
-            'value_daily_9' => 'numeric|max_digits:3|max:100',
-            'value_daily_10' => 'numeric|max_digits:3|max:100',
             'value_sts' => 'required|numeric|max_digits:3|max:100',
             'value_sas' => 'required|numeric|max_digits:3|max:100',
         ]);
@@ -81,18 +73,18 @@ class NilaiController extends Controller
                 'mapel_id' => $request->mapel_id,
                 'fst_id' => $request->fst_id,
                 'student_id' => $request->student_id,
-                'value_daily' => $request->value_daily,
-                'value_daily_2' => $request->value_daily_2,
-                'value_daily_3' => $request->value_daily_3,
-                'value_daily_4' => $request->value_daily_4,
-                'value_daily_5' => $request->value_daily_5,
-                'value_daily_6' => $request->value_daily_6,
-                'value_daily_7' => $request->value_daily_7,
-                'value_daily_8' => $request->value_daily_8,
-                'value_daily_9' => $request->value_daily_9,
-                'value_daily_10' => $request->value_daily_10,
-                'value_sts' => $request->value_sts,
-                'value_sas' => $request->value_sas,
+                'value_daily' => $request->value_daily ?? 0,
+                'value_daily_2' => $request->value_daily_2 ?? 0,
+                'value_daily_3' => $request->value_daily_3 ?? 0,
+                'value_daily_4' => $request->value_daily_4 ?? 0,
+                'value_daily_5' => $request->value_daily_5 ?? 0,
+                'value_daily_6' => $request->value_daily_6 ?? 0,
+                'value_daily_7' => $request->value_daily_7 ?? 0,
+                'value_daily_8' => $request->value_daily_8 ?? 0,
+                'value_daily_9' => $request->value_daily_9 ?? 0,
+                'value_daily_10' => $request->value_daily_10 ?? 0,
+                'value_sts' => $request->value_sts ?? 0,
+                'value_sas' => $request->value_sas ?? 0,
                 'created_at' => Carbon::now()
             ]);
             DB::commit();
@@ -109,32 +101,24 @@ class NilaiController extends Controller
             'student_id' => 'required|integer',
             'value_daily' => 'required|integer|max_digits:3',
             'value_daily_2' => 'required|integer|max_digits:3',
-            'value_daily_3' => 'integer|max_digits:3',
-            'value_daily_4' => 'integer|max_digits:3',
-            'value_daily_5' => 'integer|max_digits:3',
-            'value_daily_6' => 'integer|max_digits:3',
-            'value_daily_7' => 'integer|max_digits:3',
-            'value_daily_8' => 'integer|max_digits:3',
-            'value_daily_9' => 'integer|max_digits:3',
-            'value_daily_10' => 'integer|max_digits:3',
             'value_sts' => 'required|integer|max_digits:3',
             'value_sas' => 'required|integer|max_digits:3',
         ]);
         DB::beginTransaction();
         try {
             DB::table('values')->where('id', '=', $id)->where('student_id', '=', $request->student_id)->where('mapel_id', '=', $request->mapel_id)->where('fst_id', $request->fst_id)->where('mapel_id', '=', $request->mapel_id)->where('class_id', $request->class_id)->update([
-                'value_daily' => $request->value_daily,
-                'value_daily_2' => $request->value_daily_2,
-                'value_daily_3' => $request->value_daily_3,
-                'value_daily_4' => $request->value_daily_4,
-                'value_daily_5' => $request->value_daily_5,
-                'value_daily_6' => $request->value_daily_6,
-                'value_daily_7' => $request->value_daily_7,
-                'value_daily_8' => $request->value_daily_8,
-                'value_daily_9' => $request->value_daily_9,
-                'value_daily_10' => $request->value_daily_10,
-                'value_sts' => $request->value_sts,
-                'value_sas' => $request->value_sas,
+                'value_daily' => $request->value_daily ?? 0,
+                'value_daily_2' => $request->value_daily_2 ?? 0,
+                'value_daily_3' => $request->value_daily_3 ?? 0,
+                'value_daily_4' => $request->value_daily_4 ?? 0,
+                'value_daily_5' => $request->value_daily_5 ?? 0,
+                'value_daily_6' => $request->value_daily_6 ?? 0,
+                'value_daily_7' => $request->value_daily_7 ?? 0,
+                'value_daily_8' => $request->value_daily_8 ?? 0,
+                'value_daily_9' => $request->value_daily_9 ?? 0,
+                'value_daily_10' => $request->value_daily_10 ?? 0,
+                'value_sts' => $request->value_sts ?? 0,
+                'value_sas' => $request->value_sas ?? 0,
                 'updated_at' => Carbon::now()
             ]);
             DB::commit();

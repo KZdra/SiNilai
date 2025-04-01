@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DataSekolahContoller;
+use App\Http\Controllers\EskulController;
 use App\Http\Controllers\FstController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\NilaiAkhirController;
+use App\Http\Controllers\PeskulController;
 use App\Http\Controllers\TpController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -17,8 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get('kontol',[NilaiAkhirController::class,'getStudentAllTp']);
-
+Route::get('es',[PeskulController::class,'getdata']);
 Route::middleware('auth')->group(function () {
 
     // Begin Useless
@@ -57,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('akhir/siswa', [NilaiAkhirController::class, 'detailNilaiAkhir'])->name('nilaiakhir.detailNilaiAkhir');
     Route::get('akhir/getAVG', [NilaiAkhirController::class, 'getAllStudentAveragesOnly'])->name('nilaiakhir.getAllStudentAVG');
     Route::get('akhir/print',[NilaiAkhirController::class,'exportPDF'])->name('nilaiakhir.print');
+    Route::get('akhir/excel',[NilaiAkhirController::class,'ExportNilaiAkhirExcel'])->name('nilaiakhir.exportexcel');
     //DataSekolah
     Route::get('datasekolah',[DataSekolahContoller::class,'index'])->name('datasekolah.index');
     Route::post('datasekolah',[DataSekolahContoller::class,'store'])->name('datasekolah.store');
@@ -86,4 +88,16 @@ Route::middleware('auth')->group(function () {
     Route::get('formatif/getlist',[TpController::class,'getTPList'])->name('formatif.gettplist');
     Route::post('formatif',[TpController::class,'storeFormatif'])->name('formatif.store');
     Route::delete('formatif/{id}',[TpController::class,'destroyFormatif'])->name('formatif.destroy');
+    // Eskul
+    Route::get('meskul',[EskulController::class,'index'])->name('meskul.index');
+    Route::get('meskul/get',[EskulController::class,'getdata'])->name('meskul.getdata');
+    Route::post('meskul',[EskulController::class,'store'])->name('meskul.store');
+    Route::put('meskul/{id}',[EskulController::class,'update'])->name('meskul.update');
+    Route::delete('meskul/{id}',[EskulController::class,'destroy'])->name('meskul.destroy');
+    // Penilaian Eskul
+    Route::get('peskul',[PeskulController::class,'index'])->name('peskul.index');
+    Route::get('peskul/get',[PeskulController::class,'getdata'])->name('peskul.getdata');
+    Route::post('peskul',[PeskulController::class,'store'])->name('peskul.store');
+    Route::put('peskul/{id}',[PeskulController::class,'update'])->name('peskul.update');
+    Route::delete('peskul/{id}',[PeskulController::class,'destroy'])->name('peskul.destroy');
 });

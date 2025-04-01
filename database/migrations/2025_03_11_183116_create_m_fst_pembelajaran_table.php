@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('fase');
             $table->string('semester');
             $table->string('tahun_ajaran');
+            $table->enum('ta',['tengah','akhir'])->nullable('tengah');
             $table->timestamps();
         });
     }

@@ -21,18 +21,21 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex flex-row justify-content-between w-100">
-                                <div class="small-box bg-info mx-2 flex-fill">
-                                    <div class="inner">
-                                        <h3>{{ $classNames->count() }}</h3>
-                                        <p>Jumlah Kelas</p>
+                                @if (Auth::user()->role_id == 1)
+                                    <div class="small-box bg-info mx-2 flex-fill">
+                                        <div class="inner">
+                                            <h3>{{ $classNames->count() }}</h3>
+                                            <p>Jumlah Kelas</p>
+                                        </div>
+                                        <div class="icon">
+                                            <i class="fas fa-school"></i>
+                                        </div>
+                                        <a href="#" class="small-box-footer">
+                                            Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                        </a>
                                     </div>
-                                    <div class="icon">
-                                        <i class="fas fa-school"></i>
-                                    </div>
-                                    <a href="#" class="small-box-footer">
-                                        Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
-                                    </a>
-                                </div>
+                                @endif
+
                                 <div class="small-box bg-gradient-success mx-2 flex-fill">
                                     <div class="inner">
                                         <h3>{{ $allstudentCounts }}</h3>
@@ -45,18 +48,21 @@
                                         Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
                                     </a>
                                 </div>
-                                <div class="small-box bg-gradient-primary mx-2 flex-fill">
-                                    <div class="inner">
-                                        <h3>{{ $allMapelCounts }}</h3>
-                                        <p>Jumlah Mata Pelajaran</p>
+                                @if (Auth::user()->role_id == 1)
+                                    <div class="small-box bg-gradient-primary mx-2 flex-fill">
+                                        <div class="inner">
+                                            <h3>{{ $allMapelCounts }}</h3>
+                                            <p>Jumlah Mata Pelajaran</p>
+                                        </div>
+                                        <div class="icon">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                        <a href="#" class="small-box-footer">
+                                            Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
+                                        </a>
                                     </div>
-                                    <div class="icon">
-                                        <i class="fas fa-book"></i>
-                                    </div>
-                                    <a href="#" class="small-box-footer">
-                                        Lihat Selengkapnya <i class="fas fa-arrow-circle-right"></i>
-                                    </a>
-                                </div>
+                                @endif
+
                             </div>
                         </div>
                     </div>

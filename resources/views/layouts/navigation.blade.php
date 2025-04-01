@@ -39,7 +39,7 @@
                 </a>
             </li>
             <li class="nav-item ">
-                <a href="#" class="nav-link {{ request()->is('peskul*') ? 'active' : '' }}">
+                <a href="{{route('peskul.index')}}" class="nav-link {{ request()->is('peskul*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-pencil-ruler"></i>
                     <p>
                         {{ __('Penilaian Ekstrakurikuler') }}
@@ -67,7 +67,15 @@
                     </p>
                 </a>
                 <ul class="nav nav-treeview" style="display: none;">
-                @if (Auth::user()->role_id == 1)
+
+                    <li class="nav-item ">
+                        <a href="{{ route('student.index') }}"
+                            class="nav-link {{ request()->is('siswa*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-user-graduate"></i>
+                            <p>Data Siswa</p>
+                        </a>
+                    </li>
+                    @if (Auth::user()->role_id == 1)
                         <li class="nav-item ">
                             <a href="{{ route('class.index') }}"
                                 class="nav-link {{ request()->is('kelas*') ? 'active' : '' }}">
@@ -75,56 +83,60 @@
                                 <p>Data Kelas</p>
                             </a>
                         </li>
-                @endif
-            <li class="nav-item ">
-                <a href="{{ route('student.index') }}" class="nav-link {{ request()->is('siswa*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-user-graduate"></i>
-                    <p>Data Siswa</p>
-                </a>
-            </li>
-            @if (Auth::user()->role_id == 1)
-                <li class="nav-item ">
-                    <a href="{{ route('mapel.index') }}"
-                        class="nav-link {{ request()->is('mapel*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-book"></i>
-                        <p>Data Mata Pelajaran</p>
-                    </a>
-                </li>
-                <li class="nav-item ">
-                    <a href="{{ route('datasekolah.index') }}"
-                        class="nav-link {{ request()->is('datasekolah*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-cogs"></i>
-                        <p>Data Sekolah</p>
-                    </a>
-                </li>
-            @endif
-            <li class="nav-item ">
-                <a href="{{ route('mfst.index') }}" class="nav-link {{ request()->is('mfst*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-calendar"></i>
-                    <p>Fase/Semester/Tahun Ajaran</p>
-                </a>
-            </li>
-            <li class="nav-item ">
-                <a href="{{ route('mastertp.index') }}"
-                    class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-th-list"></i>
-                    <p>Tujuan Pembelajaran</p>
-                </a>
-            </li>
-            @if (Auth::user()->role_id == 1)
-            <li class="nav-item ">
-                <a href="{{ route('muser.index') }}" class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-user-cog"></i>
-                    <p>
-                        {{ __('Manajemen User') }}
-                    </p>
-                </a>
-            </li>
-        @endif
-        </ul>
+                    @endif
+                    @if (Auth::user()->role_id == 1)
+                        <li class="nav-item ">
+                            <a href="{{ route('mapel.index') }}"
+                                class="nav-link {{ request()->is('mapel*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-book"></i>
+                                <p>Data Mata Pelajaran</p>
+                            </a>
+                        </li>
+                        <li class="nav-item ">
+                            <a href="{{ route('datasekolah.index') }}"
+                                class="nav-link {{ request()->is('datasekolah*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-cogs"></i>
+                                <p>Data Sekolah</p>
+                            </a>
+                        </li>
+                        <li class="nav-item ">
+                            <a href="{{ route('meskul.index') }}"
+                                class="nav-link {{ request()->is('meskul*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-trophy"></i>
+                                <p>Data Eskul</p>
+                            </a>
+                        </li>
 
-        </li>
-       
+                        <li class="nav-item ">
+                            <a href="{{ route('mfst.index') }}"
+                                class="nav-link {{ request()->is('mfst*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-calendar"></i>
+                                <p>Fase/Semester/Tahun Ajaran</p>
+                            </a>
+                        </li>
+                    @endif
+                    <li class="nav-item ">
+                        <a href="{{ route('mastertp.index') }}"
+                            class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-th-list"></i>
+                            <p>Tujuan Pembelajaran</p>
+                        </a>
+                    </li>
+                    @if (Auth::user()->role_id == 1)
+                        <li class="nav-item ">
+                            <a href="{{ route('muser.index') }}"
+                                class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-user-cog"></i>
+                                <p>
+                                    {{ __('Manajemen User') }}
+                                </p>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+
+            </li>
+
         </ul>
     </nav>
     <!-- /.sidebar-menu -->

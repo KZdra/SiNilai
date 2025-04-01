@@ -8,6 +8,10 @@
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Nilai Akhir') }}</h1>
                     <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas</button>
+                    <button class="mt-2 btn btn-success" id="expBtn1" style="display: none;"><i
+                            class="fas fa-file-excel"></i> Export Nilai Akhir</button>
+                    <button class="mt-2 btn btn-success" id="expBtn2" style="display: none;"><i class="fas fa-medal"></i>
+                        Export Ranking Siswa</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -45,12 +49,13 @@
                         <div class="card-body p-2">
                             <form id="fstForm">
                                 <div class="form-group">
-                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran dan faseSemester</label>
                                     <select name="fst_id" id="fst_id" class="form-control">
-                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran dan
+                                            faseSemester</option>
                                         @foreach ($fstList as $index => $fst)
                                             <option value="{{ $fst->id }}">
-                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran }}
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran . '/' . ucfirst($fst->ta) }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -63,6 +68,11 @@
                         <div class="card-header">
                             <h5>Kelas: <span id="ClassSel"></span></h5>
                             <h5>Fase/Semester/Tahun: <span id="FstSel"></span></h5>
+                            {{-- <h5>Tanggal Print: <input type="date" name="tgl_print" id="tgl_print" class="form-control"> --}}
+                            </h5>
+                            <button class="mt-2 btn btn-dark" id="expBtn3" style="display: none;" data-toggle="modal"
+                                data-target="#SettingRaportCenter"><i class="fas fa-cog"></i> Pengaturan Raport</button>
+
                         </div>
                         <div class="card-body p-2">
 
@@ -85,6 +95,38 @@
                 </div>
             </div>
             <!-- /.row -->
+            <div class="modal fade" id="SettingRaportCenter" tabindex="-1" role="dialog"
+                aria-labelledby="SettingRaportCenterTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="SettingRaportLongTitle">Pengaturan Sebelum Print Raport</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form id="SetRaportForm">
+                            <div class="modal-body">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="tanggalPrint" class="form-label">Tanggal Print</label>
+                                        <input type="date" class="form-control" id="tanggalPrint" required />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="boxKeputusan" class="form-label">Box Keputusan</label>
+                                        <textarea class="form-control" id="boxKeputusan" rows="3" placeholder="Bila Tidak Ada Tidak Usah Di Isikan"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
@@ -98,7 +140,14 @@
             let class_name = ''; // Simpan nama kelas
             let fst_id = null;
             let fst_name = '';
+            //Setting Raport Section
+            let tgl_print = null;
+            let keputusan = '';
             // NIlai Section (Filter)
+            $('#tgl_print').change(function() {
+                tgl_print = $('#tgl_print').val()
+                $('#valueTable').DataTable().ajax.reload(null, false);
+            })
             $('#pickClassBtn').click(function() {
                 $("#pickClass").slideToggle(300);
             })
@@ -132,6 +181,7 @@
 
                 $('#valueTable').DataTable({
                     "responsive": true,
+                    "ordering": false,
                     "ajax": {
                         "url": "{{ route('nilaiakhir.getAllStudentAVG') }}", // Ganti dengan URL API Anda
                         "type": "GET",
@@ -167,16 +217,19 @@
                             "data": null,
                             "render": function(data, type, row) {
                                 let exportUrl =
-                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) }}";
+                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__', 'tgl_print' => '__TGL_PR__']) }}";
                                 exportUrl = exportUrl.replace('__STUDENT_ID__', row
                                         .student_id).replace('__VALUE_ID__', row.class_id)
-                                    .replace('__FST_ID__', fst_id);
+                                    .replace('__FST_ID__', fst_id).replace('__TGL_PR__',
+                                        tgl_print);
 
                                 let exportUrl2 =
-                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) }}";
+                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__', 'tgl_print' => '__TGL_PR__', 'keputusan' => '__KPT__']) }}";
                                 exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row
                                         .student_id).replace('__VALUE_ID__', row.class_id)
-                                    .replace('__FST_ID__', fst_id);
+                                    .replace('__FST_ID__', fst_id).replace('__TGL_PR__',
+                                        tgl_print).replace('__KPT__',
+                                        keputusan);
                                 return `
                         <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"
@@ -200,6 +253,9 @@
                 });
                 $("#pickFst").hide(300);
                 $("#resultTable").show(300);
+                $("#expBtn1").show(300);
+                $("#expBtn2").show(400);
+                $("#expBtn3").show(500);
 
             });
 
@@ -208,6 +264,52 @@
                 let url = $(this).data("url"); // Get PDF URL from button
                 exportpdf(url);
             })
+            $('#SetRaportForm').submit(function(e) {
+                e.preventDefault();
+                tgl_print = $('#tanggalPrint').val();
+                keputusan = $('#boxKeputusan').val();
+                SwalHelper.showSuccess('Pengaturan Raport Berhasil Disimpan!')
+                setTimeout(function() {
+                    $('#SettingRaportCenter').modal('hide');
+                    console.log(tgl_print, keputusan);
+                }, 2000);
+            })
+            $('#expBtn1').on('click', function() {
+                let excelUrl = @json(route('nilaiakhir.exportexcel', ['class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']));
+
+                // Gunakan hasil replace
+                excelUrl = excelUrl.replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
+
+
+                $.ajax({
+                    url: excelUrl,
+                    method: 'GET',
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, _, xhr) {
+                        var contentDisposition = xhr.getResponseHeader('Content-Disposition');
+                        var fileName = `Nilai_Akhir_${class_name}.xlsx`; // Default name
+
+                        if (contentDisposition) {
+                            var matches = /filename="([^"]*)"/.exec(contentDisposition);
+                            if (matches != null && matches[1]) {
+                                fileName = matches[1]; // Extract filename from the header
+                            }
+                        }
+
+                        var a = document.createElement('a');
+                        var url = window.URL.createObjectURL(data);
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.append(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                        SwalHelper.showSuccess('Berhasil DiExport!')
+                    }
+                });
+            });
 
             function exportpdf(url) {
                 fetch(url)

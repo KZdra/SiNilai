@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\NilaiAkhirExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class NilaiAkhirController extends Controller
 {
@@ -56,75 +58,112 @@ class NilaiAkhirController extends Controller
         $data = DB::select($query, $classId ? ['classId' => $classId, 'studentId' => $student_id, 'fstId' => $fstId] : []);
         return $data;
     }
-    public function getStudentAllTp($classId = null, $student_id = null, $fstId = null)
-{
-    // Ambil data siswa berdasarkan student_id (hanya satu siswa)
-    $student = DB::table('students')
-        ->where('id', $student_id)
-        ->first();
+    public function getStudentsAllScores($classId = null,  $fstId = null)
+    {
+        // Ambil semua mata pelajaran untuk generate kolom dinamis
+        $mapels = DB::table('mata_pelajarans')->get();
 
-    // Jika siswa tidak ditemukan, return response kosong
-    if (!$student) {
-        return response()->json(["message" => "Siswa tidak ditemukan"], 404);
+        // Generate kolom dinamis untuk setiap mata pelajaran
+        $columns = [];
+        foreach ($mapels as $mapel) {
+            $columns[] = "ROUND(COALESCE(AVG(CASE WHEN v.mapel_id = {$mapel->id} THEN
+                (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12 END), 0), 2) AS `{$mapel->nama_mapel}`";
+        }
+
+        // Buat query dasar
+        $query = "
+            SELECT
+                s.nama AS student_name,
+                s.nis AS student_nis,
+                c.class_name,
+                " . implode(', ', $columns) . "
+            FROM students AS s
+            JOIN class AS c ON s.class_id = c.id
+            LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id =:fstId
+            LEFT JOIN mata_pelajarans AS mp ON v.mapel_id = mp.id
+        ";
+
+        // Filter berdasarkan class_id jika diberikan
+        if ($classId) {
+            $query .= " WHERE s.class_id = :classId";
+        }
+
+        $query .= " GROUP BY s.id, s.nama, c.class_name ORDER BY c.class_name, s.nama";
+        // dd($query);
+        // Jalankan query
+        $data = DB::select($query, $classId ? ['classId' => $classId, 'fstId' => $fstId] : []);
+        return $data;
     }
 
-    // Ambil semua mata pelajaran yang ada
-    $mapels = DB::table('mata_pelajarans')->get();
+    public function getStudentAllTp($classId = null, $student_id = null, $fstId = null)
+    {
+        // Ambil data siswa berdasarkan student_id (hanya satu siswa)
+        $student = DB::table('students')
+            ->where('id', $student_id)
+            ->first();
 
-    // Inisialisasi hasil untuk 1 siswa
-    $result = [
-        "mapel" => []
-    ];
+        // Jika siswa tidak ditemukan, return response kosong
+        if (!$student) {
+            return response()->json(["message" => "Siswa tidak ditemukan"], 404);
+        }
 
-    foreach ($mapels as $mapel) {
-        // Ambil TP untuk mata pelajaran tertentu
-        $data = DB::table('tpsiswas as v')
-            ->leftJoin('m_tp as tp', 'v.tp_id', '=', 'tp.id')
-            ->where('v.siswa_id', $student_id)
-            ->where('v.class_id', $classId)
-            ->where('v.fst_id', $fstId)
-            ->where('v.mapel_id', $mapel->id)
-            ->select(
-                'v.tp_id',
-                'tp.tp_deskripsi',
-                'v.kktp',
-                'v.tampilkan'
-            )
-            ->get();
+        // Ambil semua mata pelajaran yang ada
+        $mapels = DB::table('mata_pelajarans')->get();
 
-        // Inisialisasi data mapel, meskipun tidak ada TP
-        $result["mapel"][$mapel->nama_mapel] = [
-            "Hasil_Tp_tinggi" => [],
-            "Hasil_Tp_kurang" => []
+        // Inisialisasi hasil untuk 1 siswa
+        $result = [
+            "mapel" => []
         ];
 
-        foreach ($data as $item) {
-            // Tambahkan TP tinggi jika kktp = 1 dan tampilkan = 1
-            if ($item->kktp == 1 && $item->tampilkan == 1) {
-                $result["mapel"][$mapel->nama_mapel]["Hasil_Tp_tinggi"][] = $item->tp_deskripsi;
-            }
+        foreach ($mapels as $mapel) {
+            // Ambil TP untuk mata pelajaran tertentu
+            $data = DB::table('tpsiswas as v')
+                ->leftJoin('m_tp as tp', 'v.tp_id', '=', 'tp.id')
+                ->where('v.siswa_id', $student_id)
+                ->where('v.class_id', $classId)
+                ->where('v.fst_id', $fstId)
+                ->where('v.mapel_id', $mapel->id)
+                ->select(
+                    'v.tp_id',
+                    'tp.tp_deskripsi',
+                    'v.kktp',
+                    'v.tampilkan'
+                )
+                ->get();
 
-            // Tambahkan TP kurang jika kktp = 0 dan tampilkan = 1
-            if ($item->kktp == 0 && $item->tampilkan == 1) {
-                $result["mapel"][$mapel->nama_mapel]["Hasil_Tp_kurang"][] = $item->tp_deskripsi;
+            // Inisialisasi data mapel, meskipun tidak ada TP
+            $result["mapel"][$mapel->nama_mapel] = [
+                "Hasil_Tp_tinggi" => [],
+                "Hasil_Tp_kurang" => []
+            ];
+
+            foreach ($data as $item) {
+                // Tambahkan TP tinggi jika kktp = 1 dan tampilkan = 1
+                if ($item->kktp == 1 && $item->tampilkan == 1) {
+                    $result["mapel"][$mapel->nama_mapel]["Hasil_Tp_tinggi"][] = $item->tp_deskripsi;
+                }
+
+                // Tambahkan TP kurang jika kktp = 0 dan tampilkan = 1
+                if ($item->kktp == 0 && $item->tampilkan == 1) {
+                    $result["mapel"][$mapel->nama_mapel]["Hasil_Tp_kurang"][] = $item->tp_deskripsi;
+                }
             }
         }
+
+        // Ubah array hasil tinggi dan kurang menjadi string dipisahkan koma
+        foreach ($result["mapel"] as $mapel => &$tp) {
+            $tp["Hasil_Tp_tinggi"] = !empty($tp["Hasil_Tp_tinggi"])
+                ? $student->nama . " Menunjukkan Pemahaman Dalam " . implode(", ", $tp["Hasil_Tp_tinggi"])
+                : $student->nama . " Belum Memiliki TP dengan Pemahaman Tinggi.";
+
+            $tp["Hasil_Tp_kurang"] = !empty($tp["Hasil_Tp_kurang"])
+                ? $student->nama . " Membutuhkan Bimbingan Dalam " . implode(", ", $tp["Hasil_Tp_kurang"])
+                : $student->nama . " Tidak Memiliki TP yang Membutuhkan Bimbingan.";
+        }
+
+        // return response()->json(
+        return  $result;
     }
-
-    // Ubah array hasil tinggi dan kurang menjadi string dipisahkan koma
-    foreach ($result["mapel"] as $mapel => &$tp) {
-        $tp["Hasil_Tp_tinggi"] = !empty($tp["Hasil_Tp_tinggi"])
-            ? $student->nama . " Menunjukkan Pemahaman Dalam " . implode(", ", $tp["Hasil_Tp_tinggi"])
-            : $student->nama . " Belum Memiliki TP dengan Pemahaman Tinggi.";
-
-        $tp["Hasil_Tp_kurang"] = !empty($tp["Hasil_Tp_kurang"])
-            ? $student->nama . " Membutuhkan Bimbingan Dalam " . implode(", ", $tp["Hasil_Tp_kurang"])
-            : $student->nama . " Tidak Memiliki TP yang Membutuhkan Bimbingan.";
-    }
-
-    // return response()->json(
-   return  $result;
-}
 
 
 
@@ -164,7 +203,7 @@ class NilaiAkhirController extends Controller
     public function index()
     {
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
-        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran')->orderBy('id', 'asc')->get();
+        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran', 'ta')->orderBy('id', 'asc')->get();
 
         $className = null;
         if (Auth::user()->class_id !== null) {
@@ -243,8 +282,10 @@ class NilaiAkhirController extends Controller
 
         $students = $this->getStudentAllScores($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $studentsTP = $this->getStudentAllTp($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
-        $fst= DB::table('m_fst_pembelajaran')->select('fase','semester','tahun_ajaran')->where('id',$request->fst_id)->first();
-        $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah','nama_kepala_sekolah','nip_kepala_sekolah')->first();
+        $fst = DB::table('m_fst_pembelajaran')->select('fase', 'semester', 'tahun_ajaran', 'ta')->where('id', $request->fst_id)->first();
+        $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah', 'nama_kepala_sekolah', 'nip_kepala_sekolah')->first();
+        $studentEskul = DB::table('nilai_eskuls as ns')->select('ns.id', 'ns.nilai_eskul', 'ms.nama_eskul')->join('m_eskul as ms','ns.eskul_id','=','ms.id')
+        ->where('ns.student_id',$request->student_id)->where('ns.fst_id',$request->fst_id)->get();
         $formattedStudents = [];
 
         foreach ($students as $student) {
@@ -268,19 +309,50 @@ class NilaiAkhirController extends Controller
             $mapelScores = array_diff_key($studentArray, $studentInfo);
 
             // Gabungkan semua ke dalam satu array
-            $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores, 'school_data' => $schoolData,'TP'=>$studentsTP["mapel"],'fst'=>$fst]);
+            $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores, 'school_data' => $schoolData, 'TP' => $studentsTP["mapel"], 'fst' => $fst,'eskul'=>$studentEskul]);
         }
         // return response()->json($formattedStudents);
         // dd($formattedStudents);
 
         $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents'));
-        // $pdfPath = 'raport/' . $formattedStudents[0]['class_name'] . '/' . $formattedStudents[0]['student_name'] . '.pdf';
+        $concated = ucwords($formattedStudents[0]['fst']->fase) . '-' . str_replace(' ', '', $formattedStudents[0]['fst']->semester) . '-' . $formattedStudents[0]['fst']->ta;
+        $pdfPath = 'raport/' . str_replace(' ','_',$formattedStudents[0]['class_name']) . '/' . $concated . '/' . str_replace(' ','_',$formattedStudents[0]['student_name']). '.pdf';
 
-        return $pdf->stream('Raport_' . $formattedStudents[0]['student_name'] . '.pdf');
+        // return $pdf->stream('Raport_' . $formattedStudents[0]['student_name'] . '.pdf');
         // return view('docs.nilai',compact('formattedStudents'));
 
-        // Storage::disk('public')->put($pdfPath, $pdf->output());
+        Storage::disk('public')->put($pdfPath, $pdf->output());
 
-        // return response()->json(['pdf_url' => asset('storage/' . $pdfPath)]);
+        return response()->json(['pdf_url' => asset('storage/' . $pdfPath)]);
     }
+
+    public function ExportNilaiAkhirExcel(Request $request)
+    {
+        $students = $this->getStudentsAllScores($request->class_id,$request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
+        $className= DB::table('class')->select('class_name')->where('id', $request->class_id)->first();
+        $formattedStudents = [];
+
+        foreach ($students as $student) {
+            $studentArray = (array) $student;
+
+            // Informasi siswa
+            $studentInfo = [
+                'student_name' => $studentArray['student_name'],
+                'class_name' => $studentArray['class_name'],
+                'student_nis' => $studentArray['student_nis'],
+            ];
+
+            // Nilai mata pelajaran (otomatis tanpa hardcoding)
+            $mapelScores = array_diff_key($studentArray, $studentInfo);
+
+            // Gabungkan semua ke dalam satu array
+            $formattedStudents[] = array_merge($studentInfo, ['nilai_per_mapel' => $mapelScores]);
+        }
+
+
+        // dd($formattedStudents);
+        // return view('docs.nilaiakhir',compact('formattedStudents'));
+        
+        return Excel::download(new NilaiAkhirExport($formattedStudents),"Nilai_Akhir_$className->class_name.xlsx");
+ }
 }

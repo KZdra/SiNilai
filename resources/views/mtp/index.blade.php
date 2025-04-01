@@ -62,12 +62,13 @@
                         <div class="card-body p-2">
                             <form id="fstForm">
                                 <div class="form-group">
-                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran dan faseSemester</label>
                                     <select name="fst_id" id="fst_id" class="form-control">
-                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran dan faseSemester</option>
                                         @foreach ($fstList as $index => $fst)
                                             <option value="{{ $fst->id }}">
-                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran }}</option>
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran.'/'.ucfirst($fst->ta) }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>

@@ -18,7 +18,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card" id="resultTable" >
+                    <div class="card" id="resultTable">
                         <div class="card-header">
                             <button class=" mt-2 btn btn-success " id="inputFstBtn">Input</button>
                         </div>
@@ -31,6 +31,7 @@
                                         <th>Fase</th>
                                         <th>Semester</th>
                                         <th>Tahun Ajaran</th>
+                                        <th>Sem</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -80,7 +81,16 @@
                             </div>
                             <div class="form-group">
                                 <label for="tahun_ajaran">Tahun Ajaran</label>
-                                <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran" placeholder="contoh pengisian 2022/2025" required>
+                                <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran"
+                                    placeholder="contoh pengisian 2022/2025" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ta">Semester Tengah / Akhir</label>
+                                <select name="ta" id="ta" class="form-control">
+                                    <option value="" selected disabled>Pilih Semester Tengah/Akhir</option>
+                                    <option value="tengah">Tengah</option>
+                                    <option value="akhir">Akhir</option>
+                                </select>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -100,49 +110,55 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
-                let table = $('#valueTable').DataTable({
-                    "responsive": true,
-                    "ajax": {
-                        "url": "{{route('mfst.getData')}}",
-                        "type": "GET",
-                        "dataSrc": 'data'
+            let table = $('#valueTable').DataTable({
+                "responsive": true,
+                "ajax": {
+                    "url": "{{ route('mfst.getData') }}",
+                    "type": "GET",
+                    "dataSrc": 'data'
+                },
+                "columns": [{
+                        "data": null,
+                        "render": function(data, type, row, meta) {
+                            return meta.row + 1; // Index + 1
+                        }
                     },
-                    "columns": [{
-                            "data": null,
-                            "render": function(data, type, row, meta) {
-                                return meta.row + 1; // Index + 1
-                            }
-                        },
-                        {
-                            "data": "fase",
-                            "render": function(data, type, row) {
-                                return data ? data.toUpperCase() : '-'
-                            }
-                        },
-                        {
-                            "data": "semester",
-                            "render": function(data, type, row) {
-                                return data ? data : '-'
-                            }
-                        },
-                        {
-                            "data": "tahun_ajaran",
-                            "render": function(data, type, row) {
-                                return data ? data : '-'
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                if (row.id) {
-                                    return `
+                    {
+                        "data": "fase",
+                        "render": function(data, type, row) {
+                            return data ? data.toUpperCase() : '-'
+                        }
+                    },
+                    {
+                        "data": "semester",
+                        "render": function(data, type, row) {
+                            return data ? data : '-'
+                        }
+                    },
+                    {
+                        "data": "tahun_ajaran",
+                        "render": function(data, type, row) {
+                            return data ? data : '-'
+                        }
+                    },
+                    {
+                        "data": "ta",
+                        "render": function(data, type, row) {
+                            return data ? data : '-'
+                        }
+                    },
+                    {
+                        "data": null,
+                        "render": function(data, type, row) {
+                            if (row.id) {
+                                return `
                         <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"
                                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
-                                                    <button class="dropdown-item editFstBtn" data-id='${row.id}' data-fase='${row.fase}' data-semester='${row.semester}' data-tahun_ajaran='${row.tahun_ajaran}' ><i
+                                                    <button class="dropdown-item editFstBtn" data-id='${row.id}' data-fase='${row.fase}' data-semester='${row.semester}' data-tahun_ajaran='${row.tahun_ajaran}' data-ta='${row.ta}'><i
                                                             class="fas fa-pen text-info"></i>&nbsp;Edit</button>
                                                     <div class="dropdown-divider"></div>
                                                     <button class="dropdown-item text-danger delFstBtn" data-id='${row.id}'><i
@@ -150,14 +166,14 @@
                                                 </div>
                                             </div>
                     `;
-                                } else {
-                                    return `<button class="btn btn-success inputFstBtn btn-disabled">No Data</button>`
-                                }
-
+                            } else {
+                                return `<button class="btn btn-success inputFstBtn btn-disabled">No Data</button>`
                             }
+
                         }
-                    ]
-                });
+                    }
+                ]
+            });
 
             // Init
             ///
@@ -167,6 +183,7 @@
                 $('#fase').val('');
                 $('#semester').val('');
                 $('#tahun_ajaran').val('');
+                $('#ta').val('');
                 $('#tpModalLabel').text('Input Fase/Semester/Tahun Ajaran');
                 $('#tpModal').modal('show');
             });
@@ -182,9 +199,10 @@
                     url: url,
                     method: method,
                     data: {
-                        fase:$('#fase').val(),
-                        semester:$('#semester').val(),
-                        tahun_ajaran:$('#tahun_ajaran').val(),
+                        fase: $('#fase').val(),
+                        semester: $('#semester').val(),
+                        tahun_ajaran: $('#tahun_ajaran').val(),
+                        ta: $('#ta').val(),
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -213,12 +231,14 @@
                 let fase = $(this).data('fase');
                 let semester = $(this).data('semester');
                 let tahun_ajaran = $(this).data('tahun_ajaran');
+                let ta = $(this).data('ta');
 
 
                 $('#fst_id').val(id);
                 $('#fase').val(fase);
                 $('#semester').val(semester);
                 $('#tahun_ajaran').val(tahun_ajaran);
+                $('#ta').val(ta);
                 $('#tpModalLabel').text('Edit Fase/Semester/Tahun Ajaran');
                 $('#tpModal').modal('show');
             });
