@@ -38,9 +38,14 @@ class SiswaController extends Controller
                 DB::raw('COALESCE(s.alpa,0) as alpa'),
                 's.foto_siswa_path'
             )
-            ->leftJoin('class', 's.class_id', '=', 'class.id')
-            ->orderBy('s.nama', 'asc')
-            ->get();
+            ->leftJoin('class', 's.class_id', '=', 'class.id');
+
+        // Role Management: Jika bukan admin dan punya class_id, filter berdasarkan kelasnya
+        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $data = $data->where('s.class_id', Auth::user()->class_id);
+        }
+
+        $data = $data->orderBy('s.nama', 'asc')->get();
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
         $className = null;
         if(Auth::user()->class_id !== null){

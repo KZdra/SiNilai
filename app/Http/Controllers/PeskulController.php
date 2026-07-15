@@ -12,7 +12,11 @@ class PeskulController extends Controller
 {
     public function index()
     {
-        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $query = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc');
+        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $query->where('id', Auth::user()->class_id);
+        }
+        $classList = $query->get();
         $eskulList = DB::table('m_eskul')->select('id', 'nama_eskul')->orderBy('id', 'asc')->get();
         $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran', 'ta')->orderBy('id', 'asc')->get();
         $className = null;

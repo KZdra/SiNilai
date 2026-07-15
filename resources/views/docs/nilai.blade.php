@@ -137,100 +137,107 @@
 
 
     </table>
-    <table class="eskul-table" style="margin-top: 20px">
-        <tr>
-            <th>No</th>
-            <th>Ekstrakulikuler</th>
-            <th>Keterangan</th>
-        </tr>
-        @foreach ($formattedStudents[0]['eskul'] as $eskul)
+    <div style="page-break-inside: avoid;">
+        <table class="eskul-table" style="margin-top: 20px; width: 100%;">
             <tr>
-                <td style="width: 10px">
-                    {{ $loop->iteration }}
-                </td>
-                <td>{{ $eskul->nama_eskul }}</td>
-                <td>{{ $eskul->nilai_eskul }} </td>
+                <th style="width: 5%;">No</th>
+                <th style="width: 40%;">Ekstrakulikuler</th>
+                <th style="width: 55%;">Keterangan</th>
             </tr>
-        @endforeach
-    </table>
-    <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-            <!-- Tabel kiri -->
-            <td style="width: 50%;border:none;padding:0;margin:0;">
-                <table class="absen-table" style="width: 100%;">
-                    <tr>
-                        <td colspan="2" style="text-align: center;font-weight: bold">Ketidakhadiran</td>
-                    </tr>
-                    <tr>
-                        <td style="width: 145px">Sakit</td>
-                        <td style="text-align: center;">{{ $formattedStudents[0]['sakit'] }} Hari</td>
-                    </tr>
-                    <tr>
-                        <td style="width: 145px">Izin</td>
-                        <td style="text-align: center;">{{ $formattedStudents[0]['izin'] }} Hari</td>
-                    </tr>
-                    <tr>
-                        <td style="width: 145px">Tanpa Keterangan</td>
-                        <td style="text-align: center;">{{ $formattedStudents[0]['alpa'] }} Hari</td>
-                    </tr>
-                </table>
-            </td>
-
-            <!-- Tabel kanan -->
-            <td style="width: 50%;border:none;padding:0;margin:0;padding-left:20px">
-                @if (request()->filled('keputusan'))
-                    <table class="absen-table" style="width: 100%;">
+            @forelse ($formattedStudents[0]['eskul'] as $eskul)
+                <tr>
+                    <td style="text-align: center;">
+                        {{ $loop->iteration }}
+                    </td>
+                    <td>{{ $eskul->nama_eskul }}</td>
+                    <td>{{ $eskul->nilai_eskul }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="3" style="text-align: center;">-</td>
+                </tr>
+            @endforelse
+        </table>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr>
+                <!-- Tabel kiri -->
+                <td style="width: 50%;border:none;padding:0;margin:0;vertical-align: top;">
+                    <table class="absen-table" style="width: 100%; margin-top:0;">
                         <tr>
-                            <td colspan="2" style="text-align: center;font-weight: bold">Keputusan</td>
+                            <td colspan="3" style="text-align: center;font-weight: bold">Ketidakhadiran</td>
                         </tr>
                         <tr>
-                            <td style="width: 145px;text-align:center;font-weight: bold" colspan="2">
-                                {{-- Berdasarkan
-                            pencapaian seluruh kompetensi, peserta didik dinyatakan Naik Kelas ke Kelas XII (Dua belas) --}}
-                                {{ request()->keputusan }}
-                            </td>
+                            <td style="width: 145px">Sakit</td>
+                            <td style="text-align: center; width: 50px;">{{ $formattedStudents[0]['sakit'] }}</td>
+                            <td style="text-align: center; width: 50px;">hari</td>
+                        </tr>
+                        <tr>
+                            <td style="width: 145px">Izin</td>
+                            <td style="text-align: center; width: 50px;">{{ $formattedStudents[0]['izin'] }}</td>
+                            <td style="text-align: center; width: 50px;">hari</td>
+                        </tr>
+                        <tr>
+                            <td style="width: 145px">Tanpa Keterangan</td>
+                            <td style="text-align: center; width: 50px;">{{ $formattedStudents[0]['alpa'] }}</td>
+                            <td style="text-align: center; width: 50px;">hari</td>
                         </tr>
                     </table>
-            </td>
-            @endif
-        </tr>
-    </table>
+                </td>
 
+                <!-- Tabel kanan -->
+                <td style="width: 50%;border:none;padding:0;margin:0;padding-left:20px;vertical-align: top;">
+                    @if ($keputusan)
+                        <table class="absen-table" style="width: 100%; margin-top:0;">
+                            <tr>
+                                <td colspan="2" style="text-align: center;font-weight: bold">Keputusan:</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align:center;" colspan="2">
+                                    {{ $keputusan }}
+                                </td>
+                            </tr>
+                        </table>
+                    @endif
+                </td>
+            </tr>
+        </table>
 
-    <table class="ttd-table" style="border-collapse: collapse; width: 100%;">
-        <tr>
-            <td style="text-align: center;width:50%;border:none"></td>
-            <td style="text-align: center;width:50%;font-size:10.5pt;border:none">Bandung,
-                {{ \Carbon\Carbon::parse(request()->tgl_print == 'null' ? now() : request()->tgl_print)->locale('id')->translatedFormat('d F Y') }}
-        </tr>
-        <tr>
-            <td style="width:50%;text-align:center;font-size:10.5pt;border:none">Orang Tua,</td>
-            <td style="text-align: center;width:50%;font-size:10.5pt;border:none">Wali Kelas</td>
-        </tr>
-        <tr>
-            <td style="height: 38px;width:50%;border:none"></td>
-            <td style="height: 38px;width:50%;border:none"></td>
-        </tr>
-        <tr>
-            <td style="text-align:center;width:50%;font-size:10.5pt;border:none">……………………………</td>
-            <td style="text-align:center;width:50%;font-size:10.5pt;border:none">{{ Auth::user()->name }}</td>
-        </tr>
-    </table>
+        <table class="ttd-table" style="border-collapse: collapse; width: 100%; margin-top: 20px;">
+            <tr>
+                <td style="text-align: center;width:50%;border:none"></td>
+                <td style="text-align: center;width:50%;font-size:10.5pt;border:none">Bandung,
+                    {{ \Carbon\Carbon::parse($tgl_print == 'null' ? now() : $tgl_print)->locale('id')->translatedFormat('d F Y') }}
+                </td>
+            </tr>
+            <tr>
+                <td style="width:50%;text-align:center;font-size:10.5pt;border:none">Orang Tua,</td>
+                <td style="text-align: center;width:50%;font-size:10.5pt;border:none">Wali Kelas</td>
+            </tr>
+            <tr>
+                <td style="height: 60px;width:50%;border:none"></td>
+                <td style="height: 60px;width:50%;border:none"></td>
+            </tr>
+            <tr>
+                <td style="text-align:center;width:50%;font-size:10.5pt;border:none">……………………………</td>
+                <td style="text-align:center;width:50%;font-size:10.5pt;border:none">{{ Auth::user()->name }}</td>
+            </tr>
+        </table>
 
-    <table class="ttd-table" style="border-collapse: collapse; width: 100%;margin-left:auto;margin-right:auto;">
-
-        <tr>
-            <td style="text-align: center;width:50%;border:none;font-size:10.5pt;">Mengetahui,<br> Kepala Sekolah</td>
-        </tr>
-        <tr>
-            <td style="height: 40px;width:50%;border:none;font-size:10.5pt;"></td>
-        </tr>
-        <tr>
-            <td style="width:50%;border:none;font-size:10.5pt;text-align: center">
-                {{ $formattedStudents[0]['school_data']->nama_kepala_sekolah ?? 'Belum Di Atur' }}<br>Nip:
-                {{ $formattedStudents[0]['school_data']->nip_kepala_sekolah ?? '-' }}</td>
-        </tr>
-    </table>
+        <table class="ttd-table" style="border-collapse: collapse; width: 100%;margin-left:auto;margin-right:auto; margin-top: 10px;">
+            <tr>
+                <td style="text-align: center;width:50%;border:none;font-size:10.5pt;">Mengetahui,<br> Kepala Sekolah</td>
+            </tr>
+            <tr>
+                <td style="height: 60px;width:50%;border:none;font-size:10.5pt;"></td>
+            </tr>
+            <tr>
+                <td style="width:50%;border:none;font-size:10.5pt;text-align: center">
+                    {{ $formattedStudents[0]['school_data']->nama_kepala_sekolah ?? 'Belum Di Atur' }}<br>NIP.
+                    {{ $formattedStudents[0]['school_data']->nip_kepala_sekolah ?? '-' }}</td>
+            </tr>
+        </table>
+    </div>
 </body>
 
 </html>

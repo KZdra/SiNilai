@@ -12,7 +12,11 @@ class TpController extends Controller
     // Master Sections
     public function index()
     {
-        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $query = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc');
+        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $query->where('id', Auth::user()->class_id);
+        }
+        $classList = $query->get();
         $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('id', 'asc')->get();
         $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->orderBy('id', 'asc')->get();
         $className = null;
@@ -100,7 +104,11 @@ class TpController extends Controller
     //End Master Sections
     public function indexFormatif()
     {
-        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $query = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc');
+        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $query->where('id', Auth::user()->class_id);
+        }
+        $classList = $query->get();
         $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('id', 'asc')->get();
         $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->orderBy('id', 'asc')->get();
         $className = null;

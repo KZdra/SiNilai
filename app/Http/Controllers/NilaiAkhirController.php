@@ -202,7 +202,14 @@ class NilaiAkhirController extends Controller
 
     public function index()
     {
-        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $query = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc');
+        
+        // Role Management: Wali Kelas / Guru hanya melihat kelasnya
+        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $query->where('id', Auth::user()->class_id);
+        }
+        $classList = $query->get();
+
         $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran', 'ta')->orderBy('id', 'asc')->get();
 
         $className = null;
@@ -279,7 +286,6 @@ class NilaiAkhirController extends Controller
 
     public function exportPDF(Request $request)
     {
-
         $students = $this->getStudentAllScores($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $studentsTP = $this->getStudentAllTp($request->class_id, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $fst = DB::table('m_fst_pembelajaran')->select('fase', 'semester', 'tahun_ajaran', 'ta')->where('id', $request->fst_id)->first();
@@ -287,7 +293,8 @@ class NilaiAkhirController extends Controller
         $studentEskul = DB::table('nilai_eskuls as ns')->select('ns.id', 'ns.nilai_eskul', 'ms.nama_eskul')->join('m_eskul as ms','ns.eskul_id','=','ms.id')
         ->where('ns.student_id',$request->student_id)->where('ns.fst_id',$request->fst_id)->get();
         $formattedStudents = [];
-
+        $tgl_print = $request->tgl_print;
+        $keputusan = $request->keputusan;
         foreach ($students as $student) {
             $studentArray = (array) $student;
 
@@ -314,7 +321,7 @@ class NilaiAkhirController extends Controller
         // return response()->json($formattedStudents);
         // dd($formattedStudents);
 
-        $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents'));
+        $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents', 'tgl_print', 'keputusan'));
         $concated = ucwords($formattedStudents[0]['fst']->fase) . '-' . str_replace(' ', '', $formattedStudents[0]['fst']->semester) . '-' . $formattedStudents[0]['fst']->ta;
         $pdfPath = 'raport/' . str_replace(' ','_',$formattedStudents[0]['class_name']) . '/' . $concated . '/' . str_replace(' ','_',$formattedStudents[0]['student_name']). '.pdf';
 
@@ -354,5 +361,20 @@ class NilaiAkhirController extends Controller
         // return view('docs.nilaiakhir',compact('formattedStudents'));
         
         return Excel::download(new NilaiAkhirExport($formattedStudents),"Nilai_Akhir_$className->class_name.xlsx");
- }
+    }
+
+    public function exportRankingExcel(Request $request)
+    {
+        $data = $this->getStudentAvgScores($request->class_id, $request->fst_id);
+        
+        // Convert to array and sort descending by average
+        $students = (array) $data;
+        usort($students, function ($a, $b) {
+            return $b->avg_nilai_semua_mapel <=> $a->avg_nilai_semua_mapel;
+        });
+
+        $className = DB::table('class')->where('id', $request->class_id)->value('class_name');
+        
+        return Excel::download(new \App\Exports\RankingExport($students), "Ranking_Siswa_{$className}.xlsx");
+    }
 }

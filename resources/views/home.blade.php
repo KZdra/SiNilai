@@ -67,15 +67,62 @@
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-text text-center">
-                                Statistik Murid/Kelas
-                            </h5>
-                            <div class="d-flex justify-content-center">
-                                <canvas id="myChart"></canvas>
+                    <div class="row">
+                        <!-- Chart Column -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-text text-center font-weight-bold mb-4">
+                                        Statistik Murid/Kelas
+                                    </h5>
+                                    <div class="d-flex justify-content-center" style="position: relative; height:300px; width:100%">
+                                        <canvas id="myChart"></canvas>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
+                        <!-- Top 5 Students Column -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-text text-center font-weight-bold mb-4">
+                                        Top 5 Siswa (Rata-Rata Tertinggi)
+                                    </h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-striped text-center">
+                                            <thead class="bg-primary text-white">
+                                                <tr>
+                                                    <th>Peringkat</th>
+                                                    <th>Nama Siswa</th>
+                                                    <th>Kelas</th>
+                                                    <th>Rata-Rata</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($topStudents as $index => $student)
+                                                    <tr>
+                                                        <td>
+                                                            @if($index == 0) <i class="fas fa-medal text-warning"></i> 1
+                                                            @elseif($index == 1) <i class="fas fa-medal text-secondary"></i> 2
+                                                            @elseif($index == 2) <i class="fas fa-medal" style="color: #cd7f32;"></i> 3
+                                                            @else {{ $index + 1 }}
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-left">{{ $student->student_name }}</td>
+                                                        <td>{{ $student->class_name }}</td>
+                                                        <td class="font-weight-bold text-success">{{ $student->average_score }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="4" class="text-center text-muted">Belum ada data nilai.</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

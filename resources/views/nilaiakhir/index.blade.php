@@ -141,8 +141,8 @@
             let fst_id = null;
             let fst_name = '';
             //Setting Raport Section
-            let tgl_print = null;
-            let keputusan = '';
+            let tgl_print = sessionStorage.getItem('tgl_print') ?? null;
+            let keputusan = sessionStorage.getItem('keputusan') ?? '';
             // NIlai Section (Filter)
             $('#tgl_print').change(function() {
                 tgl_print = $('#tgl_print').val()
@@ -262,12 +262,14 @@
 
             $(document).on("click", ".btn-print", function() {
                 let url = $(this).data("url"); // Get PDF URL from button
-                exportpdf(url);
+                    exportpdf(url);
             })
             $('#SetRaportForm').submit(function(e) {
                 e.preventDefault();
                 tgl_print = $('#tanggalPrint').val();
                 keputusan = $('#boxKeputusan').val();
+                sessionStorage.setItem('tgl_print', tgl_print);
+                sessionStorage.setItem('keputusan', keputusan);
                 SwalHelper.showSuccess('Pengaturan Raport Berhasil Disimpan!')
                 setTimeout(function() {
                     $('#SettingRaportCenter').modal('hide');
@@ -307,6 +309,40 @@
                         a.remove();
                         window.URL.revokeObjectURL(url);
                         SwalHelper.showSuccess('Berhasil DiExport!')
+                    }
+                });
+            });
+
+            $('#expBtn2').on('click', function() {
+                let rankingUrl = @json(route('nilaiakhir.exportranking', ['class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']));
+                rankingUrl = rankingUrl.replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
+
+                $.ajax({
+                    url: rankingUrl,
+                    method: 'GET',
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, _, xhr) {
+                        var contentDisposition = xhr.getResponseHeader('Content-Disposition');
+                        var fileName = `Ranking_Siswa_${class_name}.xlsx`;
+
+                        if (contentDisposition) {
+                            var matches = /filename="([^"]*)"/.exec(contentDisposition);
+                            if (matches != null && matches[1]) {
+                                fileName = matches[1];
+                            }
+                        }
+
+                        var a = document.createElement('a');
+                        var url = window.URL.createObjectURL(data);
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.append(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                        SwalHelper.showSuccess('Ranking Berhasil DiExport!')
                     }
                 });
             });
