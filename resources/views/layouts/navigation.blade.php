@@ -21,6 +21,7 @@
                     </p>
                 </a>
             </li>
+            @if (Auth::user()->role_id == 1 || Auth::user()->class_id !== null)
             <li class="nav-item ">
                 <a href="{{ route('formatif.index') }}"
                     class="nav-link {{ request()->is('formatif*') ? 'active' : '' }} ">
@@ -136,6 +137,7 @@
                 </ul>
 
             </li>
+            @endif
 
         </ul>
     </nav>
