@@ -6,22 +6,27 @@ SiNilai adalah aplikasi berbasis web yang dirancang untuk mempermudah guru dan w
 
 ## 📸 Antarmuka Aplikasi (Screenshots)
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/2eebc714-a81e-454d-9d64-774f7fb74df0" width="80%" alt="Screenshot 1">
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/2c9c9b16-b3cd-4e01-aecb-a0e426d02bf3" width="80%" alt="Screenshot 2">
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/71f14c75-2b91-4a2a-b5cf-87395f21bfd4" width="80%" alt="Screenshot 3">
-</p>
+<img width="1920" height="929" alt="screencapture-127-0-0-1-8000-2026-07-16-02_02_56" src="https://github.com/user-attachments/assets/2093212b-e00c-439c-a90e-3cb674c31553" />
+<img width="1920" height="1174" alt="screencapture-127-0-0-1-8000-akhir-2026-07-16-02_05_58" src="https://github.com/user-attachments/assets/59d32dc1-e2ae-4cb4-841e-5130d4fc338a" />
+<img width="1920" height="1328" alt="screencapture-127-0-0-1-8000-mapel-mapping-2026-07-16-02_03_44" src="https://github.com/user-attachments/assets/b76be78a-5389-4ccc-ba5c-772063f63bca" />
+<img width="1920" height="1598" alt="screencapture-127-0-0-1-8000-nilai-2026-07-16-02_04_17" src="https://github.com/user-attachments/assets/576fa9a8-eea2-4694-897e-0f568ab817e8" />
 
 ---
 ## 📸 Hasil Cetak Raport Kurikulum Merdeka (Screenshots)
+<p align="center">
+<img width="1241" height="1754" alt="Artanto_Hutasoit_8_page-0001" src="https://github.com/user-attachments/assets/451fae63-0419-49b8-8dda-7807c48a38b1" />
+    
+</p>
+<p align="center">
+<img width="1241" height="1754" alt="Artanto_Hutasoit_8_page-0002" src="https://github.com/user-attachments/assets/d99cd1ee-f0fa-4c52-ad6a-88d8476fa3c4" />
+    
+</p>
+<p align="center">
+<img width="1241" height="1754" alt="Artanto_Hutasoit_8_page-0003" src="https://github.com/user-attachments/assets/592c816c-24b0-47f2-a504-9e9203c1f716" />
+    
+</p>
 
-CengHere
+
 
 ---
 
