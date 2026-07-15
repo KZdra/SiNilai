@@ -14,11 +14,21 @@ class NilaiAkhirController extends Controller
 {
     public function getStudentAllScores($classId = null, $student_id = null, $fstId = null)
     {
-        // Ambil semua mata pelajaran untuk generate kolom dinamis
-        $mapels = DB::table('mata_pelajarans')->get();
+        // Ambil mata pelajaran yang aktif untuk kelas dan semester ini
+        $mapels = DB::table('mapel_class_fst')
+            ->join('mata_pelajarans', 'mapel_class_fst.mapel_id', '=', 'mata_pelajarans.id')
+            ->where('mapel_class_fst.class_id', $classId)
+            ->where('mapel_class_fst.fst_id', $fstId)
+            ->where('mapel_class_fst.is_active', 1)
+            ->select('mata_pelajarans.*')
+            ->orderBy('mata_pelajarans.nama_mapel', 'asc')
+            ->get();
 
         // Generate kolom dinamis untuk setiap mata pelajaran
         $columns = [];
+        $activeMapelIds = $mapels->pluck('id')->toArray();
+        $inMapelIds = count($activeMapelIds) > 0 ? implode(',', $activeMapelIds) : '0';
+
         foreach ($mapels as $mapel) {
             $columns[] = "ROUND(COALESCE(AVG(CASE WHEN v.mapel_id = {$mapel->id} THEN
                 (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12 END), 0), 2) AS `{$mapel->nama_mapel}`";
@@ -43,7 +53,7 @@ class NilaiAkhirController extends Controller
                 " . implode(', ', $columns) . "
             FROM students AS s
             JOIN class AS c ON s.class_id = c.id
-            LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id =:fstId
+            LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id =:fstId AND v.mapel_id IN ($inMapelIds)
             LEFT JOIN mata_pelajarans AS mp ON v.mapel_id = mp.id
         ";
 
@@ -60,11 +70,21 @@ class NilaiAkhirController extends Controller
     }
     public function getStudentsAllScores($classId = null,  $fstId = null)
     {
-        // Ambil semua mata pelajaran untuk generate kolom dinamis
-        $mapels = DB::table('mata_pelajarans')->get();
+        // Ambil mata pelajaran yang aktif untuk kelas dan semester ini
+        $mapels = DB::table('mapel_class_fst')
+            ->join('mata_pelajarans', 'mapel_class_fst.mapel_id', '=', 'mata_pelajarans.id')
+            ->where('mapel_class_fst.class_id', $classId)
+            ->where('mapel_class_fst.fst_id', $fstId)
+            ->where('mapel_class_fst.is_active', 1)
+            ->select('mata_pelajarans.*')
+            ->orderBy('mata_pelajarans.nama_mapel', 'asc')
+            ->get();
 
         // Generate kolom dinamis untuk setiap mata pelajaran
         $columns = [];
+        $activeMapelIds = $mapels->pluck('id')->toArray();
+        $inMapelIds = count($activeMapelIds) > 0 ? implode(',', $activeMapelIds) : '0';
+
         foreach ($mapels as $mapel) {
             $columns[] = "ROUND(COALESCE(AVG(CASE WHEN v.mapel_id = {$mapel->id} THEN
                 (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12 END), 0), 2) AS `{$mapel->nama_mapel}`";
@@ -79,7 +99,7 @@ class NilaiAkhirController extends Controller
                 " . implode(', ', $columns) . "
             FROM students AS s
             JOIN class AS c ON s.class_id = c.id
-            LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id =:fstId
+            LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id =:fstId AND v.mapel_id IN ($inMapelIds)
             LEFT JOIN mata_pelajarans AS mp ON v.mapel_id = mp.id
         ";
 
@@ -107,8 +127,15 @@ class NilaiAkhirController extends Controller
             return response()->json(["message" => "Siswa tidak ditemukan"], 404);
         }
 
-        // Ambil semua mata pelajaran yang ada
-        $mapels = DB::table('mata_pelajarans')->get();
+        // Ambil mata pelajaran yang aktif untuk kelas dan semester ini
+        $mapels = DB::table('mapel_class_fst')
+            ->join('mata_pelajarans', 'mapel_class_fst.mapel_id', '=', 'mata_pelajarans.id')
+            ->where('mapel_class_fst.class_id', $classId)
+            ->where('mapel_class_fst.fst_id', $fstId)
+            ->where('mapel_class_fst.is_active', 1)
+            ->select('mata_pelajarans.*')
+            ->orderBy('mata_pelajarans.nama_mapel', 'asc')
+            ->get();
 
         // Inisialisasi hasil untuk 1 siswa
         $result = [

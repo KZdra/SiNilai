@@ -88,9 +88,16 @@
                     @if (Auth::user()->role_id == 1)
                         <li class="nav-item ">
                             <a href="{{ route('mapel.index') }}"
-                                class="nav-link {{ request()->is('mapel*') ? 'active' : '' }}">
+                                class="nav-link {{ request()->is('mapel') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-book"></i>
                                 <p>Data Mata Pelajaran</p>
+                            </a>
+                        </li>
+                        <li class="nav-item ">
+                            <a href="{{ route('mapel_mapping.index') }}"
+                                class="nav-link {{ request()->is('mapel-mapping*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-network-wired"></i>
+                                <p>Mapping Mapel Kelas</p>
                             </a>
                         </li>
                         <li class="nav-item ">

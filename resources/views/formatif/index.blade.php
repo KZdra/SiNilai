@@ -43,15 +43,17 @@
                             </form>
                         </div>
                     </div>
-                    <div class="card" id="pickMapel" style="display: none;">
+                    <div class="card" id="pickFst" style="display: none;">
                         <div class="card-body p-2">
-                            <form id="mapelForm">
+                            <form id="fstForm">
                                 <div class="form-group">
-                                    <label for="mapel_id">Mata Pelajaran</label>
-                                    <select name="mapel_id" id="mapel_id" class="form-control">
-                                        <option value="" selected disabled>Pilih Mata Pelajaran</option>
-                                        @foreach ($mapelList as $index => $mapel)
-                                            <option value="{{ $mapel->id }}">{{ $mapel->nama_mapel }}</option>
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <select name="fst_id" id="fst_id" class="form-control">
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        @foreach ($fstList as $index => $fst)
+                                            <option value="{{ $fst->id }}">
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran . '/' . ucfirst($fst->ta) }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -59,18 +61,13 @@
                             </form>
                         </div>
                     </div>
-                    <div class="card" id="pickFst" style="display: none;">
+                    <div class="card" id="pickMapel" style="display: none;">
                         <div class="card-body p-2">
-                            <form id="fstForm">
+                            <form id="mapelForm">
                                 <div class="form-group">
-                                    <label for="fst_id">Fase/Semester/Tahun Ajaran dan faseSemester</label>
-                                    <select name="fst_id" id="fst_id" class="form-control">
-                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran dan faseSemester</option>
-                                        @foreach ($fstList as $index => $fst)
-                                            <option value="{{ $fst->id }}">
-                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran.'/'.ucfirst($fst->ta) }}
-                                            </option>
-                                        @endforeach
+                                    <label for="mapel_id">Mata Pelajaran</label>
+                                    <select name="mapel_id" id="mapel_id" class="form-control">
+                                        <option value="" selected disabled>Loading Mata Pelajaran...</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-success">Submit</button>
@@ -196,8 +193,45 @@
                     return;
                 }
                 $("#pickClass").hide(300);
-                $("#pickMapel").show(300);
+                $("#pickFst").show(300);
             })
+
+            $('#fstForm').submit(function(e) {
+                e.preventDefault();
+                fst_id = $('#fst_id').val();
+                fst_name = $('#fst_id option:selected').text();
+                if (!fst_id) {
+                    SwalHelper.showError('Silahkan Pilih Fase/Semester/Tahun Ajaran Terlebih Dahulu');
+                    return;
+                }
+
+                // Fetch Mapel via AJAX
+                $.ajax({
+                    url: "{{ route('value.getMapel') }}",
+                    type: "GET",
+                    data: {
+                        class_id: class_id,
+                        fst_id: fst_id
+                    },
+                    success: function(response) {
+                        let html = '<option value="" selected disabled>Pilih Mata Pelajaran</option>';
+                        if(response.length === 0) {
+                            html = '<option value="" selected disabled>Belum ada mapel aktif untuk kelas ini di semester ini.</option>';
+                        } else {
+                            response.forEach(function(item) {
+                                html += `<option value="${item.id}">${item.nama_mapel}</option>`;
+                            });
+                        }
+                        $('#mapel_id').html(html);
+                        $("#pickFst").hide(300);
+                        $("#pickMapel").show(300);
+                    },
+                    error: function() {
+                        SwalHelper.showError('Gagal mengambil data Mata Pelajaran.');
+                    }
+                });
+            })
+
             $('#mapelForm').submit(function(e) {
                 e.preventDefault();
                 mapel_id = $('#mapel_id').val();
@@ -207,18 +241,7 @@
                     SwalHelper.showError('Silahkan Pilih Mata Pelajaran Terlebih Dahulu');
                     return;
                 }
-                $("#pickMapel").hide(300);
-                $("#pickFst").show();
 
-            })
-            $('#fstForm').submit(function(e) {
-                e.preventDefault();
-                fst_id = $('#fst_id').val();
-                fst_name = $('#fst_id option:selected').text();
-                if (!fst_id) {
-                    SwalHelper.showError('Silahkan Pilih Fase/Semester/Tahun Ajaran Terlebih Dahulu');
-                    return;
-                }
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
                     $('#valueTable').DataTable()
                         .destroy(); // Hancurkan DataTables lama sebelum memuat ulang

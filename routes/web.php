@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
         Route::get('nilai', [NilaiController::class, 'index'])->name('value.index');
         Route::post('nilai', [NilaiController::class, 'store'])->name('value.store');
         Route::get('nilai/get', [NilaiController::class, 'getData'])->name('value.getByClass');
+        Route::get('nilai/getmapel', [NilaiController::class, 'getMapel'])->name('value.getMapel');
         Route::get('nilai/template', [NilaiController::class, 'downloadTemplate'])->name('value.download');
         Route::get('nilai/export', [NilaiController::class, 'exportPDF'])->name('value.exportPDF');
         Route::post('nilai/import', [NilaiController::class, 'import'])->name('value.import');
@@ -82,6 +83,11 @@ Route::middleware('auth')->group(function () {
     Route::get('mapel/all', [MapelController::class, 'getAll'])->name('mapel.getAll');
     Route::put('mapel/{id}', [MapelController::class, 'update'])->name('mapel.update');
     Route::delete('mapel/{id}', [MapelController::class, 'destroy'])->name('mapel.destroy');
+    // Mapel Mapping
+    Route::get('mapel-mapping', [App\Http\Controllers\MapelMappingController::class, 'index'])->name('mapel_mapping.index');
+    Route::post('mapel-mapping/toggle', [App\Http\Controllers\MapelMappingController::class, 'toggleMapel'])->name('mapel_mapping.toggle');
+    Route::post('mapel-mapping/copy', [App\Http\Controllers\MapelMappingController::class, 'copyFromPrevious'])->name('mapel_mapping.copy');
+    Route::post('mapel-mapping/activate-all', [App\Http\Controllers\MapelMappingController::class, 'activateAll'])->name('mapel_mapping.activate_all');
     //DataSekolah
     Route::get('datasekolah',[DataSekolahContoller::class,'index'])->name('datasekolah.index');
     Route::post('datasekolah',[DataSekolahContoller::class,'store'])->name('datasekolah.store');

@@ -63,6 +63,23 @@ class NilaiController extends Controller
             ->get();
         return response()->json(['data' => $data], 200);
     }
+
+    public function getMapel(Request $request)
+    {
+        $class_id = $request->class_id;
+        $fst_id = $request->fst_id;
+
+        $mapels = DB::table('mapel_class_fst')
+            ->join('mata_pelajarans', 'mapel_class_fst.mapel_id', '=', 'mata_pelajarans.id')
+            ->where('mapel_class_fst.class_id', $class_id)
+            ->where('mapel_class_fst.fst_id', $fst_id)
+            ->where('mapel_class_fst.is_active', 1)
+            ->select('mata_pelajarans.id', 'mata_pelajarans.nama_mapel')
+            ->orderBy('mata_pelajarans.nama_mapel', 'asc')
+            ->get();
+
+        return response()->json($mapels);
+    }
     public function store(Request $request)
     {
 

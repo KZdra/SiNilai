@@ -63,8 +63,8 @@
                                 <label for="fase">Fase</label>
                                 <select name="fase" id="fase" class="form-control">
                                     <option value="" selected disabled>Pilih Fase Pembelajaran</option>
-                                    <option value="e">E</option>
-                                    <option value="f">F</option>
+                                    <option value="E">E</option>
+                                    <option value="F">F</option>
                                 </select>
                             </div>
                             <div class="form-group">
