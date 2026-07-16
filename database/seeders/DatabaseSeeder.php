@@ -15,18 +15,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = [
-            [
-                'name' => 'GuruEx',
-                'email' => 'admin@x.com',
-                'password' => Hash::make('admin'),
-                'created_at' => now(),
-            ]
-        ];
-
-        DB::table('users')->insert($users);
-
+        $this->call(RoleSeeder::class);
+        $this->call(AccountSeeder::class);
         $this->call(ClassSeeder::class);
         $this->call(MapelSeeder::class);
+        $this->call(DummyDataSeeder::class);
     }
 }

@@ -25,10 +25,35 @@
                             <form id="filterForm">
                                 <div class="form-group">
                                     <label for="class_id">Kelas</label>
-                                    <select name="class_id" id="class_id" class="form-control">
-                                        <option value="" selected disabled>Pilih Kelas</option>
-                                        @foreach ($classList as $index => $class)
-                                            <option value="{{ $class->id }}">{{ $class->class_name }}</option>
+                                    @if ($className)
+                                        <select name="class_id" id="class_id" class="form-control" disabled>
+                                            <option value="{{ Auth::user()->class_id }}" selected>{{ $className }}
+                                            </option>
+                                        </select>
+                                    @else
+                                        <select name="class_id" id="class_id" class="form-control">
+                                            <option value="" selected disabled>Pilih Kelas</option>
+                                            @foreach ($classList as $index => $class)
+                                                <option value="{{ $class->id }}">{{ $class->class_name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                </div>
+                                <button type="submit" class="btn btn-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card" id="pickFst" style="display: none;">
+                        <div class="card-body p-2">
+                            <form id="fstForm">
+                                <div class="form-group">
+                                    <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
+                                    <select name="fst_id" id="fst_id" class="form-control">
+                                        <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
+                                        @foreach ($fstList as $index => $fst)
+                                            <option value="{{ $fst->id }}">
+                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran . '/' . ucfirst($fst->ta) }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -42,10 +67,7 @@
                                 <div class="form-group">
                                     <label for="mapel_id">Mata Pelajaran</label>
                                     <select name="mapel_id" id="mapel_id" class="form-control">
-                                        <option value="" selected disabled>Pilih Mata Pelajaran</option>
-                                        @foreach ($mapelList as $index => $mapel)
-                                            <option value="{{ $mapel->id }}">{{ $mapel->nama_mapel }}</option>
-                                        @endforeach
+                                        <option value="" selected disabled>Loading Mata Pelajaran...</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-success">Submit</button>
@@ -56,6 +78,7 @@
                         <div class="card-header">
                             <h5>Kelas: <span id="ClassSel"></span></h5>
                             <h5>Mata Pelajaran: <span id="MapelSel"></span></h5>
+                            <h5>Fase/Semester/Tahun: <span id="FstSel"></span></h5>
                         </div>
                         <div class="card-body p-2">
 
@@ -65,10 +88,19 @@
                                         <th>No</th>
                                         <th>Siswa</th>
                                         <th>Kelas</th>
-                                        <th>Nilai Harian</th>
+                                        <th>Sumatif 1</th>
+                                        <th>Sumatif 2</th>
+                                        <th>Sumatif 3</th>
+                                        <th>Sumatif 4</th>
+                                        <th>Sumatif 5</th>
+                                        <th>Sumatif 6</th>
+                                        <th>Sumatif 7</th>
+                                        <th>Sumatif 8</th>
+                                        <th>Sumatif 9</th>
+                                        <th>Sumatif 10</th>
                                         <th>Nilai STS</th>
                                         <th>Nilai SAS</th>
-                                        <th>Rata Rata</th>
+                                        <th>Nilai Akhir</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -98,20 +130,74 @@
                             <input type="hidden" id="value_id">
                             <input type="hidden" id="student_id">
                             <input type="hidden" id="mapel_id">
+                            <input type="hidden" id="fst_id">
                             <div class="form-group">
-                                <label for="value_daily">Nilai Harian</label>
+                                <label for="value_daily">Sumatif 1</label>
                                 <input type="number" max="100" inputmode="numeric" class="form-control"
-                                    id="value_daily" name="value_daily" required>
+                                    id="value_daily" name="value_daily">
+                            </div>
+                            <div class="form-group">
+                                <label for="value_daily_2">Sumatif 2</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_2" name="value_daily_2">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_3">Sumatif3</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_3" name="value_daily_3">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_4">Sumatif 4</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_4" name="value_daily_4">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_5">Sumatif 5</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_5" name="value_daily_5">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_6">Sumatif 6</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_6" name="value_daily_6">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_7">Sumatif 7</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_7" name="value_daily_7">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_8">Sumatif 8</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_8" name="value_daily_8">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_9">Sumatif 9</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_9" name="value_daily_9">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="value_daily_10">Sumatif 10</label>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_daily_10" name="value_daily_10">
                             </div>
                             <div class="form-group">
                                 <label for="value_sts">Nilai STS</label>
-                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_sts"
-                                    name="value_sts" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_sts" name="value_sts">
                             </div>
                             <div class="form-group">
                                 <label for="value_sas">Nilai SAS</label>
-                                <input type="number" max="100" inputmode="numeric" class="form-control" id="value_sas"
-                                    name="value_sas" required>
+                                <input type="number" max="100" inputmode="numeric" class="form-control"
+                                    id="value_sas" name="value_sas">
                             </div>
 
                         </div>
@@ -165,8 +251,10 @@
             // State
             let class_id = null;
             let mapel_id = null;
-            let class_name = ''; // Simpan nama kelas
-            let mapel_name = ''; // Simpan nama mapel
+            let fst_id = null;
+            let class_name = '';
+            let mapel_name = '';
+            let fst_name = '';
             // End Of State
             $('#upCsvBtn').hide()
             // NIlai Section (Filter)
@@ -182,8 +270,46 @@
                     return;
                 }
                 $("#pickClass").hide(300);
-                $("#pickMapel").show(300);
+                $("#pickFst").show(300);
             })
+
+            $('#fstForm').submit(function(e) {
+                e.preventDefault();
+                fst_id = $('#fst_id').val();
+                fst_name = $('#fst_id option:selected').text();
+
+                if (!fst_id) {
+                    SwalHelper.showError('Silahkan Pilih Fase/Semester/Tahun Ajaran Terlebih Dahulu');
+                    return;
+                }
+
+                // Ambil daftar Mapel yang aktif via AJAX
+                $.ajax({
+                    url: "{{ route('value.getMapel') }}",
+                    type: "GET",
+                    data: {
+                        class_id: class_id,
+                        fst_id: fst_id
+                    },
+                    success: function(response) {
+                        let html = '<option value="" selected disabled>Pilih Mata Pelajaran</option>';
+                        if(response.length === 0) {
+                            html = '<option value="" selected disabled>Belum ada mapel aktif untuk kelas ini di semester ini.</option>';
+                        } else {
+                            response.forEach(function(item) {
+                                html += `<option value="${item.id}">${item.nama_mapel}</option>`;
+                            });
+                        }
+                        $('#mapel_id').html(html);
+                        $("#pickFst").hide(300);
+                        $("#pickMapel").show(300);
+                    },
+                    error: function() {
+                        SwalHelper.showError('Gagal mengambil data Mata Pelajaran.');
+                    }
+                });
+            })
+
             $('#mapelForm').submit(function(e) {
                 e.preventDefault();
                 mapel_id = $('#mapel_id').val();
@@ -195,9 +321,11 @@
                 }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
-                    $('#valueTable').DataTable().destroy(); // Hancurkan DataTables lama sebelum memuat ulang
+                    $('#valueTable').DataTable()
+                        .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
                 }
                 $("#MapelSel").text(mapel_name);
+                $("#FstSel").text(fst_name);
                 $("#ClassSel").text(class_name);
 
                 $('#valueTable').DataTable({
@@ -207,7 +335,8 @@
                         "type": "GET",
                         "data": {
                             class_id: class_id,
-                            mapel_id: mapel_id
+                            mapel_id: mapel_id,
+                            fst_id: fst_id,
                         },
                         "dataSrc": 'data'
                     },
@@ -225,6 +354,69 @@
                         },
                         {
                             "data": "value_daily",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_2",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_3",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_4",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_5",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_6",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_7",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_8",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_9",
+                            "render": function(data) {
+                                return data ? Math.round(data) :
+                                    '-'; // Jika null, tampilkan "-"
+                            }
+                        },
+                        {
+                            "data": "value_daily_10",
                             "render": function(data) {
                                 return data ? Math.round(data) :
                                     '-'; // Jika null, tampilkan "-"
@@ -280,8 +472,7 @@
                     ]
                 });
                 $('#upCsvBtn').show();
-                $("#pickMapel").hide(300);
-
+                $('#pickFst').hide();
                 $("#resultTable").show(300);
             })
             // Init
@@ -292,7 +483,17 @@
                 $('#value_id').val('');
                 $('#mapel_id').val(mapel_id);
                 $('#student_id').val(student_id);
+                $('#fst_id').val(fst_id);
                 $('#value_daily').val('');
+                $('#value_daily_2').val('');
+                $('#value_daily_3').val('');
+                $('#value_daily_4').val('');
+                $('#value_daily_5').val('');
+                $('#value_daily_6').val('');
+                $('#value_daily_7').val('');
+                $('#value_daily_8').val('');
+                $('#value_daily_9').val('');
+                $('#value_daily_10').val('');
                 $('#value_sts').val('');
                 $('#value_sas').val('');
                 $('#valueModalLabel').text('Input Nilai');
@@ -312,7 +513,17 @@
                     data: {
                         mapel_id: $('#mapel_id').val(),
                         student_id: $('#student_id').val(),
+                        fst_id: $('#fst_id').val(),
                         value_daily: $('#value_daily').val(),
+                        value_daily_2: $('#value_daily_2').val(),
+                        value_daily_3: $('#value_daily_3').val(),
+                        value_daily_4: $('#value_daily_4').val(),
+                        value_daily_5: $('#value_daily_5').val(),
+                        value_daily_6: $('#value_daily_6').val(),
+                        value_daily_7: $('#value_daily_7').val(),
+                        value_daily_8: $('#value_daily_8').val(),
+                        value_daily_9: $('#value_daily_9').val(),
+                        value_daily_10: $('#value_daily_10').val(),
                         value_sts: $('#value_sts').val(),
                         value_sas: $('#value_sas').val(),
                         _token: "{{ csrf_token() }}"
@@ -342,14 +553,33 @@
                 let id = $(this).data('id');
                 let student_id = $(this).data('student_id');
                 let value_daily = $(this).data('value_daily');
+                let value_daily_2 = $(this).data('value_daily_2');
+                let value_daily_3 = $(this).data('value_daily_3');
+                let value_daily_4 = $(this).data('value_daily_4');
+                let value_daily_5 = $(this).data('value_daily_5');
+                let value_daily_6 = $(this).data('value_daily_6');
+                let value_daily_7 = $(this).data('value_daily_7');
+                let value_daily_8 = $(this).data('value_daily_8');
+                let value_daily_9 = $(this).data('value_daily_9');
+                let value_daily_10 = $(this).data('value_daily_10');
                 let value_sts = $(this).data('value_sts');
                 let value_sas = $(this).data('value_sas');
 
 
                 $('#value_id').val(id);
                 $('#mapel_id').val(mapel_id);
+                $('#fst_id').val(fst_id);
                 $('#student_id').val(student_id);
                 $('#value_daily').val(value_daily);
+                $('#value_daily_2').val(value_daily_2);
+                $('#value_daily_3').val(value_daily_3);
+                $('#value_daily_4').val(value_daily_4);
+                $('#value_daily_5').val(value_daily_5);
+                $('#value_daily_6').val(value_daily_6);
+                $('#value_daily_7').val(value_daily_7);
+                $('#value_daily_8').val(value_daily_8);
+                $('#value_daily_9').val(value_daily_9);
+                $('#value_daily_10').val(value_daily_10);
                 $('#value_sts').val(value_sts);
                 $('#value_sas').val(value_sas);
                 $('#valueModalLabel').text('Edit Nilai');
@@ -402,12 +632,14 @@
             $('#upCsvBtn').click(function() {
                 $('#csv').val(null);
                 $('#mapel_id').val(mapel_id);
+                $('#fst_id').val(fst_id);
                 $('#upCsvModal').modal('show');
             });
             $('#csvForm').on('submit', function(e) {
                 e.preventDefault();
                 let formData = new FormData(this);
                 formData.append('mapel_id', mapel_id);
+                formData.append('fst_id', fst_id);
 
 
                 $.ajax({
