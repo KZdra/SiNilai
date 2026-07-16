@@ -20,5 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ClassSeeder::class);
         $this->call(MapelSeeder::class);
         $this->call(DummyDataSeeder::class);
+        $this->call(SettingSeeder::class);
     }
 }

@@ -9,6 +9,7 @@
                     <h1 class="m-0">{{ __('Input Nilai') }}</h1>
                     <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
                     <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV Nilai Siswa</button>
+                    <button class="mt-2 btn btn-success" id="saveAllBtn" style="display: none">Simpan Semua Nilai</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -328,17 +329,55 @@
                 $("#FstSel").text(fst_name);
                 $("#ClassSel").text(class_name);
 
+                let isAllNew = false;
+                
+                function renderInput(data, fieldName, row) {
+                    let val = data !== null && data !== undefined ? Math.round(data) : '';
+                    let textVal = val !== '' ? val : '-';
+                    let textClass = isAllNew ? 'd-none' : '';
+                    let inputClass = isAllNew ? '' : 'd-none';
+                    return `
+                        <span class="val-text ${textClass}">${textVal}</span>
+                        <input type="number" max="100" class="form-control form-control-sm val-input ${inputClass}" data-field="${fieldName}" value="${val}" style="min-width: 70px;">
+                    `;
+                }
+
                 $('#valueTable').DataTable({
-                    "responsive": true,
+                    "responsive": false,
+                    "scrollX": true,
                     "ajax": {
-                        "url": "{{ route('value.getByClass') }}", // Ganti dengan URL API Anda
+                        "url": "{{ route('value.getByClass') }}",
                         "type": "GET",
                         "data": {
                             class_id: class_id,
                             mapel_id: mapel_id,
                             fst_id: fst_id,
                         },
-                        "dataSrc": 'data'
+                        "dataSrc": function(json) {
+                            let allNew = true;
+                            let anyNew = false;
+                            
+                            if (json.data && json.data.length > 0) {
+                                json.data.forEach(row => {
+                                    if (row.value_id) allNew = false;
+                                    else anyNew = true;
+                                });
+                                isAllNew = allNew && anyNew;
+                            } else {
+                                isAllNew = false;
+                            }
+                            
+                            if (isAllNew) {
+                                $('#saveAllBtn').show();
+                            } else {
+                                $('#saveAllBtn').hide();
+                            }
+                            
+                            return json.data;
+                        }
+                    },
+                    "createdRow": function(row, data, dataIndex) {
+                        $(row).attr('data-student_id', data.student_id);
                     },
                     "columns": [{
                             "data": null,
@@ -346,94 +385,20 @@
                                 return meta.row + 1; // Index + 1
                             }
                         },
-                        {
-                            "data": "student_name"
-                        },
-                        {
-                            "data": "class_name"
-                        },
-                        {
-                            "data": "value_daily",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_2",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_3",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_4",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_5",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_6",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_7",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_8",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_9",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_daily_10",
-                            "render": function(data) {
-                                return data ? Math.round(data) :
-                                    '-'; // Jika null, tampilkan "-"
-                            }
-                        },
-                        {
-                            "data": "value_sts",
-                            "render": function(data) {
-                                return data ? Math.round(data) : '-';
-                            }
-                        },
-                        {
-                            "data": "value_sas",
-                            "render": function(data) {
-                                return data ? Math.round(data) : '-';
-                            }
-                        },
+                        { "data": "student_name" },
+                        { "data": "class_name" },
+                        { "data": "value_daily", "render": function(data, type, row) { return renderInput(data, 'value_daily', row); } },
+                        { "data": "value_daily_2", "render": function(data, type, row) { return renderInput(data, 'value_daily_2', row); } },
+                        { "data": "value_daily_3", "render": function(data, type, row) { return renderInput(data, 'value_daily_3', row); } },
+                        { "data": "value_daily_4", "render": function(data, type, row) { return renderInput(data, 'value_daily_4', row); } },
+                        { "data": "value_daily_5", "render": function(data, type, row) { return renderInput(data, 'value_daily_5', row); } },
+                        { "data": "value_daily_6", "render": function(data, type, row) { return renderInput(data, 'value_daily_6', row); } },
+                        { "data": "value_daily_7", "render": function(data, type, row) { return renderInput(data, 'value_daily_7', row); } },
+                        { "data": "value_daily_8", "render": function(data, type, row) { return renderInput(data, 'value_daily_8', row); } },
+                        { "data": "value_daily_9", "render": function(data, type, row) { return renderInput(data, 'value_daily_9', row); } },
+                        { "data": "value_daily_10", "render": function(data, type, row) { return renderInput(data, 'value_daily_10', row); } },
+                        { "data": "value_sts", "render": function(data, type, row) { return renderInput(data, 'value_sts', row); } },
+                        { "data": "value_sas", "render": function(data, type, row) { return renderInput(data, 'value_sas', row); } },
                         {
                             "data": "average_value",
                             "render": function(data) {
@@ -443,30 +408,28 @@
                         {
                             "data": null,
                             "render": function(data, type, row) {
-                                let exportUrl =
-                                    "{{ route('value.exportPDF', ['student_id' => '__STUDENT_ID__', 'value_id' => '__VALUE_ID__']) }}";
-                                exportUrl = exportUrl.replace('__STUDENT_ID__', row
-                                    .student_id).replace('__VALUE_ID__', row.value_id);
-                                if (row.value_id) {
-                                    return `
-                        <div class="btn-group">
-                                                <button type="button" class="btn btn-info dropdown-toggle"
-                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    Aksi
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-right">
-                                                    <button class="dropdown-item editNilaiBtn" data-id='${row.value_id}' data-student_id='${row.student_id}' data-value_daily='${Math.round(row.value_daily)}' data-value_sts='${Math.round(row.value_sts)}' data-value_sas='${Math.round(row.value_sas)}' ><i
-                                                            class="fas fa-pen text-info"></i>&nbsp;Edit</button>
-                                                    <div class="dropdown-divider"></div>
-                                                    <button class="dropdown-item text-danger delNilaiBtn" data-id='${row.value_id}'><i
-                                                            class="fas fa-trash text-danger"></i>&nbsp;Delete</button>
-                                                </div>
-                                            </div>
-                    `;
-                                } else {
-                                    return `<button class="btn btn-success inputNilaiBtn" data-student_id='${row.student_id}'>Input</button>`
+                                if (isAllNew) {
+                                    return `<span class="text-muted"><i class="fas fa-edit"></i> Edit Semua</span>`;
                                 }
 
+                                if (row.value_id) {
+                                    return `
+                                        <div class="d-flex" style="gap: 5px;">
+                                            <button type="button" class="btn btn-sm btn-info editRowBtn" data-id='${row.value_id}' data-student_id='${row.student_id}'><i class="fas fa-pen"></i> Edit</button>
+                                            <button type="button" class="btn btn-sm btn-success saveRowBtn d-none" data-id='${row.value_id}' data-student_id='${row.student_id}'><i class="fas fa-save"></i> Save</button>
+                                            <button type="button" class="btn btn-sm btn-secondary cancelRowBtn d-none"><i class="fas fa-times"></i></button>
+                                            <button type="button" class="btn btn-sm btn-danger delNilaiBtn" data-id='${row.value_id}'><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    `;
+                                } else {
+                                    return `
+                                        <div class="d-flex" style="gap: 5px;">
+                                            <button type="button" class="btn btn-sm btn-primary inputRowBtn" data-student_id='${row.student_id}'><i class="fas fa-plus"></i> Input</button>
+                                            <button type="button" class="btn btn-sm btn-success saveRowBtn d-none" data-id='' data-student_id='${row.student_id}'><i class="fas fa-save"></i> Save</button>
+                                            <button type="button" class="btn btn-sm btn-secondary cancelRowBtn d-none"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    `;
+                                }
                             }
                         }
                     ]
@@ -477,57 +440,120 @@
             })
             // Init
             ///
-            // Tampilkan Modal Input Nilai
-            $("#valueTable").on("click", ".inputNilaiBtn", function() {
-                let student_id = $(this).data('student_id');
-                $('#value_id').val('');
-                $('#mapel_id').val(mapel_id);
-                $('#student_id').val(student_id);
-                $('#fst_id').val(fst_id);
-                $('#value_daily').val('');
-                $('#value_daily_2').val('');
-                $('#value_daily_3').val('');
-                $('#value_daily_4').val('');
-                $('#value_daily_5').val('');
-                $('#value_daily_6').val('');
-                $('#value_daily_7').val('');
-                $('#value_daily_8').val('');
-                $('#value_daily_9').val('');
-                $('#value_daily_10').val('');
-                $('#value_sts').val('');
-                $('#value_sas').val('');
-                $('#valueModalLabel').text('Input Nilai');
-                $('#valueModal').modal('show');
+            // Save All Actions
+            $("#saveAllBtn").click(function() {
+                let btn = $(this);
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+                
+                let requests = [];
+                
+                $('#valueTable tbody tr').each(function() {
+                    let tr = $(this);
+                    let student_id = tr.attr('data-student_id');
+                    if (!student_id) return;
+                    
+                    let data = {
+                        mapel_id: mapel_id,
+                        student_id: student_id,
+                        fst_id: fst_id,
+                        _token: "{{ csrf_token() }}"
+                    };
+                    
+                    let hasValue = false;
+                    tr.find('.val-input').each(function() {
+                        let field = $(this).data('field');
+                        let val = $(this).val();
+                        if (val !== '') {
+                            hasValue = true;
+                        }
+                        data[field] = val;
+                    });
+                    
+                    if (hasValue) {
+                        requests.push($.ajax({
+                            url: "{{ route('value.store') }}",
+                            method: "POST",
+                            data: data
+                        }));
+                    }
+                });
+                
+                if (requests.length === 0) {
+                    Swal.fire('Info', 'Tidak ada nilai yang diisi.', 'info');
+                    btn.prop('disabled', false).html('Simpan Semua Nilai');
+                    return;
+                }
+                
+                Promise.all(requests).then(function(responses) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil menyimpan semua nilai!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    $('#valueTable').DataTable().ajax.reload(null, false);
+                }).catch(function(err) {
+                    console.log(err);
+                    Swal.fire('Error', 'Terjadi kesalahan saat menyimpan sebagian/semua nilai.', 'error');
+                    $('#valueTable').DataTable().ajax.reload(null, false);
+                }).finally(function() {
+                    btn.prop('disabled', false).html('Simpan Semua Nilai');
+                });
+            });
+            ///
+            // Inline Edit Actions
+            $("#valueTable").on("click", ".editRowBtn, .inputRowBtn", function() {
+                let tr = $(this).closest('tr');
+                tr.find('.val-text').addClass('d-none');
+                tr.find('.val-input').removeClass('d-none');
+                
+                tr.find('.editRowBtn, .inputRowBtn, .delNilaiBtn').addClass('d-none');
+                tr.find('.saveRowBtn, .cancelRowBtn').removeClass('d-none');
             });
 
-            // Simpan atau Update Input
-            $('#valueForm').submit(function(e) {
-                e.preventDefault();
-                let id = $('#value_id').val();
+            $("#valueTable").on("click", ".cancelRowBtn", function() {
+                let tr = $(this).closest('tr');
+                tr.find('.val-input').addClass('d-none');
+                tr.find('.val-text').removeClass('d-none');
+                
+                // reset values
+                tr.find('.val-input').each(function() {
+                    let textVal = $(this).siblings('.val-text').text();
+                    $(this).val(textVal === '-' ? '' : textVal);
+                });
+
+                tr.find('.editRowBtn, .inputRowBtn, .delNilaiBtn').removeClass('d-none');
+                tr.find('.saveRowBtn, .cancelRowBtn').addClass('d-none');
+            });
+
+            $("#valueTable").on("click", ".saveRowBtn", function() {
+                let tr = $(this).closest('tr');
+                let btn = $(this);
+                let id = btn.data('id');
+                let student_id = btn.data('student_id');
+                
                 let url = id ? `/nilai/${id}` : "{{ route('value.store') }}";
                 let method = id ? "PUT" : "POST";
-
+                
+                let data = {
+                    mapel_id: mapel_id,
+                    student_id: student_id,
+                    fst_id: fst_id,
+                    _token: "{{ csrf_token() }}"
+                };
+                
+                tr.find('.val-input').each(function() {
+                    let field = $(this).data('field');
+                    let val = $(this).val();
+                    data[field] = val;
+                });
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                
                 $.ajax({
                     url: url,
                     method: method,
-                    data: {
-                        mapel_id: $('#mapel_id').val(),
-                        student_id: $('#student_id').val(),
-                        fst_id: $('#fst_id').val(),
-                        value_daily: $('#value_daily').val(),
-                        value_daily_2: $('#value_daily_2').val(),
-                        value_daily_3: $('#value_daily_3').val(),
-                        value_daily_4: $('#value_daily_4').val(),
-                        value_daily_5: $('#value_daily_5').val(),
-                        value_daily_6: $('#value_daily_6').val(),
-                        value_daily_7: $('#value_daily_7').val(),
-                        value_daily_8: $('#value_daily_8').val(),
-                        value_daily_9: $('#value_daily_9').val(),
-                        value_daily_10: $('#value_daily_10').val(),
-                        value_sts: $('#value_sts').val(),
-                        value_sas: $('#value_sas').val(),
-                        _token: "{{ csrf_token() }}"
-                    },
+                    data: data,
                     success: function(response) {
                         Swal.fire({
                             icon: 'success',
@@ -535,55 +561,14 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
-                        setTimeout(function() {
-                            $('#valueModal').modal('hide');
-                            $('#valueTable').DataTable().ajax.reload(null, false);
-                        }, 2000);
-
+                        $('#valueTable').DataTable().ajax.reload(null, false);
                     },
                     error: function(res) {
-                        console.log(res)
+                        console.log(res);
                         Swal.fire('Error', 'Terjadi kesalahan, coba lagi!', 'error');
+                        btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save');
                     }
                 });
-            });
-
-            // Tampilkan Modal Edit Nilai
-            $("#valueTable").on("click", ".editNilaiBtn", function() {
-                let id = $(this).data('id');
-                let student_id = $(this).data('student_id');
-                let value_daily = $(this).data('value_daily');
-                let value_daily_2 = $(this).data('value_daily_2');
-                let value_daily_3 = $(this).data('value_daily_3');
-                let value_daily_4 = $(this).data('value_daily_4');
-                let value_daily_5 = $(this).data('value_daily_5');
-                let value_daily_6 = $(this).data('value_daily_6');
-                let value_daily_7 = $(this).data('value_daily_7');
-                let value_daily_8 = $(this).data('value_daily_8');
-                let value_daily_9 = $(this).data('value_daily_9');
-                let value_daily_10 = $(this).data('value_daily_10');
-                let value_sts = $(this).data('value_sts');
-                let value_sas = $(this).data('value_sas');
-
-
-                $('#value_id').val(id);
-                $('#mapel_id').val(mapel_id);
-                $('#fst_id').val(fst_id);
-                $('#student_id').val(student_id);
-                $('#value_daily').val(value_daily);
-                $('#value_daily_2').val(value_daily_2);
-                $('#value_daily_3').val(value_daily_3);
-                $('#value_daily_4').val(value_daily_4);
-                $('#value_daily_5').val(value_daily_5);
-                $('#value_daily_6').val(value_daily_6);
-                $('#value_daily_7').val(value_daily_7);
-                $('#value_daily_8').val(value_daily_8);
-                $('#value_daily_9').val(value_daily_9);
-                $('#value_daily_10').val(value_daily_10);
-                $('#value_sts').val(value_sts);
-                $('#value_sas').val(value_sas);
-                $('#valueModalLabel').text('Edit Nilai');
-                $('#valueModal').modal('show');
             });
 
             // Delete Action

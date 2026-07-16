@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 //     return view('welcome');
 // });
 
+Route::get('auth/redirect', [\App\Http\Controllers\SsoController::class, 'redirect'])->name('sso.login');
+Route::get('auth/callback', [\App\Http\Controllers\SsoController::class, 'callback'])->name('sso.callback');
+
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('es',[PeskulController::class,'getdata']);
@@ -104,6 +107,9 @@ Route::middleware('auth')->group(function () {
     Route::post('muser',[UserController::class,'store'])->name('muser.store');
     Route::put('muser/{id}',[UserController::class,'update'])->name('muser.update');
     Route::delete('muser/{id}',[UserController::class,'destroy'])->name('muser.destroy');
+
+    Route::get('settings/auth', [App\Http\Controllers\SettingController::class, 'editAuth'])->name('settings.auth');
+    Route::post('settings/auth', [App\Http\Controllers\SettingController::class, 'updateAuth'])->name('settings.auth.update');
     });
     // Eskul
     Route::get('meskul',[EskulController::class,'index'])->name('meskul.index');

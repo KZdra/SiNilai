@@ -18,10 +18,10 @@ class DummyDataSeeder extends Seeder
 
         // 1. Insert Fase/Semester/Tahun Ajaran
         $fstId = DB::table('m_fst_pembelajaran')->insertGetId([
-            'fase' => 'Fase F',
-            'semester' => 'Ganjil',
+            'fase' => 'E',
+            'semester' => 'I (Satu)',
             'tahun_ajaran' => '2024/2025',
-            'ta' => 'tengah',
+            'ta' => 'awal',
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now()
         ]);

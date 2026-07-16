@@ -140,6 +140,15 @@
                                 </p>
                             </a>
                         </li>
+                        <li class="nav-item ">
+                            <a href="{{ route('settings.auth') }}"
+                                class="nav-link {{ request()->is('settings/auth*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-shield-alt"></i>
+                                <p>
+                                    {{ __('Pengaturan Auth') }}
+                                </p>
+                            </a>
+                        </li>
                     @endif
                 </ul>
 

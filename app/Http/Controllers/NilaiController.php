@@ -52,7 +52,24 @@ class NilaiController extends Controller
             'v.value_daily_10',
             'v.value_sts',
             'v.value_sas',
-            DB::raw('ROUND((COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) / 12, 2) as average_value')
+            DB::raw('ROUND(
+                (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) 
+                / 
+                NULLIF(
+                    IF(v.value_daily IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_2 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_3 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_4 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_5 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_6 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_7 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_8 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_9 IS NOT NULL, 1, 0) + 
+                    IF(v.value_daily_10 IS NOT NULL, 1, 0) + 
+                    IF(v.value_sts IS NOT NULL, 1, 0) + 
+                    IF(v.value_sas IS NOT NULL, 1, 0), 
+                0)
+            , 2) as average_value')
         )
             ->Join('class as c', 's.class_id', '=', 'c.id')
             ->leftJoin('values as v', function ($join) use ($mp_id,$fst_id) {
@@ -85,10 +102,10 @@ class NilaiController extends Controller
 
         $request->validate([
             'student_id' => 'required|integer',
-            'value_daily' => 'required|numeric|max_digits:3|max:100',
-            'value_daily_2' => 'required|numeric|max_digits:3|max:100',
-            'value_sts' => 'required|numeric|max_digits:3|max:100',
-            'value_sas' => 'required|numeric|max_digits:3|max:100',
+            'value_daily' => 'nullable|numeric|max_digits:3|max:100',
+            'value_daily_2' => 'nullable|numeric|max_digits:3|max:100',
+            'value_sts' => 'nullable|numeric|max_digits:3|max:100',
+            'value_sas' => 'nullable|numeric|max_digits:3|max:100',
         ]);
         DB::beginTransaction();
         try {
@@ -97,18 +114,18 @@ class NilaiController extends Controller
                 'mapel_id' => $request->mapel_id,
                 'fst_id' => $request->fst_id,
                 'student_id' => $request->student_id,
-                'value_daily' => $request->value_daily ?? 0,
-                'value_daily_2' => $request->value_daily_2 ?? 0,
-                'value_daily_3' => $request->value_daily_3 ?? 0,
-                'value_daily_4' => $request->value_daily_4 ?? 0,
-                'value_daily_5' => $request->value_daily_5 ?? 0,
-                'value_daily_6' => $request->value_daily_6 ?? 0,
-                'value_daily_7' => $request->value_daily_7 ?? 0,
-                'value_daily_8' => $request->value_daily_8 ?? 0,
-                'value_daily_9' => $request->value_daily_9 ?? 0,
-                'value_daily_10' => $request->value_daily_10 ?? 0,
-                'value_sts' => $request->value_sts ?? 0,
-                'value_sas' => $request->value_sas ?? 0,
+                'value_daily' => $request->value_daily ,
+                'value_daily_2' => $request->value_daily_2 ,
+                'value_daily_3' => $request->value_daily_3 ,
+                'value_daily_4' => $request->value_daily_4 ,
+                'value_daily_5' => $request->value_daily_5 ,
+                'value_daily_6' => $request->value_daily_6 ,
+                'value_daily_7' => $request->value_daily_7 ,
+                'value_daily_8' => $request->value_daily_8 ,
+                'value_daily_9' => $request->value_daily_9 ,
+                'value_daily_10' => $request->value_daily_10 ,
+                'value_sts' => $request->value_sts ,
+                'value_sas' => $request->value_sas ,
                 'created_at' => Carbon::now()
             ]);
             DB::commit();
@@ -123,26 +140,26 @@ class NilaiController extends Controller
 
         $request->validate([
             'student_id' => 'required|integer',
-            'value_daily' => 'required|integer|max_digits:3',
-            'value_daily_2' => 'required|integer|max_digits:3',
-            'value_sts' => 'required|integer|max_digits:3',
-            'value_sas' => 'required|integer|max_digits:3',
+            'value_daily' => 'nullable|integer|max_digits:3',
+            'value_daily_2' => 'nullable|integer|max_digits:3',
+            'value_sts' => 'nullable|integer|max_digits:3',
+            'value_sas' => 'nullable|integer|max_digits:3',
         ]);
         DB::beginTransaction();
         try {
             DB::table('values')->where('id', '=', $id)->where('student_id', '=', $request->student_id)->where('mapel_id', '=', $request->mapel_id)->where('fst_id', $request->fst_id)->where('mapel_id', '=', $request->mapel_id)->where('class_id', $request->class_id)->update([
-                'value_daily' => $request->value_daily ?? 0,
-                'value_daily_2' => $request->value_daily_2 ?? 0,
-                'value_daily_3' => $request->value_daily_3 ?? 0,
-                'value_daily_4' => $request->value_daily_4 ?? 0,
-                'value_daily_5' => $request->value_daily_5 ?? 0,
-                'value_daily_6' => $request->value_daily_6 ?? 0,
-                'value_daily_7' => $request->value_daily_7 ?? 0,
-                'value_daily_8' => $request->value_daily_8 ?? 0,
-                'value_daily_9' => $request->value_daily_9 ?? 0,
-                'value_daily_10' => $request->value_daily_10 ?? 0,
-                'value_sts' => $request->value_sts ?? 0,
-                'value_sas' => $request->value_sas ?? 0,
+                'value_daily' => $request->value_daily,
+                'value_daily_2' => $request->value_daily_2,
+                'value_daily_3' => $request->value_daily_3,
+                'value_daily_4' => $request->value_daily_4,
+                'value_daily_5' => $request->value_daily_5,
+                'value_daily_6' => $request->value_daily_6,
+                'value_daily_7' => $request->value_daily_7,
+                'value_daily_8' => $request->value_daily_8,
+                'value_daily_9' => $request->value_daily_9,
+                'value_daily_10' => $request->value_daily_10,
+                'value_sts' => $request->value_sts,
+                'value_sas' => $request->value_sas,
                 'updated_at' => Carbon::now()
             ]);
             DB::commit();
