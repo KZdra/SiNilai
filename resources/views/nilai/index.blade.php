@@ -343,6 +343,7 @@
                 }
 
                 $('#valueTable').DataTable({
+                    "paging": false,
                     "responsive": false,
                     "scrollX": true,
                     "ajax": {
@@ -438,8 +439,45 @@
                 $('#pickFst').hide();
                 $("#resultTable").show(300);
             })
-            // Init
-            ///
+            // Handle paste from Excel
+            $('#valueTable').on('paste', '.val-input', function(e) {
+                e.preventDefault();
+                let text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                if (!text) return;
+                
+                let rows = text.split(/\r\n|\n|\r/);
+                let currentInput = $(this);
+                let currentTd = currentInput.closest('td');
+                let currentTr = currentTd.closest('tr');
+                
+                let startRowIndex = currentTr.index();
+                let startColIndex = currentTd.index();
+                
+                let tableRows = $('#valueTable tbody tr');
+                
+                for (let i = 0; i < rows.length; i++) {
+                    let rowData = rows[i].trim();
+                    if (!rowData && i === rows.length - 1) continue; // Skip empty last row
+                    
+                    let cols = rowData.split(/\t/);
+                    let targetTr = tableRows.eq(startRowIndex + i);
+                    if (!targetTr.length) break;
+                    
+                    for (let j = 0; j < cols.length; j++) {
+                        let targetTd = targetTr.find('td').eq(startColIndex + j);
+                        if (!targetTd.length) continue;
+                        
+                        let targetInput = targetTd.find('.val-input');
+                        if (targetInput.length && !targetInput.prop('readonly') && !targetInput.prop('disabled')) {
+                            let val = cols[j].trim().replace(',', '.');
+                            if (!isNaN(val) && val !== '') {
+                                targetInput.val(val);
+                                targetInput.trigger('input'); 
+                            }
+                        }
+                    }
+                }
+            });
             // Save All Actions
             $("#saveAllBtn").click(function() {
                 let btn = $(this);
@@ -456,6 +494,7 @@
                         mapel_id: mapel_id,
                         student_id: student_id,
                         fst_id: fst_id,
+                        class_id: class_id,
                         _token: "{{ csrf_token() }}"
                     };
                     
@@ -539,6 +578,7 @@
                     mapel_id: mapel_id,
                     student_id: student_id,
                     fst_id: fst_id,
+                    class_id: class_id,
                     _token: "{{ csrf_token() }}"
                 };
                 

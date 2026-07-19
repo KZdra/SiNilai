@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Laravel') }}</title>
     <link rel="shortcut icon" href="{{asset('images/icb.png')}}" type="image/x-icon">
     <!-- Google Font: Source Sans Pro -->
-     <link rel="stylesheet" 
-          href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
     <!-- Theme style -->
@@ -15,88 +16,90 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @yield('styles')
     <style>
-
-        .main-sidebar { background-color: #102C57 !important }
+        .main-sidebar {
+            background-color: #102C57 !important
+        }
     </style>
 </head>
+
 <body class="hold-transition sidebar-mini">
-<div class="wrapper">
+    <div class="wrapper">
 
-    <!-- Navbar -->
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-        <!-- Left navbar links -->
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-            </li>
-        </ul>
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                </li>
+            </ul>
 
-        <!-- Right navbar links -->
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item dropdown">
-                <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
-                    {{ Auth::user()->name }}
-                </a>
-                <div class="dropdown-menu dropdown-menu-right" style="left: inherit; right: 0px;">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <a href="{{ route('logout') }}" class="dropdown-item"
-                           onclick="event.preventDefault(); this.closest('form').submit();">
-                            <i class="mr-2 fas fa-sign-out-alt"></i>
-                            {{ __('Log Out') }}
-                        </a>
-                    </form>
-                </div>
-            </li>
-        </ul>
-    </nav>
-    <!-- /.navbar -->
+            <!-- Right navbar links -->
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
+                        {{ Auth::user()->name }}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" style="left: inherit; right: 0px;">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <a href="{{ route('logout') }}" class="dropdown-item"
+                                onclick="event.preventDefault(); this.closest('form').submit();">
+                                <i class="mr-2 fas fa-sign-out-alt"></i>
+                                {{ __('Log Out') }}
+                            </a>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+        <!-- /.navbar -->
 
-    <!-- Main Sidebar Container -->
-    <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="/" class="brand-link">
-            <img src="{{asset('images/icb.png')}}" alt="SiNilai Logo" class="brand-image  elevation-3"
-            style="opacity: .8">
-            <span class="brand-text font-weight-light">{{ config('app.name', 'Laravel') }}</span>
-        </a>
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <a href="/" class="brand-link">
 
-        @include('layouts.navigation')
-    </aside>
+                <span class="brand-text font-weight-bold">{{ config('app.name', 'Laravel') }}</span>
+            </a>
 
-    <!-- Content Wrapper. Contains page content -->
-    <div class="content-wrapper">
-        @yield('content')
+            @include('layouts.navigation')
+        </aside>
+
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            @yield('content')
+        </div>
+        <!-- /.content-wrapper -->
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+            <div class="p-3">
+                <h5>Title</h5>
+                <p>Sidebar content</p>
+            </div>
+        </aside>
+        <!-- /.control-sidebar -->
+
+        <!-- Main Footer -->
+        <footer class="main-footer">
+            <!-- To the right -->
+            <div class="float-right d-none d-sm-inline">
+                SiNilai {{\Carbon\Carbon::now()->format('Y')}}
+            </div>
+            <!-- Default to the left -->
+            <strong>Copyright &copy; {{\Carbon\Carbon::now()->format('Y')}} <a href="https://github.com/KZdra" target="blank">KZdra</a>.</strong>
+        </footer>
     </div>
-    <!-- /.content-wrapper -->
+    <!-- ./wrapper -->
 
-    <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
-        <!-- Control sidebar content goes here -->
-        <div class="p-3">
-            <h5>Title</h5>
-            <p>Sidebar content</p>
-        </div>
-    </aside>
-    <!-- /.control-sidebar -->
+    <!-- REQUIRED SCRIPTS -->
 
-    <!-- Main Footer -->
-    <footer class="main-footer">
-        <!-- To the right -->
-        <div class="float-right d-none d-sm-inline">
-            SiNilai 2K25
-        </div>
-        <!-- Default to the left -->
-        <strong>Copyright &copy; {{\Carbon\Carbon::now()->format('Y')}} <a href="https://github.com/KZdra" target="blank">KZdra</a>.</strong>
-    </footer>
-</div>
-<!-- ./wrapper -->
+    @vite('resources/js/app.js')
+    <!-- AdminLTE App -->
+    <script src="{{ asset('js/adminlte.min.js') }}" defer></script>
 
-<!-- REQUIRED SCRIPTS -->
-
-@vite('resources/js/app.js')
-<!-- AdminLTE App -->
-<script src="{{ asset('js/adminlte.min.js') }}" defer></script>
-
-@yield('scripts')
+    @yield('scripts')
 </body>
+
 </html>

@@ -53,22 +53,29 @@ class NilaiController extends Controller
             'v.value_sts',
             'v.value_sas',
             DB::raw('ROUND(
-                (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0) + COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0)) 
-                / 
+                (
+                    COALESCE(
+                        (COALESCE(v.value_daily, 0) + COALESCE(v.value_daily_2, 0) + COALESCE(v.value_daily_3, 0) + COALESCE(v.value_daily_4, 0) + COALESCE(v.value_daily_5, 0) + COALESCE(v.value_daily_6, 0) + COALESCE(v.value_daily_7, 0) + COALESCE(v.value_daily_8, 0) + COALESCE(v.value_daily_9, 0) + COALESCE(v.value_daily_10, 0))
+                        / 
+                        NULLIF(
+                            IF(v.value_daily IS NOT NULL, 1, 0) + IF(v.value_daily_2 IS NOT NULL, 1, 0) + IF(v.value_daily_3 IS NOT NULL, 1, 0) + IF(v.value_daily_4 IS NOT NULL, 1, 0) + IF(v.value_daily_5 IS NOT NULL, 1, 0) + IF(v.value_daily_6 IS NOT NULL, 1, 0) + IF(v.value_daily_7 IS NOT NULL, 1, 0) + IF(v.value_daily_8 IS NOT NULL, 1, 0) + IF(v.value_daily_9 IS NOT NULL, 1, 0) + IF(v.value_daily_10 IS NOT NULL, 1, 0),
+                            0
+                        ), 0
+                    )
+                    +
+                    COALESCE(
+                        (COALESCE(v.value_sts, 0) + COALESCE(v.value_sas, 0))
+                        /
+                        NULLIF(IF(v.value_sts IS NOT NULL, 1, 0) + IF(v.value_sas IS NOT NULL, 1, 0), 0), 0
+                    )
+                )
+                /
                 NULLIF(
-                    IF(v.value_daily IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_2 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_3 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_4 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_5 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_6 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_7 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_8 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_9 IS NOT NULL, 1, 0) + 
-                    IF(v.value_daily_10 IS NOT NULL, 1, 0) + 
-                    IF(v.value_sts IS NOT NULL, 1, 0) + 
-                    IF(v.value_sas IS NOT NULL, 1, 0), 
-                0)
+                    IF(COALESCE(v.value_daily, v.value_daily_2, v.value_daily_3, v.value_daily_4, v.value_daily_5, v.value_daily_6, v.value_daily_7, v.value_daily_8, v.value_daily_9, v.value_daily_10) IS NOT NULL, 1, 0)
+                    +
+                    IF(COALESCE(v.value_sts, v.value_sas) IS NOT NULL, 1, 0), 
+                    0
+                )
             , 2) as average_value')
         )
             ->Join('class as c', 's.class_id', '=', 'c.id')
@@ -102,10 +109,10 @@ class NilaiController extends Controller
 
         $request->validate([
             'student_id' => 'required|integer',
-            'value_daily' => 'nullable|numeric|max_digits:3|max:100',
-            'value_daily_2' => 'nullable|numeric|max_digits:3|max:100',
-            'value_sts' => 'nullable|numeric|max_digits:3|max:100',
-            'value_sas' => 'nullable|numeric|max_digits:3|max:100',
+            'value_daily' => 'nullable|max:100',
+            'value_daily_2' => 'nullable|max:100',
+            'value_sts' => 'nullable|max:100',
+            'value_sas' => 'nullable|max:100',
         ]);
         DB::beginTransaction();
         try {
@@ -140,10 +147,10 @@ class NilaiController extends Controller
 
         $request->validate([
             'student_id' => 'required|integer',
-            'value_daily' => 'nullable|integer|max_digits:3',
-            'value_daily_2' => 'nullable|integer|max_digits:3',
-            'value_sts' => 'nullable|integer|max_digits:3',
-            'value_sas' => 'nullable|integer|max_digits:3',
+            'value_daily' => 'nullable',
+            'value_daily_2' => 'nullable',
+          'value_sts' => 'nullable|max:100',
+            'value_sas' => 'nullable|max:100',
         ]);
         DB::beginTransaction();
         try {

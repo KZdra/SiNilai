@@ -12,6 +12,8 @@
                             class="fas fa-file-excel"></i> Export Nilai Akhir</button>
                     <button class="mt-2 btn btn-success" id="expBtn2" style="display: none;"><i class="fas fa-medal"></i>
                         Export Ranking Siswa</button>
+                    <button class="mt-2 btn btn-info" id="expBtn4" style="display: none;"><i class="fas fa-print"></i>
+                        Print Raport Berurutan</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -127,6 +129,31 @@
                     </div>
                 </div>
             </div>
+            </div>
+            
+            <!-- Modal Print Berurutan -->
+            <div class="modal fade" id="BulkPrintModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Print Raport Berurutan</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <h5 id="bpProgress" class="text-secondary">Siswa 1 dari X</h5>
+                            <h3 id="bpStudentName" class="text-primary font-weight-bold my-3">-</h3>
+                            <div class="d-flex justify-content-center mt-4" style="gap: 15px;">
+                                <button class="btn btn-secondary" id="bpPrevBtn"><i class="fas fa-chevron-left"></i> Prev</button>
+                                <button class="btn btn-success" id="bpPrintBtn"><i class="fas fa-print"></i> Print Sekarang</button>
+                                <button class="btn btn-primary" id="bpNextBtn">Next <i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
@@ -180,6 +207,7 @@
                 $("#FstSel").text(fst_name);
 
                 $('#valueTable').DataTable({
+                    "paging": false,
                     "responsive": true,
                     "ordering": false,
                     "ajax": {
@@ -216,35 +244,24 @@
                         {
                             "data": null,
                             "render": function(data, type, row) {
-                                let exportUrl =
-                                    "{{ route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__', 'tgl_print' => '__TGL_PR__']) }}";
-                                exportUrl = exportUrl.replace('__STUDENT_ID__', row
-                                        .student_id).replace('__VALUE_ID__', row.class_id)
-                                    .replace('__FST_ID__', fst_id).replace('__TGL_PR__',
-                                        tgl_print);
+                                let exportUrl = "{!! route('nilaiakhir.detailNilaiAkhir', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) !!}";
+                                exportUrl = exportUrl.replace('__STUDENT_ID__', row.student_id).replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
 
-                                let exportUrl2 =
-                                    "{{ route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__', 'tgl_print' => '__TGL_PR__', 'keputusan' => '__KPT__']) }}";
-                                exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row
-                                        .student_id).replace('__VALUE_ID__', row.class_id)
-                                    .replace('__FST_ID__', fst_id).replace('__TGL_PR__',
-                                        tgl_print).replace('__KPT__',
-                                        keputusan);
+                                let exportUrl2 = "{!! route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) !!}";
+                                exportUrl2 = exportUrl2.replace('__STUDENT_ID__', row.student_id).replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
                                 return `
-                        <div class="btn-group">
+                                            <div class="btn-group">
                                                 <button type="button" class="btn btn-info dropdown-toggle"
                                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
-                                                    <a class="dropdown-item " href="${exportUrl}"><i
-                                                            class="fas fa-info-circle text-primary"></i>&nbsp;Detail</a>
+                                                    <a class="dropdown-item btn-detail" data-url="${exportUrl}" href="#"><i class="fas fa-info-circle text-primary"></i>&nbsp;Detail</a>
                                                     <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item btn-print" data-url="${exportUrl2}" href="#"><i
-                                                    class="fas fa-print text-success " ></i>&nbsp;Print</a>
+                                                    <a class="dropdown-item btn-print" data-url="${exportUrl2}" href="#"><i class="fas fa-print text-success" ></i>&nbsp;Print</a>
                                                 </div>
                                             </div>
-                    `;
+                                `;
 
 
                             }
@@ -255,15 +272,29 @@
                 $("#resultTable").show(300);
                 $("#expBtn1").show(300);
                 $("#expBtn2").show(400);
+                $("#expBtn4").show(400);
                 $("#expBtn3").show(500);
 
             });
 
 
-            $(document).on("click", ".btn-print", function() {
-                let url = $(this).data("url"); // Get PDF URL from button
-                    exportpdf(url);
-            })
+            $(document).on("click", ".btn-print", function(e) {
+                e.preventDefault();
+                let url = $(this).data("url"); // Get base PDF URL
+                let tgl = sessionStorage.getItem('tgl_print') ?? '';
+                let kpt = sessionStorage.getItem('keputusan') ?? '';
+                
+                url += `&tgl_print=${encodeURIComponent(tgl)}&keputusan=${encodeURIComponent(kpt)}`;
+                exportpdf(url);
+            });
+            
+            $(document).on("click", ".btn-detail", function(e) {
+                e.preventDefault();
+                let url = $(this).data("url"); 
+                let tgl = sessionStorage.getItem('tgl_print') ?? '';
+                url += `&tgl_print=${encodeURIComponent(tgl)}`;
+                window.location.href = url;
+            });
             $('#SetRaportForm').submit(function(e) {
                 e.preventDefault();
                 tgl_print = $('#tanggalPrint').val();
@@ -358,6 +389,74 @@
                         // console.log(data);
                     });
             }
+
+            // --- Bulk Print Berurutan Logic ---
+            let currentPrintIndex = 0;
+            let tableData = [];
+
+            $('#expBtn4').click(function() {
+                let dt = $('#valueTable').DataTable();
+                tableData = dt.rows().data().toArray();
+                if(tableData.length === 0) {
+                    SwalHelper.showError('Tidak ada data siswa.');
+                    return;
+                }
+                currentPrintIndex = 0;
+                updateBulkPrintUI();
+                $('#BulkPrintModal').modal('show');
+            });
+
+            function updateBulkPrintUI() {
+                if (currentPrintIndex < 0) currentPrintIndex = 0;
+                if (currentPrintIndex >= tableData.length) currentPrintIndex = tableData.length - 1;
+                
+                let student = tableData[currentPrintIndex];
+                $('#bpProgress').text(`Siswa ${currentPrintIndex + 1} dari ${tableData.length}`);
+                $('#bpStudentName').text(student.student_name);
+                
+                $('#bpPrevBtn').prop('disabled', currentPrintIndex === 0);
+                $('#bpNextBtn').prop('disabled', currentPrintIndex === tableData.length - 1);
+            }
+
+            $('#bpPrevBtn').click(function() {
+                currentPrintIndex--;
+                updateBulkPrintUI();
+            });
+
+            $('#bpNextBtn').click(function() {
+                currentPrintIndex++;
+                updateBulkPrintUI();
+            });
+
+            $('#bpPrintBtn').click(function() {
+                let student = tableData[currentPrintIndex];
+                
+                // Get current settings
+                let tgl = sessionStorage.getItem('tgl_print') ?? '';
+                let kpt = sessionStorage.getItem('keputusan') ?? '';
+
+                let exportUrl2 ="{!! route('nilaiakhir.print', ['student_id' => '__STUDENT_ID__', 'class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']) !!}";
+                exportUrl2 = exportUrl2.replace('__STUDENT_ID__', student.student_id).replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
+                exportUrl2 += `&tgl_print=${encodeURIComponent(tgl)}&keputusan=${encodeURIComponent(kpt)}`;
+                                      
+                let btn = $(this);
+                let originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyiapkan PDF...');
+                
+                fetch(exportUrl2)
+                    .then(response => response.json())
+                    .then(data => {
+                        btn.prop('disabled', false).html(originalHtml);
+                        let newWindow = window.open(data.pdf_url, '_blank');
+                        setTimeout(() => newWindow.print(), 1000);
+                    })
+                    .catch(err => {
+                        btn.prop('disabled', false).html(originalHtml);
+                        SwalHelper.showError('Gagal menyiapkan PDF.');
+                    });
+            });
+            // --- End Bulk Print Berurutan Logic ---
+
         });
     </script>
 @endsection

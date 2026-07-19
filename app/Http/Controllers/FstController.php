@@ -27,7 +27,7 @@ class FstController extends Controller
         ]);
         try {
             DB::table('m_fst_pembelajaran')->insert([
-                'fase' => ucword($bagong['fase']),
+                'fase' => ucwords($bagong['fase']),
                 'semester' => $bagong['semester'],
                 'tahun_ajaran' => $bagong['tahun_ajaran'],
                 'ta' => $bagong['ta'],

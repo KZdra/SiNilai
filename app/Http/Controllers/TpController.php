@@ -43,17 +43,21 @@ class TpController extends Controller
             'mapel_id' => 'required|integer',
             'class_id' => 'required|integer',
             'fst_id' => 'required|integer',
-            'tp_deskripsi' => 'required|string'
+            'tp_deskripsi' => 'required|array',
+            'tp_deskripsi.*' => 'required|string'
         ]);
         try {
-            DB::table('m_tp')->insert([
-                'mapel_id' => $sangu['mapel_id'],
-                'class_id' => $sangu['class_id'],
-                'fst_id' => $sangu['fst_id'],
-                'tp_deskripsi' => $sangu['tp_deskripsi'],
-                'created_at' => Carbon::now()
-
-            ]);
+            $insertData = [];
+            foreach ($sangu['tp_deskripsi'] as $deskripsi) {
+                $insertData[] = [
+                    'mapel_id' => $sangu['mapel_id'],
+                    'class_id' => $sangu['class_id'],
+                    'fst_id' => $sangu['fst_id'],
+                    'tp_deskripsi' => $deskripsi,
+                    'created_at' => Carbon::now()
+                ];
+            }
+            DB::table('m_tp')->insert($insertData);
             return response()->json(['message' => 'Tujuan Pembelajaran berhasil ditambahkan!'], 201);
         } catch (\Exception $e) {
 
@@ -66,7 +70,8 @@ class TpController extends Controller
         $sangu = $r->validate([
             'mapel_id' => 'required|integer',
             'class_id' => 'required|integer',
-            'tp_deskripsi' => 'required|string'
+            'tp_deskripsi' => 'required|array',
+            'tp_deskripsi.*' => 'required|string'
         ]);
         try {
             DB::table('m_tp')->where(
@@ -76,7 +81,7 @@ class TpController extends Controller
             )->update([
                 'mapel_id' => $sangu['mapel_id'],
                 'class_id' => $sangu['class_id'],
-                'tp_deskripsi' => $sangu['tp_deskripsi'],
+                'tp_deskripsi' => $sangu['tp_deskripsi'][0], // Edit hanya untuk 1 baris
                 'updated_at' => Carbon::now()
             ]);
             return response()->json(['message' => 'Tujuan Pembelajaran berhasil diEdit!'], 201);
@@ -277,6 +282,96 @@ class TpController extends Controller
                 ->where('fst_id', $fst_id)->delete();
             DB::commit();
             return response()->json(['message' => 'Input Nilai Formatif Sukses!'], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+    public function getFormatifGrid(Request $request)
+    {
+        $mapel_id = $request->mapel_id;
+        $class_id = $request->class_id;
+        $fst_id = $request->fst_id;
+
+        $tps = DB::table('m_tp')
+            ->where('mapel_id', $mapel_id)
+            ->where('class_id', $class_id)
+            ->where('fst_id', $fst_id)
+            ->select('id', 'tp_deskripsi')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $students = DB::table('students')
+            ->where('class_id', $class_id)
+            ->select('id as student_id', 'nama as student_name')
+            ->orderBy('nama', 'asc')
+            ->get();
+
+        $tpsiswas = DB::table('tpsiswas')
+            ->where('class_id', $class_id)
+            ->where('mapel_id', $mapel_id)
+            ->where('fst_id', $fst_id)
+            ->get();
+
+        $tps_map = [];
+        foreach($tpsiswas as $row) {
+            $tps_map[$row->siswa_id][$row->tp_id] = [
+                'tps_id' => $row->id,
+                'kktp' => $row->kktp,
+                'tampilkan' => $row->tampilkan
+            ];
+        }
+
+        $student_data = [];
+        foreach($students as $student) {
+            $student_row = [
+                'student_id' => $student->student_id,
+                'student_name' => $student->student_name,
+                'tps' => []
+            ];
+            foreach($tps as $tp) {
+                $student_row['tps'][$tp->id] = $tps_map[$student->student_id][$tp->id] ?? null;
+            }
+            $student_data[] = $student_row;
+        }
+
+        return response()->json([
+            'tps' => $tps,
+            'students' => $student_data
+        ]);
+    }
+
+    public function storeFormatifBulk(Request $request)
+    {
+        $fst_id = $request->input('fst_id');
+        $mapel_id = $request->input('mapel_id');
+        $class_id = $request->input('class_id');
+        $data = $request->input('data'); // format: [ student_id => [ tp_id => [ 'kktp' => 1, 'tampilkan' => 1 ] ] ]
+
+        DB::beginTransaction();
+        try {
+            if ($data && is_array($data)) {
+                foreach ($data as $student_id => $tps_data) {
+                    foreach ($tps_data as $tp_id => $val) {
+                        DB::table('tpsiswas')->updateOrInsert(
+                            [
+                                'siswa_id' => $student_id,
+                                'class_id' => $class_id,
+                                'mapel_id' => $mapel_id,
+                                'fst_id' => $fst_id,
+                                'tp_id' => $tp_id
+                            ],
+                            [
+                                'kktp' => $val['kktp'] ?? 0,
+                                'tampilkan' => $val['tampilkan'] ?? 0,
+                                'updated_at' => Carbon::now()
+                            ]
+                        );
+                    }
+                }
+            }
+            DB::commit();
+            return response()->json(['message' => 'Semua Nilai Formatif Berhasil Disimpan!'], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);

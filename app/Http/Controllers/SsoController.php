@@ -94,4 +94,27 @@ class SsoController extends Controller
 
         return redirect('/');
     }
+
+    public function slo(Request $request)
+    {
+        $username = $request->input('username');
+        \Illuminate\Support\Facades\Log::info('SLO Hit for username: ' . $username);
+        if (!$username) {
+            return response()->json(['message' => 'Username required'], 400);
+        }
+
+        $user = User::where('username', $username)->first();
+        if ($user) {
+            $deleted = \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+            
+            // Invalidate remember me token so it doesn't auto-login
+            $user->update(['remember_token' => null]);
+            
+            \Illuminate\Support\Facades\Log::info('SLO Processed. Sessions deleted: ' . $deleted);
+        } else {
+            \Illuminate\Support\Facades\Log::warning('SLO Failed: User not found for username: ' . $username);
+        }
+
+        return response()->json(['message' => 'Single Logout processed successfully']);
+    }
 }

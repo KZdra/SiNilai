@@ -23,6 +23,8 @@ Route::get('auth/callback', [\App\Http\Controllers\SsoController::class, 'callba
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('es',[PeskulController::class,'getdata']);
+Route::post('/sso/slo', [\App\Http\Controllers\SsoController::class, 'slo']);
+
 Route::middleware('auth')->group(function () {
 
     // Begin Useless
@@ -69,13 +71,16 @@ Route::middleware('auth')->group(function () {
         // INput Formatif
         Route::get('formatif',[TpController::class,'indexFormatif'])->name('formatif.index');
         Route::get('formatif/get',[TpController::class,'getDataFormatif'])->name('formatif.getdata');
+        Route::get('formatif/grid',[TpController::class,'getFormatifGrid'])->name('formatif.grid');
         Route::get('formatif/getlist',[TpController::class,'getTPList'])->name('formatif.gettplist');
         Route::post('formatif',[TpController::class,'storeFormatif'])->name('formatif.store');
+        Route::post('formatif/bulk',[TpController::class,'storeFormatifBulk'])->name('formatif.storeBulk');
         Route::delete('formatif/{id}',[TpController::class,'destroyFormatif'])->name('formatif.destroy');
         // Penilaian Eskul
         Route::get('peskul',[PeskulController::class,'index'])->name('peskul.index');
         Route::get('peskul/get',[PeskulController::class,'getdata'])->name('peskul.getdata');
         Route::post('peskul',[PeskulController::class,'store'])->name('peskul.store');
+        Route::post('peskul/bulk',[PeskulController::class,'storeBulk'])->name('peskul.storeBulk');
         Route::put('peskul/{id}',[PeskulController::class,'update'])->name('peskul.update');
         Route::delete('peskul/{id}',[PeskulController::class,'destroy'])->name('peskul.destroy');
     });

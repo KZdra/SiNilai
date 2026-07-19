@@ -8,7 +8,7 @@
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Input Asesmen Formatif') }}</h1>
                     <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
-                    {{-- <button class="mt-2 btn btn-info" id="upCsvBtn">Import Excel Asesmen Formatif Siswa</button> --}}
+                    <button class="mt-2 btn btn-success" id="saveBulkBtn" style="display:none">Simpan Semua Nilai</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -82,18 +82,13 @@
                         </div>
                         <div class="card-body p-2">
 
-                            <table class="table table-striped table-bordered" id="valueTable">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Siswa</th>
-                                        <th>Deskripsi Capaian Tertinggi dalam Rapor</th>
-                                        <th>Deskripsi Capaian Terendah dalam Rapor</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered" id="valueTable" style="width: 100%;">
+                                    <thead id="valueTableHead">
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -243,73 +238,171 @@
                 }
 
                 if ($.fn.DataTable.isDataTable('#valueTable')) {
-                    $('#valueTable').DataTable()
-                        .destroy(); // Hancurkan DataTables lama sebelum memuat ulang
+                    $('#valueTable').DataTable().destroy(); 
+                    $('#valueTableHead').empty();
+                    $('#valueTable tbody').empty();
                 }
                 $("#MapelSel").text(mapel_name);
                 $("#FstSel").text(fst_name);
                 $("#ClassSel").text(class_name);
 
-                $('#valueTable').DataTable({
-                    "responsive": true,
-                    "ajax": {
-                        "url": "{{ route('formatif.getdata') }}", // Ganti dengan URL API Anda
-                        "type": "GET",
-                        "data": {
-                            class_id: class_id,
-                            mapel_id: mapel_id,
-                            fst_id: fst_id
-                        },
-                        "dataSrc": 'data'
+                $.ajax({
+                    url: "{{ route('formatif.grid') }}",
+                    type: "GET",
+                    data: {
+                        class_id: class_id,
+                        mapel_id: mapel_id,
+                        fst_id: fst_id
                     },
-                    "columns": [{
-                            "data": null,
-                            "render": function(data, type, row, meta) {
-                                return meta.row + 1; // Index + 1
-                            }
-                        },
-                        {
-                            "data": "student_name"
-                        },
-
-                        {
-                            "data": "Hasil_Tp_tinggi"
-                        },
-                        {
-                            "data": "Hasil_Tp_kurang"
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                if (row.tp_isFill) {
+                    success: function(res) {
+                        let tps = res.tps;
+                        let students = res.students;
+                        
+                        let headHtml = '<tr><th>No</th><th>Siswa</th>';
+                        tps.forEach(function(tp, idx) {
+                            headHtml += `<th style="min-width: 160px;" title="${tp.tp_deskripsi}">TP ${idx+1} <br><small class="text-muted" style="white-space:normal">${tp.tp_deskripsi}</small><br><button type="button" class="btn btn-xs btn-outline-info mt-1 w-100 copyAllBtn" data-tpid="${tp.id}" title="Copy nilai siswa pertama ke semua siswa di bawahnya">Copy ke Bawah <i class="fas fa-arrow-down"></i></button></th>`;
+                        });
+                        headHtml += '</tr>';
+                        $('#valueTableHead').html(headHtml);
+                        
+                        let columns = [
+                            { data: null, render: function(data, type, row, meta) { return meta.row + 1; } },
+                            { data: 'student_name' }
+                        ];
+                        
+                        tps.forEach(function(tp) {
+                            columns.push({
+                                data: null,
+                                orderable: false,
+                                render: function(data, type, row) {
+                                    let tpData = row.tps[tp.id] || { kktp: 0, tampilkan: 0 };
+                                    
+                                    let isKktpCukup = tpData.kktp == 1 ? 'selected' : '';
+                                    let isKktpKurang = tpData.kktp == 0 ? 'selected' : '';
+                                    let isTampilkanYa = tpData.tampilkan == 1 ? 'selected' : '';
+                                    let isTampilkanTidak = tpData.tampilkan == 0 ? 'selected' : '';
+                                    
                                     return `
-                        <div class="btn-group">
-                                                <button type="button" class="btn btn-info dropdown-toggle"
-                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    Aksi
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-right">
-                                                    <button class="dropdown-item editNilaiBtn" data-student_id='${row.student_id}'><i
-                                                            class="fas fa-pen text-info"></i>&nbsp;Edit</button>
-                                                    <div class="dropdown-divider"></div>
-                                                    <button class="dropdown-item text-danger delNilaiBtn" data-student_id='${row.student_id}'><i
-                                                            class="fas fa-trash text-danger"></i>&nbsp;Delete</button>
-                                                </div>
+                                        <div class="tp-cell" data-tpid="${tp.id}">
+                                            <div class="mb-1">
+                                                <select class="form-control form-control-sm kktp-select">
+                                                    <option value="1" ${isKktpCukup}>1 - Tercapai</option>
+                                                    <option value="0" ${isKktpKurang}>0 - Perlu Bimbingan</option>
+                                                </select>
                                             </div>
-                    `;
-                                } else {
-                                    return `<button class="btn btn-success inputNilaiBtn" data-student_id='${row.student_id}'>Atur TP</button>`
+                                            <div>
+                                                <select class="form-control form-control-sm tampilkan-select">
+                                                    <option value="1" ${isTampilkanYa}>1 - Tampil</option>
+                                                    <option value="0" ${isTampilkanTidak}>0 - Sembunyi</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    `;
                                 }
-
+                            });
+                        });
+                        
+                        $('#valueTable').DataTable({
+                            paging: false,
+                            responsive: false,
+                            scrollX: true,
+                            data: students,
+                            columns: columns,
+                            createdRow: function(row, data, dataIndex) {
+                                $(row).attr('data-studentid', data.student_id);
                             }
-                        }
-                    ]
+                        });
+                        
+                        $('#pickFst').hide();
+                        $("#resultTable").show(300);
+                        $('#saveBulkBtn').show();
+                    }
                 });
-                // $('#upCsvBtn').show();
-                $('#pickFst').hide();
-                $("#resultTable").show(300);
             })
-            // Init
+            
+            // Copy All
+            $(document).on('click', '.copyAllBtn', function() {
+                let tpId = $(this).data('tpid');
+                
+                // Ambil nilai dari baris pertama (index 0)
+                let firstRow = $('#valueTable tbody tr:first');
+                if (!firstRow.length) return;
+                
+                let firstCell = firstRow.find(`.tp-cell[data-tpid='${tpId}']`);
+                if (!firstCell.length) return;
+                
+                let kktpVal = firstCell.find('.kktp-select').val();
+                let tampilVal = firstCell.find('.tampilkan-select').val();
+                
+                // Terapkan ke semua baris
+                $('#valueTable tbody tr').each(function() {
+                    let cell = $(this).find(`.tp-cell[data-tpid='${tpId}']`);
+                    cell.find('.kktp-select').val(kktpVal);
+                    cell.find('.tampilkan-select').val(tampilVal);
+                });
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil di-copy ke semua siswa!',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            });
+            
+            // Bulk Save Actions
+            $('#saveBulkBtn').click(function() {
+                let btn = $(this);
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+                
+                let payload = {};
+                
+                $('#valueTable tbody tr').each(function() {
+                    let tr = $(this);
+                    let studentId = tr.attr('data-studentid');
+                    if(studentId) {
+                        payload[studentId] = {};
+                        tr.find('.tp-cell').each(function() {
+                            let cell = $(this);
+                            let tpId = cell.attr('data-tpid');
+                            let kktp = cell.find('.kktp-select').val();
+                            let tampilkan = cell.find('.tampilkan-select').val();
+                            payload[studentId][tpId] = {
+                                kktp: parseInt(kktp),
+                                tampilkan: parseInt(tampilkan)
+                            };
+                        });
+                    }
+                });
+                
+                $.ajax({
+                    url: "{{ route('formatif.storeBulk') }}",
+                    method: "POST",
+                    data: {
+                        class_id: class_id,
+                        mapel_id: mapel_id,
+                        fst_id: fst_id,
+                        data: payload,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: res.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        $('#mapelForm').submit();
+                    },
+                    error: function(err) {
+                        Swal.fire('Error', 'Terjadi kesalahan saat menyimpan.', 'error');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('Simpan Semua Nilai');
+                    }
+                });
+            });
             function fetchTPList(student_id) {
 
                 $.ajax({

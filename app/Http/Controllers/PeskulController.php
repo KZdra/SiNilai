@@ -27,16 +27,13 @@ class PeskulController extends Controller
     }
     public function getdata(Request $request)
     {
-        //
-        $eskul_id = $request->eskul_id;
         $class_id = $request->class_id;
         $fst_id = $request->fst_id;
-        //
+
         $data = DB::table('students as s')
             ->join('class as c', 's.class_id', '=', 'c.id')
-            ->leftJoin('nilai_eskuls as v', function ($join) use ($eskul_id, $fst_id) {
+            ->leftJoin('nilai_eskuls as v', function ($join) use ($fst_id) {
                 $join->on('s.id', '=', 'v.student_id')
-                    ->where('v.eskul_id', $eskul_id)
                     ->where('v.fst_id', $fst_id);
             })
             ->leftJoin('m_eskul as es', 'v.eskul_id', '=', 'es.id')
@@ -45,14 +42,33 @@ class PeskulController extends Controller
             ->select(
                 's.id as student_id',
                 's.nama as student_name',
-                'es.id as eskul_id',
                 'v.id as nilai_eskul_id',
+                'es.id as eskul_id',
+                'es.nama_eskul',
                 'v.nilai_eskul'
             )
-            ->groupBy('s.id', 's.nama', 'v.id', 'es.id', 'v.nilai_eskul')
             ->get();
 
-        return response()->json(['data' => $data], 200);
+        $students = [];
+        foreach ($data as $row) {
+            if (!isset($students[$row->student_id])) {
+                $students[$row->student_id] = [
+                    'student_id' => $row->student_id,
+                    'student_name' => $row->student_name,
+                    'eskuls' => []
+                ];
+            }
+            if ($row->nilai_eskul_id) {
+                $students[$row->student_id]['eskuls'][] = [
+                    'id' => $row->nilai_eskul_id,
+                    'eskul_id' => $row->eskul_id,
+                    'nama_eskul' => $row->nama_eskul,
+                    'nilai_eskul' => $row->nilai_eskul
+                ];
+            }
+        }
+
+        return response()->json(['data' => array_values($students)], 200);
     }
     public function store(Request $request)
     {
@@ -103,6 +119,51 @@ class PeskulController extends Controller
             DB::table('nilai_eskuls')->where('id', $id)->where('student_id', $student_id)->delete();
             DB::commit();
             return response()->json(['message' => 'Hapus Nilai Eskul Sukses!'], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+    public function storeBulk(Request $request)
+    {
+        $class_id = $request->input('class_id');
+        $fst_id = $request->input('fst_id');
+        $students = $request->input('students', []); // format: { student_id: [ {eskul_id: 1, nilai_eskul: 'Baik'}, ... ] }
+
+        DB::beginTransaction();
+        try {
+            $studentIds = array_keys($students);
+            if (count($studentIds) > 0) {
+                // Delete existing records for these students in this semester to overwrite them cleanly
+                DB::table('nilai_eskuls')
+                    ->whereIn('student_id', $studentIds)
+                    ->where('fst_id', $fst_id)
+                    ->delete();
+            }
+
+            $inserts = [];
+            $now = Carbon::now();
+            foreach ($students as $student_id => $eskuls) {
+                foreach ($eskuls as $eskul) {
+                    if (!empty($eskul['eskul_id']) && !empty($eskul['nilai_eskul'])) {
+                        $inserts[] = [
+                            'student_id' => $student_id,
+                            'eskul_id' => $eskul['eskul_id'],
+                            'fst_id' => $fst_id,
+                            'nilai_eskul' => $eskul['nilai_eskul'],
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                }
+            }
+
+            if (count($inserts) > 0) {
+                DB::table('nilai_eskuls')->insert($inserts);
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Simpan Penilaian Ekstrakurikuler Sukses!'], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);

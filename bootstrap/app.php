@@ -16,7 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'roleCheck' => RoleCheck::class,
             'checkClass' => \App\Http\Middleware\CheckAssignedClass::class,
         ]);
-
+        $middleware->validateCsrfTokens(except: [
+            'sso/slo',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -48,11 +48,11 @@ class SiswaController extends Controller
         $data = $data->orderBy('s.nama', 'asc')->get();
         $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
         $className = null;
-        if(Auth::user()->class_id !== null){
-            $className = DB::table('class')->where('id',Auth::user()->class_id)->value('class_name');
+        if (Auth::user()->class_id !== null) {
+            $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
         }
 
-        return view('msiswa.index', compact('data', 'classList','className'));
+        return view('msiswa.index', compact('data', 'classList', 'className'));
     }
     public function store(Request $request)
     {
@@ -118,8 +118,7 @@ class SiswaController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nis' => 'required|numeric',
-            'nis' => 'required|integer',
+            'nis' => 'required',
             'student_name' => 'required|string|max:255',
             'class_id' => 'required|integer',
             'jenis_kelamin' => 'required|string',
@@ -162,16 +161,16 @@ class SiswaController extends Controller
         try {
             DB::table('students')->where('id', '=', $id)->update([
                 'nis' => $request->nis,
-                'nama' => $request->student_name,
+                'nama' => ucwords(strtolower($request->student_name)),
                 'class_id' => $request->class_id,
                 'jenis_kelamin' => $request->jenis_kelamin,
-                'tempat_lahir' => $request->tempat_lahir,
+                'tempat_lahir' => ucwords(strtolower($request->tempat_lahir)),
                 'tanggal_lahir' => $request->tanggal_lahir,
                 'agama' => $request->agama,
                 'pendidikan_sebelumnya' => $request->pendidikan_sebelumnya,
                 'alamat' => $request->alamat,
-                'nama_ayah' => $request->nama_ayah,
-                'nama_ibu' => $request->nama_ibu,
+                'nama_ayah' => ucwords(strtolower($request->nama_ayah)),
+                'nama_ibu' => ucwords(strtolower($request->nama_ibu)),
                 'pekerjaan_ayah' => $request->pekerjaan_ayah,
                 'pekerjaan_ibu' => $request->pekerjaan_ibu,
                 'alamat_orang_tua' => $request->alamat_orang_tua,
@@ -267,16 +266,16 @@ class SiswaController extends Controller
                     ['nis' => $nis], // Cek berdasarkan NIS
                     [
                         'nisn' => $nisn,
-                        'nama' => ucwords($nama),
+                        'nama' => ucwords(strtolower($nama)),
                         'class_id' => $classId, // NULL jika tidak ada kelas
                         'jenis_kelamin' => $jenis_kelamin,
-                        'tempat_lahir' => ucwords($tempat_lahir),
+                        'tempat_lahir' => ucwords(strtolower($tempat_lahir)),
                         'tanggal_lahir' => $tanggal_lahir,
                         'agama' => $agama,
                         'pendidikan_sebelumnya' => $pendidikan_sebelumnya,
                         'alamat' => $alamat,
-                        'nama_ayah' => ucwords($nama_ayah),
-                        'nama_ibu' => ucwords($nama_ibu),
+                        'nama_ayah' => ucwords(strtolower($nama_ayah)),
+                        'nama_ibu' => ucwords(strtolower($nama_ibu)),
                         'pekerjaan_ayah' => $pekerjaan_ayah,
                         'pekerjaan_ibu' => $pekerjaan_ibu,
                         'alamat_orang_tua' => $alamat_orang_tua,

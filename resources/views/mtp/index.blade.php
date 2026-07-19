@@ -115,10 +115,13 @@
                             <input type="hidden" id="tp_id">
                             <input type="hidden" id="class_id">
                             <input type="hidden" id="mapel_id">
-                            <div class="form-group">
-                                <label for="tp_deskripsi">Tujuan Pembelajaran</label>
-                                <textarea  class="form-control" id="tp_deskripsi" name="tp_deskripsi" required></textarea>
+                            <div id="tpInputsContainer">
+                                <div class="form-group tp-input-group">
+                                    <label>Tujuan Pembelajaran</label>
+                                    <textarea class="form-control tp_deskripsi_input" name="tp_deskripsi[]" required></textarea>
+                                </div>
                             </div>
+                            <button type="button" class="btn btn-sm btn-success mt-2" id="addTpBtn"><i class="fas fa-plus"></i> Tambah Baris TP</button>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -278,9 +281,33 @@
                 $('#fst_id').val(fst_id);
                 $('#mapel_id').val(mapel_id);
                 $('#class_id').val(class_id);
-                $('#tp_deskripsi').val('');
+                
+                $('#tpInputsContainer').html(`
+                    <div class="form-group tp-input-group">
+                        <label>Tujuan Pembelajaran 1</label>
+                        <textarea class="form-control tp_deskripsi_input" name="tp_deskripsi[]" required></textarea>
+                    </div>
+                `);
+                $('#addTpBtn').show();
+                tpCount = 1;
+
                 $('#tpModalLabel').text('Input Tujuan Pembelajaran');
                 $('#tpModal').modal('show');
+            });
+
+            let tpCount = 1;
+            $('#addTpBtn').click(function() {
+                tpCount++;
+                $('#tpInputsContainer').append(`
+                    <div class="form-group tp-input-group mt-2">
+                        <label>Tujuan Pembelajaran ${tpCount} <button type="button" class="btn btn-sm btn-danger removeTpBtn float-right"><i class="fas fa-times"></i></button></label>
+                        <textarea class="form-control tp_deskripsi_input" name="tp_deskripsi[]" required></textarea>
+                    </div>
+                `);
+            });
+
+            $(document).on("click", ".removeTpBtn", function() {
+                $(this).closest('.tp-input-group').remove();
             });
 
             // Simpan atau Update Input
@@ -289,6 +316,11 @@
                 let id = $('#tp_id').val();
                 let url = id ? `/mastertp/${id}` : "{{ route('mastertp.store') }}";
                 let method = id ? "PUT" : "POST";
+                
+                let deskripsiArray = [];
+                $('.tp_deskripsi_input').each(function() {
+                    deskripsiArray.push($(this).val());
+                });
 
                 $.ajax({
                     url: url,
@@ -297,7 +329,7 @@
                         mapel_id: $('#mapel_id').val(),
                         fst_id: $('#fst_id').val(),
                         class_id: $('#class_id').val(),
-                        tp_deskripsi: $('#tp_deskripsi').val(),
+                        tp_deskripsi: deskripsiArray,
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -330,7 +362,15 @@
                 $('#fst_id').val(fst_id);
                 $('#mapel_id').val(mapel_id);
                 $('#class_id').val(class_id);
-                $('#tp_deskripsi').val(tp_deskripsi);
+                
+                $('#tpInputsContainer').html(`
+                    <div class="form-group tp-input-group">
+                        <label>Tujuan Pembelajaran</label>
+                        <textarea class="form-control tp_deskripsi_input" name="tp_deskripsi[]" required>${tp_deskripsi}</textarea>
+                    </div>
+                `);
+                $('#addTpBtn').hide();
+
                 $('#tpModalLabel').text('Edit Tujuan Pembelajaran');
                 $('#tpModal').modal('show');
             });

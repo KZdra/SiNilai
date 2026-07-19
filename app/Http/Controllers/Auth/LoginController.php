@@ -45,16 +45,15 @@ class LoginController extends Controller
 
     protected function loggedOut(\Illuminate\Http\Request $request)
     {
-        $authMethod = \Illuminate\Support\Facades\Schema::hasTable('settings') 
-            ? \App\Models\Setting::where('key', 'auth_method')->value('value') 
+        $authMethod = \Illuminate\Support\Facades\Schema::hasTable('settings')
+            ? \App\Models\Setting::where('key', 'auth_method')->value('value')
             : 'internal';
 
         if ($authMethod === 'sso') {
             $ssoServerUrl = \App\Models\Setting::where('key', 'sso_server_url')->value('value');
             $redirectUri = route('login', ['logged_out' => 1]);
-            
+
             $ssoLogoutUrl = rtrim($ssoServerUrl, '/') . '/sso/logout?redirect_uri=' . urlencode($redirectUri);
-            
             return redirect($ssoLogoutUrl);
         }
 
