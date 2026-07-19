@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sinilai_app
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql3306
+      - DB_PORT=3306
+      - DB_DATABASE=sinilai_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=
+    volumes:
+      - .:/var/www/html
+      # Supaya vendor/ dan file lainnya tidak menimpa jika tidak diinginkan (tergantung use-case)
+      # Tapi untuk development, me-mount seluruh folder . adalah best practice.
+      # Jangan lupa set permission storage dan bootstrap/cache 
+    networks:
+      - external_network
+
+networks:
+  external_network:
+    # Menggunakan external network agar bisa berkomunikasi dengan mysql3306
+    # Pastikan mysql3306 berada di network 'bridge' (default) atau sesuaikan namanya
+    name: bridge
+    external: true
