@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'cbt' => [
+        'sync_token' => env('CBT_SYNC_TOKEN'),
+    ],
+
 ];
