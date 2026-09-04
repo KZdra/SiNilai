@@ -101,11 +101,14 @@ class SsoController extends Controller
             ]);
         }
 
+        // Pastikan url.intended dibersihkan agar tidak loop ke /login
+        $request->session()->forget('url.intended');
+
         // Login ke SiNilai & Regenerasi Session agar cookie valid
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        return redirect()->intended('/');
+        return redirect('/');
     }
 
     public function slo(Request $request)

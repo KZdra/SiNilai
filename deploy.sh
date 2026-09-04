@@ -314,8 +314,9 @@ mkdir -p /var/www/.composer /var/www/.cache
 chown -R www-data:www-data /var/www/.composer /var/www/.cache
 
 chown -R www-data:www-data "$APP_DIR"
-find "$APP_DIR" -type f -exec chmod 644 {} \;
+find "$APP_DIR" -type f -not -path "*/node_modules/*" -not -path "*/.git/*" -exec chmod 644 {} \;
 find "$APP_DIR" -type d -exec chmod 755 {} \;
+chmod +x "$APP_DIR/artisan" 2>/dev/null || true
 chmod -R 775 "$APP_DIR/storage"
 chmod -R 775 "$APP_DIR/bootstrap/cache"
 success "Hak akses file diatur untuk www-data"
@@ -379,7 +380,7 @@ DB_DATABASE=${DB_NAME}
 DB_USERNAME=${DB_USER}
 DB_PASSWORD=${DB_PASS}
 
-SESSION_DRIVER=database
+SESSION_DRIVER=file
 SESSION_LIFETIME=180
 SESSION_ENCRYPT=false
 SESSION_PATH=/
@@ -413,7 +414,10 @@ if [[ -s "$NVM_DIR/nvm.sh" ]]; then
 fi
 
 if [[ -f "$APP_DIR/package.json" ]]; then
+    info "npm install..."
     npm install --no-audit --no-fund
+    chmod -R +x "$APP_DIR/node_modules/.bin" 2>/dev/null || true
+    info "npm run build..."
     npm run build
     chown -R www-data:www-data "$APP_DIR/public"
     success "Frontend Vite selesai di-build"

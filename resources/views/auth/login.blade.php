@@ -5,18 +5,35 @@ $authMethod = \Illuminate\Support\Facades\Schema::hasTable('settings') ? \App\Mo
 @extends('layouts.guest')
 
 @section('content')
-@if($authMethod === 'sso')
-@if(request()->has('logged_out'))
+@if($authMethod === 'sso' && !request()->has('auth_override'))
+@if($errors->any() || session('error'))
+<div class="card-body login-card-body text-center py-4">
+    <div class="mb-3">
+        <i class="fas fa-exclamation-circle text-danger fa-3x"></i>
+    </div>
+    <h4 class="text-danger">Gagal Masuk via SSO</h4>
+    <div class="alert alert-danger text-left mt-3">
+        @if(session('error'))
+            <p class="mb-0">{{ session('error') }}</p>
+        @endif
+        @foreach($errors->all() as $error)
+            <p class="mb-0">{{ $error }}</p>
+        @endforeach
+    </div>
+    <a href="{{ route('sso.login') }}" class="btn btn-primary btn-block mt-3">
+        <i class="fas fa-sign-in-alt mr-2"></i> Coba Login SSO Lagi
+    </a>
+    <a href="{{ route('login', ['auth_override' => '1']) }}" class="btn btn-outline-secondary btn-block mt-2">
+        Login Form Manual
+    </a>
+</div>
+@elseif(request()->has('logged_out'))
 <div class="card-body login-card-body text-center py-5">
     <div class="mb-3">
         <i class="fas fa-check-circle text-success fa-3x"></i>
     </div>
     <h4>Anda telah keluar</h4>
     <p class="text-muted">Sesi Anda telah berakhir. Mengarahkan kembali ke halaman login SSO...</p>
-    <!-- <a href="{{ route('sso.login') }}" class="btn btn-primary btn-block mt-4">
-                <i class="fas fa-sign-in-alt mr-2"></i> Masuk Kembali via SSO
-            </a> -->
-
     <script>
         setTimeout(function() {
             window.location.href = "{{ route('sso.login') }}";
