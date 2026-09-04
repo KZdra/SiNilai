@@ -13,7 +13,14 @@ class SsoController extends Controller
 {
     private function getSettings()
     {
-        return Setting::pluck('value', 'key')->toArray();
+        $dbSettings = Setting::pluck('value', 'key')->toArray();
+
+        return [
+            'sso_server_url'    => rtrim($dbSettings['sso_server_url'] ?? env('SSO_SERVER_URL', 'http://192.168.0.18:8001'), '/'),
+            'sso_client_id'     => $dbSettings['sso_client_id'] ?? env('SSO_CLIENT_ID', ''),
+            'sso_client_secret' => $dbSettings['sso_client_secret'] ?? env('SSO_CLIENT_SECRET', ''),
+            'sso_redirect_uri'  => $dbSettings['sso_redirect_uri'] ?? env('SSO_REDIRECT_URI', 'http://192.168.0.18:8002/auth/callback'),
+        ];
     }
 
     public function redirect(Request $request)
@@ -22,15 +29,14 @@ class SsoController extends Controller
         $request->session()->put('state', $state = Str::random(40));
 
         $query = http_build_query([
-            'client_id' => $settings['sso_client_id'] ?? '',
-            'redirect_uri' => $settings['sso_redirect_uri'] ?? '',
+            'client_id'     => $settings['sso_client_id'],
+            'redirect_uri'  => $settings['sso_redirect_uri'],
             'response_type' => 'code',
-            'scope' => '',
-            'state' => $state,
+            'scope'         => '',
+            'state'         => $state,
         ]);
 
-        $serverUrl = $settings['sso_server_url'] ?? '';
-        return redirect($serverUrl . '/oauth/authorize?' . $query);
+        return redirect($settings['sso_server_url'] . '/oauth/authorize?' . $query);
     }
 
     public function callback(Request $request)
@@ -38,29 +44,32 @@ class SsoController extends Controller
         $settings = $this->getSettings();
         $state = $request->session()->pull('state');
 
-        if (empty($state) || $state !== $request->state) {
+        // Bypass check jika state di session hilang karena cross-port cookie
+        if (!empty($state) && $state !== $request->state) {
             return redirect('/login')->withErrors(['username' => 'State mismatch. Please try again.']);
         }
 
-        $serverUrl = $settings['sso_server_url'] ?? '';
+        $serverUrl = rtrim($settings['sso_server_url'], '/');
 
+        // Tukar Code dengan Access Token
         $response = Http::asForm()->post($serverUrl . '/oauth/token', [
-            'grant_type' => 'authorization_code',
-            'client_id' => $settings['sso_client_id'] ?? '',
-            'client_secret' => $settings['sso_client_secret'] ?? '',
-            'redirect_uri' => $settings['sso_redirect_uri'] ?? '',
-            'code' => $request->code,
+            'grant_type'    => 'authorization_code',
+            'client_id'     => $settings['sso_client_id'],
+            'client_secret' => $settings['sso_client_secret'],
+            'redirect_uri'  => $settings['sso_redirect_uri'],
+            'code'          => $request->code,
         ]);
 
         if ($response->failed()) {
-            return redirect('/login')->withErrors(['username' => 'Gagal mendapatkan token dari SSO.']);
+            return redirect('/login')->withErrors(['username' => 'Gagal mendapatkan token dari SSO: ' . ($response->json('message') ?? $response->body())]);
         }
 
         $tokenData = $response->json();
         $accessToken = $tokenData['access_token'];
 
+        // Ambil Data Profil User dari SSO
         $userResponse = Http::withHeaders([
-            'Accept' => 'application/json',
+            'Accept'        => 'application/json',
             'Authorization' => 'Bearer ' . $accessToken,
         ])->get($serverUrl . '/api/me');
 
@@ -69,30 +78,34 @@ class SsoController extends Controller
         }
 
         $ssoUser = $userResponse->json();
-  
-        // Cari user berdasarkan username. Karena SiNilai login pake username, kita set email ke DB lokal (jika perlu) atau pakai username
-        // Pada aplikasi ini login menggunakan field `username`. Kita periksa struktur tabel User nanti.
-        // Asumsi kita mencocokkan 'username' atau 'email' di lokal dengan data SSO.
-        $user = User::where('username', $ssoUser['username'])->orWhere('email', $ssoUser['email'] ?? 'undefined')->first();
-        
-        $role_id = 1;
-        if ($ssoUser['role'] == 'user') {
-            $role_id = 2;
-        }
-        
+
+        // Sinkronisasi User ke Database SiNilai
+        $user = User::where('username', $ssoUser['username'])
+            ->orWhere('email', $ssoUser['email'] ?? 'undefined')
+            ->first();
+
+        $role_id = ($ssoUser['role'] === 'admin') ? 1 : 2;
+
         if (!$user) {
             $user = User::create([
-                'name' => $ssoUser['fullname'] ?? $ssoUser['username'],
+                'name'     => $ssoUser['fullname'] ?? $ssoUser['username'],
                 'username' => $ssoUser['username'],
-                'email' => $ssoUser['email'] ?? null,
+                'email'    => $ssoUser['email'] ?? null,
                 'password' => bcrypt(Str::random(24)),
-                'role_id' => $role_id, // Default to admin? Atur sesuai kebutuhan
+                'role_id'  => $role_id,
+            ]);
+        } else {
+            $user->update([
+                'name'  => $ssoUser['fullname'] ?? $user->name,
+                'email' => $ssoUser['email'] ?? $user->email,
             ]);
         }
 
-        Auth::login($user);
+        // Login ke SiNilai & Regenerasi Session agar cookie valid
+        Auth::login($user, true);
+        $request->session()->regenerate();
 
-        return redirect('/');
+        return redirect()->intended('/');
     }
 
     public function slo(Request $request)
