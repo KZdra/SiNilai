@@ -319,6 +319,14 @@ find "$APP_DIR" -type d -exec chmod 755 {} \;
 chmod +x "$APP_DIR/artisan" 2>/dev/null || true
 chmod -R 775 "$APP_DIR/storage"
 chmod -R 775 "$APP_DIR/bootstrap/cache"
+
+# Kunci OAuth (Passport) wajib berizin 600/660 agar tidak error permission denied
+chmod 600 "$APP_DIR"/storage/oauth-*.key 2>/dev/null || true
+if [[ -d "/var/www/ssoicb/storage" ]]; then
+    chmod 600 /var/www/ssoicb/storage/oauth-*.key 2>/dev/null || true
+    chown www-data:www-data /var/www/ssoicb/storage/oauth-*.key 2>/dev/null || true
+fi
+
 success "Hak akses file diatur untuk www-data"
 
 # ===========================================================================
