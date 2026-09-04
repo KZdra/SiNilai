@@ -67,14 +67,31 @@ class SsoController extends Controller
         $tokenData = $response->json();
         $accessToken = $tokenData['access_token'];
 
-        // Ambil Data Profil User dari SSO
+        // 3. Ambil Data Profil User dari SSO
         $userResponse = Http::withHeaders([
             'Accept'        => 'application/json',
             'Authorization' => 'Bearer ' . $accessToken,
         ])->get($serverUrl . '/api/me');
 
+        // Fallback jika SSO menggunakan /api/user
+        if ($userResponse->status() === 404) {
+            $userResponse = Http::withHeaders([
+                'Accept'        => 'application/json',
+                'Authorization' => 'Bearer ' . $accessToken,
+            ])->get($serverUrl . '/api/user');
+        }
+
         if ($userResponse->failed()) {
-            return redirect('/login')->withErrors(['username' => 'Gagal mendapatkan data user dari SSO.']);
+            \Illuminate\Support\Facades\Log::error('SSO Profile Fetch Failed', [
+                'status' => $userResponse->status(),
+                'body'   => $userResponse->body(),
+                'url'    => $serverUrl,
+            ]);
+
+            $errorMsg = $userResponse->json('message') ?? $userResponse->body();
+            return redirect('/login')->withErrors([
+                'username' => "Gagal mendapatkan data user dari SSO (HTTP {$userResponse->status()}): {$errorMsg}"
+            ]);
         }
 
         $ssoUser = $userResponse->json();

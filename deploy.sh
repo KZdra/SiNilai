@@ -502,6 +502,7 @@ server {
         include fastcgi_params;
         fastcgi_param HTTP_HOST \$http_host;
         fastcgi_param SERVER_PORT \$server_port;
+        fastcgi_param HTTP_AUTHORIZATION \$http_authorization;
         fastcgi_read_timeout 300;
         fastcgi_send_timeout 300;
         fastcgi_buffers 8 16k;
