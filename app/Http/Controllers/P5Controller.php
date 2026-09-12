@@ -407,9 +407,14 @@ class P5Controller extends Controller
             'tgl_print'
         ))->setPaper('a4', 'portrait');
 
-        $safeClassName = str_replace(' ', '_', $student->class_name);
-        $safeStudentName = str_replace(' ', '_', $student->nama);
-        $pdfPath = "raport_p5/{$safeClassName}/{$safeStudentName}_P5.pdf";
+        $cleanTA   = $fst && !empty($fst->tahun_ajaran) ? str_replace(['/', ' '], ['-', '_'], $fst->tahun_ajaran) : 'TA';
+        $cleanFase = $fst && !empty($fst->fase) ? 'Fase_' . ucwords($fst->fase) : 'Fase';
+        $cleanSem  = $fst && !empty($fst->semester) ? 'Sem_' . preg_replace('/[^a-zA-Z0-9]/', '', $fst->semester) : 'Sem';
+        $concated  = "{$cleanTA}_{$cleanFase}_{$cleanSem}";
+
+        $safeClassName   = str_replace(['/', '\\', ' '], '_', $student->class_name);
+        $safeStudentName = str_replace(['/', '\\', ' '], '_', $student->nama);
+        $pdfPath         = "raport_p5/{$safeClassName}/{$concated}/{$safeStudentName}_P5.pdf";
 
         Storage::disk('public')->put($pdfPath, $pdf->output());
 

@@ -422,7 +422,7 @@ flowchart TD
 - **Otomasi Periode Akademik (FST Lifecycle)**:
   1. **Auto-Lock FST Lama**: Semua FST aktif sebelumnya otomatis dikunci (`is_locked = true`) sehingga nilai rapor tahun lalu terlindungi dari manipulasi.
   2. **Auto-Generate FST Baru**: Sistem mengkalkulasi tahun ajaran berikutnya (misal: `2024/2025` $\rightarrow$ `2025/2026`) dan secara otomatis membuat FST baru untuk Semester Ganjil (`I (Satu)`) pada seluruh fase kurikulum aktif (`E` dan `F`).
-  3. **Isolasi Folder Penyimpanan (Storage)**: Rapor yang dicetak pada tahun ajaran baru secara otomatis diisolasi ke dalam subfolder baru pada `storage/app/public/raport/{Kelas}/{Fase-Semester-TA}/`.
+  3. **Isolasi Folder Penyimpanan (Storage)**: Rapor yang dicetak pada tahun ajaran baru secara otomatis diisolasi ke dalam subfolder baru pada `storage/app/public/raport/{Kelas}/{TahunAjaran_Fase_Semester}/` (contoh: `2025-2026_Fase_E_Sem_ISatu/`).
 
 ---
 

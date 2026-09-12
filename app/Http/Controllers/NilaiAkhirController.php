@@ -664,8 +664,15 @@ class NilaiAkhirController extends Controller
 
         $walas = DB::table('users')->where('class_id', $classId)->where('role_id', 2)->first();
         $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents', 'tgl_print', 'keputusan', 'walas'));
-        $concated = $fst ? (ucwords($fst->fase) . '-' . str_replace(' ', '', $fst->semester) . '-' . $fst->ta) : 'Raport';
-        $pdfPath = 'raport/' . str_replace(' ','_',$formattedStudents[0]['class_name']) . '/' . $concated . '/' . str_replace(' ','_',$formattedStudents[0]['student_name']). '.pdf';
+
+        $cleanTA   = $fst && !empty($fst->tahun_ajaran) ? str_replace(['/', ' '], ['-', '_'], $fst->tahun_ajaran) : 'TA';
+        $cleanFase = $fst && !empty($fst->fase) ? 'Fase_' . ucwords($fst->fase) : 'Fase';
+        $cleanSem  = $fst && !empty($fst->semester) ? 'Sem_' . preg_replace('/[^a-zA-Z0-9]/', '', $fst->semester) : 'Sem';
+        $concated  = "{$cleanTA}_{$cleanFase}_{$cleanSem}";
+
+        $safeClassName   = str_replace(['/', '\\', ' '], '_', $formattedStudents[0]['class_name']);
+        $safeStudentName = str_replace(['/', '\\', ' '], '_', $formattedStudents[0]['student_name']);
+        $pdfPath         = "raport/{$safeClassName}/{$concated}/{$safeStudentName}.pdf";
 
         Storage::disk('public')->put($pdfPath, $pdf->output());
 
