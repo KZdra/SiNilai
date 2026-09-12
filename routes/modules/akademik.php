@@ -8,6 +8,7 @@ use App\Http\Controllers\PeskulController;
 use App\Http\Controllers\CatatanWalasController;
 use App\Http\Controllers\NilaiAuditController;
 use App\Http\Controllers\P5Controller;
+use App\Http\Controllers\RaportExplorerController;
 
 /**
  * Modul Akademik
@@ -43,6 +44,14 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
         Route::get('/excel', [NilaiAkhirController::class, 'ExportNilaiAkhirExcel'])->name('exportexcel');
         Route::get('/ranking', [NilaiAkhirController::class, 'exportRankingExcel'])->name('exportranking');
         Route::get('/leger', [NilaiAkhirController::class, 'exportLegerExcel'])->name('exportleger');
+    });
+
+    // ── Penjelajah Arsip Raport (jsTree) ───────────────────────
+    Route::prefix('raport-explorer')->name('raport_explorer.')->group(function () {
+        Route::get('/', [RaportExplorerController::class, 'index'])->name('index');
+        Route::get('/tree', [RaportExplorerController::class, 'getTreeData'])->name('tree');
+        Route::get('/download', [RaportExplorerController::class, 'download'])->name('download');
+        Route::delete('/delete', [RaportExplorerController::class, 'destroy'])->name('destroy');
     });
 
     // ── Audit Trail Nilai ──────────────────────────────────────

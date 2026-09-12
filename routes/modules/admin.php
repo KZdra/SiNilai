@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KenaikanKelasController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\BackupController;
 
 /**
  * Modul Admin
@@ -12,6 +13,14 @@ use App\Http\Controllers\SettingController;
  * Middleware: auth + roleCheck:1
  */
 Route::middleware(['auth', 'roleCheck:1'])->group(function () {
+
+    // ── Backup Database ─────────────────────────────────────────
+    Route::prefix('backup')->name('backup.')->group(function () {
+        Route::get('/', [BackupController::class, 'index'])->name('index');
+        Route::post('/', [BackupController::class, 'store'])->name('store');
+        Route::get('/download/{filename}', [BackupController::class, 'download'])->name('download');
+        Route::delete('/{filename}', [BackupController::class, 'destroy'])->name('destroy');
+    });
 
     // ── Manajemen User ─────────────────────────────────────────
     Route::prefix('muser')->name('muser.')->group(function () {
@@ -39,6 +48,8 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/auth', [SettingController::class, 'editAuth'])->name('auth');
         Route::post('/auth', [SettingController::class, 'updateAuth'])->name('auth.update');
+        Route::get('/modules', [SettingController::class, 'editModules'])->name('modules');
+        Route::post('/modules', [SettingController::class, 'updateModules'])->name('modules.update');
     });
 
 });

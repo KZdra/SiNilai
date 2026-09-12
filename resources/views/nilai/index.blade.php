@@ -9,8 +9,10 @@
                     <h1 class="m-0">{{ __('Input Nilai') }}</h1>
                     <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
                     <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV Nilai Siswa</button>
-                    <button class="mt-2 btn btn-warning" id="cbtSyncBtn" ><i class="fas fa-sync-alt mr-1"></i> Tarik Nilai CBT</button>
-                    <button class="mt-2 btn btn-outline-secondary" id="cbtLogsBtn" ><i class="fas fa-history mr-1"></i> Log CBT</button>
+                    @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
+                        <button class="mt-2 btn btn-warning" id="cbtSyncBtn"><i class="fas fa-sync-alt mr-1"></i> Tarik Nilai CBT</button>
+                        <button class="mt-2 btn btn-outline-secondary" id="cbtLogsBtn"><i class="fas fa-history mr-1"></i> Log CBT</button>
+                    @endif
                     <button class="mt-2 btn btn-success" id="saveAllBtn" style="display: none">Simpan Semua Nilai</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -240,6 +242,7 @@
                 </div>
             </div>
         </div>
+        @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
         {{-- Modal Tarik Nilai CBT --}}
         <div class="modal fade" id="cbtSyncModal" tabindex="-1" role="dialog" aria-labelledby="cbtSyncModalLabel"
             aria-hidden="true">
@@ -379,6 +382,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
     </div>
     <!-- /.content -->
@@ -395,7 +399,10 @@
             let mapel_name = '';
             let fst_name = '';
             // End Of State
-            $('#upCsvBtn, #cbtSyncBtn, #cbtLogsBtn').hide();
+            $('#upCsvBtn').hide();
+            @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
+                $('#cbtSyncBtn, #cbtLogsBtn').hide();
+            @endif
             // NIlai Section (Filter)
             $('#pickClassBtn').click(function() {
                 $("#pickClass").slideToggle(300);
@@ -577,7 +584,10 @@
                         }
                     ]
                 });
-                $('#upCsvBtn, #cbtSyncBtn, #cbtLogsBtn').show();
+                $('#upCsvBtn').show();
+                @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
+                    $('#cbtSyncBtn, #cbtLogsBtn').show();
+                @endif
                 $('#pickFst').hide();
                 $("#resultTable").show(300);
             })
@@ -842,6 +852,7 @@
                 });
             });
 
+            @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
             // CBT Sync Handlers
             function openCbtModal() {
                 if (!class_id || !mapel_id || !fst_id) {
@@ -1042,6 +1053,7 @@
             $('#cbtLogsBtn, #cardCbtLogsBtn').click(function() {
                 loadCbtLogs();
             });
+            @endif
         });
     </script>
 @endsection

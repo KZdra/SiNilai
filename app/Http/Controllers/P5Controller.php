@@ -16,6 +16,10 @@ class P5Controller extends Controller
      */
     public function index(Request $request)
     {
+        if (!\App\Models\Setting::isModuleEnabled('p5', true) && Auth::user()->role_id != 1) {
+            abort(403, 'Modul Projek P5 sedang dinonaktifkan oleh Administrator.');
+        }
+
         $query = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc');
         if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
             $query->where('id', Auth::user()->class_id);

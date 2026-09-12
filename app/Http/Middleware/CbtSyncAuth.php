@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\Setting;
 
 class CbtSyncAuth
 {
@@ -16,6 +17,13 @@ class CbtSyncAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (!Setting::isModuleEnabled('cbt_sync', true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Integrasi CBT dinonaktifkan oleh administrator.',
+            ], 403);
+        }
+
         $expectedToken = config('services.cbt.sync_token') ?: env('CBT_SYNC_TOKEN');
         $token = $request->bearerToken();
 

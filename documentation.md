@@ -142,7 +142,7 @@ SiNilai/
 │   │   │   ├── PortalSiswaController.php    # Self-service dashboard portal siswa & generate akun masal
 │   │   │   ├── ProfileController.php        # Pengaturan profil pengguna
 │   │   │   ├── PublicVerificationController.php # Landing page publik verifikasi keaslian rapor via QR
-│   │   │   ├── SettingController.php        # Pengaturan server SSO client credentials
+│   │   │   ├── SettingController.php        # Pengaturan server SSO credentials & kendali toggle modul sistem
 │   │   │   ├── SiswaController.php          # Master data siswa & template import Excel siswa
 │   │   │   ├── SsoController.php            # OAuth2 Client Handler (Redirect, Callback, SLO)
 │   │   │   ├── TpController.php             # Master Tujuan Pembelajaran (TP) & Asesmen Formatif (KKTP)

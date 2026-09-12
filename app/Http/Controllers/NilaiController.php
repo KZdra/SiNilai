@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
+use App\Models\Setting;
 
 class NilaiController extends Controller
 {
@@ -347,6 +348,13 @@ class NilaiController extends Controller
      */
     public function testCbtConnection()
     {
+        if (!Setting::isModuleEnabled('cbt_sync', true)) {
+            return response()->json([
+                'status'  => 'offline',
+                'message' => 'Integrasi CBT dinonaktifkan oleh administrator.',
+            ], 403);
+        }
+
         $cbtUrl = config('services.cbt.url', env('CBT_API_URL', 'http://localhost:8001/api/v1'));
         $cbtKey = config('services.cbt.key', env('CBT_API_KEY'));
 
@@ -405,6 +413,13 @@ class NilaiController extends Controller
      */
     public function syncFromCbt(Request $request)
     {
+        if (!Setting::isModuleEnabled('cbt_sync', true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Integrasi CBT dinonaktifkan oleh administrator.',
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'class_id'     => 'required|integer',
             'mapel_id'     => 'required|integer',
@@ -659,6 +674,14 @@ class NilaiController extends Controller
      */
     public function getCbtSyncLogs(Request $request)
     {
+        if (!Setting::isModuleEnabled('cbt_sync', true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Integrasi CBT dinonaktifkan oleh administrator.',
+                'data'    => [],
+            ], 403);
+        }
+
         if (!Schema::hasTable('cbt_sync_logs')) {
             return response()->json(['data' => []]);
         }

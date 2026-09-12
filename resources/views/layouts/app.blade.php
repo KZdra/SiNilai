@@ -34,7 +34,52 @@
             border-top: 1px solid #dee2e6;
         }
         .main-sidebar {
-            background-color: #102C57 !important;
+            background-color: #ffffff !important;
+            border-right: 1px solid #e2e8f0 !important;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+        .main-sidebar .brand-link {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            color: #0f172a !important;
+            padding: 0.8125rem 1rem !important;
+        }
+        .main-sidebar .brand-link .brand-text {
+            color: #0f172a !important;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+        }
+        .sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active {
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25) !important;
+            border-radius: 6px;
+        }
+        .sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active .nav-icon,
+        .sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active p {
+            color: #ffffff !important;
+        }
+        .nav-sidebar .nav-link {
+            color: #334155 !important;
+            font-weight: 500;
+            border-radius: 6px;
+            margin-bottom: 3px;
+            padding: 0.55rem 0.85rem !important;
+            transition: all 0.15s ease-in-out;
+        }
+        .nav-sidebar .nav-link:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+        .nav-sidebar .nav-header {
+            color: #94a3b8 !important;
+            font-size: 0.72rem !important;
+            letter-spacing: 0.06em;
+            padding: 0.85rem 0.85rem 0.35rem 0.85rem !important;
+        }
+        .nav-treeview > .nav-item > .nav-link {
+            padding-left: 1.75rem !important;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -73,7 +118,7 @@
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <aside class="main-sidebar sidebar-light-primary elevation-1">
             <a href="/" class="brand-link">
 
                 <span class="brand-text font-weight-bold">{{ config('app.name', 'Laravel') }}</span>
