@@ -497,6 +497,10 @@ $(document).ready(function() {
                         <li><strong>Tingkat XI</strong>: Naik mengisi rombel <em>Tingkat XII</em>.</li>
                         <li><strong>Tingkat X</strong>: Naik mengisi rombel <em>Tingkat XI</em>.</li>
                     </ul>
+                    <div class="bg-light p-2 rounded border mb-2">
+                        <i class="fas fa-lock text-warning mr-1"></i> <strong>Semester Lama</strong>: Akan otomatis dikunci permanen.<br>
+                        <i class="fas fa-plus-circle text-success mr-1"></i> <strong>Tahun Ajaran Baru</strong>: FST Semester Ganjil baru akan otomatis dibuat.
+                    </div>
                     ${skipTinggal ? '<p class="text-success font-weight-bold mb-0"><i class="fas fa-check-circle mr-1"></i>Siswa tinggal kelas akan dilewati & tetap tinggal di kelas asalnya.</p>' : ''}
                 </div>
                 <div class="alert alert-warning py-2 small mb-0 text-left">
@@ -513,7 +517,7 @@ $(document).ready(function() {
             if (result.isConfirmed) {
                 Swal.fire({
                     title: 'Memproses Tutup Tahun Ajaran...',
-                    text: 'Sedang mengeksekusi promosi berjenjang seluruh rombel...',
+                    text: 'Sedang mengeksekusi promosi berjenjang seluruh rombel & inisialisasi tahun ajaran baru...',
                     allowOutsideClick: false,
                     didOpen: () => Swal.showLoading()
                 });
@@ -531,9 +535,12 @@ $(document).ready(function() {
                             title: 'Tutup Tahun Ajaran Selesai!',
                             html: `
                                 <p class="mb-2">${res.message}</p>
-                                <div class="badge badge-success px-3 py-2 mr-1">Lulus: ${res.total_graduated} siswa</div>
-                                <div class="badge badge-primary px-3 py-2 mr-1">Naik Kelas: ${res.total_promoted} siswa</div>
-                                <div class="badge badge-secondary px-3 py-2">Tinggal Kelas: ${res.total_retained} siswa</div>
+                                <div class="d-flex flex-wrap justify-content-center gap-1 mb-2">
+                                    <span class="badge badge-success px-3 py-2 mr-1">Lulus: ${res.total_graduated} siswa</span>
+                                    <span class="badge badge-primary px-3 py-2 mr-1">Naik Kelas: ${res.total_promoted} siswa</span>
+                                    <span class="badge badge-secondary px-3 py-2">Tinggal: ${res.total_retained} siswa</span>
+                                </div>
+                                ${res.new_academic_year ? `<div class="alert alert-info py-1 small mb-0">Tahun Ajaran Aktif Baru: <strong>${res.new_academic_year} (Semester I)</strong></div>` : ''}
                             `,
                             confirmButtonColor: '#28a745'
                         }).then(() => {

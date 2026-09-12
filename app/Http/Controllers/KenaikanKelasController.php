@@ -150,14 +150,77 @@ class KenaikanKelasController extends Controller
 
             $totalRetained = count($retainedStudentIds);
 
+            // 1. Kunci Otomatis FST Lama yang masih aktif (is_locked = false)
+            $lockedFstCount = DB::table('m_fst_pembelajaran')
+                ->where('is_locked', false)
+                ->update([
+                    'is_locked'  => true,
+                    'locked_at'   => now(),
+                    'locked_by'   => Auth::id(),
+                    'updated_at'  => now(),
+                ]);
+
+            // 2. Otomatis Generate FST Baru (Tahun Ajaran Baru - Semester Ganjil / I)
+            $latestFst = DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+            $nextTahunAjaran = null;
+            $nextTa = null;
+
+            if ($latestFst && preg_match('/^(\d{4})\/(\d{4})$/', trim($latestFst->tahun_ajaran), $matches)) {
+                $startYear = (int) $matches[1] + 1;
+                $endYear = (int) $matches[2] + 1;
+                $nextTahunAjaran = "{$startYear}/{$endYear}";
+                $nextTa = substr((string)$startYear, -2) . substr((string)$endYear, -2);
+            } else {
+                $currYear = (int) date('Y');
+                $nextTahunAjaran = "{$currYear}/" . ($currYear + 1);
+                $nextTa = substr((string)$currYear, -2) . substr((string)($currYear + 1), -2);
+            }
+
+            // Ambil semua fase kurikulum yang aktif digunakan di sekolah (default E dan F)
+            $fases = DB::table('m_fst_pembelajaran')->distinct()->pluck('fase')->filter()->toArray();
+            if (empty($fases)) {
+                $fases = ['E', 'F'];
+            }
+
+            $createdFstNames = [];
+            foreach ($fases as $fase) {
+                // Cek apakah FST Semester I tahun ajaran baru sudah pernah dibuat
+                $exists = DB::table('m_fst_pembelajaran')
+                    ->where('fase', $fase)
+                    ->where('tahun_ajaran', $nextTahunAjaran)
+                    ->where(function($q) {
+                        $q->where('semester', 'like', '%1%')
+                          ->orWhere('semester', 'like', '%Ganjil%')
+                          ->orWhere('semester', 'like', '%Satu%');
+                    })
+                    ->exists();
+
+                if (!$exists) {
+                    $newFstId = DB::table('m_fst_pembelajaran')->insertGetId([
+                        'fase'         => $fase,
+                        'semester'     => 'I (Satu)',
+                        'tahun_ajaran' => $nextTahunAjaran,
+                        'ta'           => 'tengah',
+                        'is_locked'    => false,
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                    $createdFstNames[] = "Fase {$fase} (Sem. I - {$nextTahunAjaran})";
+                }
+            }
+
+            $fstInfoMsg = !empty($createdFstNames)
+                ? "FST baru berhasil dibuat: " . implode(', ', $createdFstNames) . ". Semester sebelumnya telah dikunci otomatis."
+                : "Semester sebelumnya telah dikunci otomatis.";
+
             // Audit Trail ke database
             DB::table('nilai_audit_logs')->insert([
                 'user_id' => Auth::id(),
                 'action' => 'KENAIKAN_KELAS',
                 'field' => 'tutup_tahun_ajaran',
                 'old_value' => 'Rombel Seluruh Sekolah',
-                'new_value' => 'Tahun Ajaran Baru',
-                'reason' => "Tutup Tahun Ajaran Massal: {$totalGraduated} siswa lulus, {$totalPromoted} siswa naik kelas, {$totalRetained} siswa tinggal kelas.",
+                'new_value' => "Tahun Ajaran Baru {$nextTahunAjaran}",
+                'reason' => "Tutup Tahun Ajaran Massal: {$totalGraduated} siswa lulus, {$totalPromoted} siswa naik kelas, {$totalRetained} siswa tinggal kelas. {$fstInfoMsg}",
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'created_at' => now(),
@@ -167,11 +230,14 @@ class KenaikanKelasController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Proses Tutup Tahun Ajaran berhasil! {$totalGraduated} siswa lulus dan {$totalPromoted} siswa berhasil dinaikkan kelas.",
-                'total_graduated' => $totalGraduated,
-                'total_promoted' => $totalPromoted,
-                'total_retained' => $totalRetained,
-                'details' => $details,
+                'message' => "Proses Tutup Tahun Ajaran berhasil! {$totalGraduated} siswa lulus, {$totalPromoted} siswa naik kelas. {$fstInfoMsg}",
+                'total_graduated'   => $totalGraduated,
+                'total_promoted'    => $totalPromoted,
+                'total_retained'    => $totalRetained,
+                'locked_fst_count'  => $lockedFstCount,
+                'new_academic_year' => $nextTahunAjaran,
+                'created_fsts'      => $createdFstNames,
+                'details'           => $details,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
