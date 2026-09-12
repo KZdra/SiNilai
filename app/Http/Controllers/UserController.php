@@ -11,7 +11,15 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = DB::table('users as u')->select(
+        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $rolesList = DB::table('roles')->select('id', 'role_name')->orderBy('role_name', 'asc')->get();
+
+        return view('users.index', compact('classList', 'rolesList'));
+    }
+
+    public function getData(Request $request)
+    {
+        $query = DB::table('users as u')->select(
             'u.id',
             'u.class_id',
             'c.class_name',
@@ -23,12 +31,38 @@ class UserController extends Controller
             'u.email'
         )
             ->leftJoin('roles as r', 'u.role_id', '=', 'r.id')
-            ->leftJoin('class as c', 'u.class_id', '=', 'c.id')  // Changed alias from 'r' to 'c'
-            ->orderBy('u.name', 'asc')->get();
-        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
-        $rolesList = DB::table('roles')->select('id', 'role_name')->orderBy('role_name', 'asc')->get();
+            ->leftJoin('class as c', 'u.class_id', '=', 'c.id');
 
-        return view('users.index', compact('users', 'classList', 'rolesList'));
+        if ($request->filled('role_id')) {
+            $query->where('u.role_id', $request->role_id);
+        }
+        if ($request->filled('class_id')) {
+            $query->where('u.class_id', $request->class_id);
+        }
+
+        $searchableColumns = [
+            'u.username',
+            'u.name',
+            'u.nip',
+            'u.email',
+            'c.class_name',
+            'r.role_name',
+        ];
+
+        $orderableColumns = [
+            0 => 'u.username',
+            1 => 'u.name',
+            2 => 'u.nip',
+            3 => 'c.class_name',
+            4 => 'u.email',
+            5 => 'r.role_name',
+        ];
+
+        if (!$request->has('order')) {
+            $query->orderBy('u.name', 'asc');
+        }
+
+        return \App\Services\DataTableHelper::process($query, $request, $searchableColumns, $orderableColumns, 'u.id');
     }
 
     public function store(Request $request)

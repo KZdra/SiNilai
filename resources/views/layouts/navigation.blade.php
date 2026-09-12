@@ -47,6 +47,24 @@
                     </p>
                 </a>
             </li>
+            <li class="nav-item ">
+                <a href="{{ route('walas.index') }}"
+                    class="nav-link {{ request()->is('walas*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-clipboard-list"></i>
+                    <p>
+                        {{ __('Presensi & Catatan Walas') }}
+                    </p>
+                </a>
+            </li>
+            <li class="nav-item ">
+                <a href="{{ route('p5.index') }}"
+                    class="nav-link {{ request()->is('p5*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-shapes"></i>
+                    <p>
+                        {{ __('Projek P5') }}
+                    </p>
+                </a>
+            </li>
 
 
 
@@ -73,6 +91,13 @@
                             class="nav-link {{ request()->is('kelas*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-school"></i>
                             <p>Data Kelas</p>
+                        </a>
+                    </li>
+                    <li class="nav-item ">
+                        <a href="{{ route('kenaikan_kelas.index') }}"
+                            class="nav-link {{ request()->is('kenaikan-kelas*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-level-up-alt"></i>
+                            <p>Kenaikan Kelas</p>
                         </a>
                     </li>
                     @endif
@@ -122,6 +147,15 @@
                         </a>
                     </li>
                     @if (Auth::user()->role_id == 1)
+                    <li class="nav-item ">
+                        <a href="{{ route('audit.index') }}"
+                            class="nav-link {{ request()->is('audit*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-history"></i>
+                            <p>
+                                {{ __('Audit Nilai') }}
+                            </p>
+                        </a>
+                    </li>
                     <li class="nav-item ">
                         <a href="{{ route('muser.index') }}"
                             class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">

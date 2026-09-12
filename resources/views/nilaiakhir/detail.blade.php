@@ -102,15 +102,35 @@
                 exportpdf(url);
             })
             function exportpdf(url) {
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        let newWindow = window.open(data.pdf_url,
-                            '_blank');
-                        setTimeout(() => newWindow.print(),
-                            1000);
-                        // console.log(data);
-                    });
+                Swal.fire({
+                    title: 'Menyiapkan Dokumen Raport...',
+                    text: 'Sedang menghasilkan PDF resmi, mohon tunggu...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    if (data && data.pdf_url) {
+                        let newWindow = window.open(data.pdf_url, '_blank');
+                        if (newWindow) {
+                            setTimeout(() => newWindow.print(), 1000);
+                        }
+                    } else {
+                        SwalHelper.showError('URL PDF tidak valid.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    SwalHelper.showError('Gagal menyiapkan PDF Raport.');
+                });
             }
         })
     </script>

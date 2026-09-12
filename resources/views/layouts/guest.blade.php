@@ -159,7 +159,9 @@
 </div>
 <!-- /.login-box -->
 
-@vite('resources/js/app.js')
+<!-- @vite('resources/js/app.js') -->
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 <!-- Bootstrap 4 -->
 <script src="{{ asset('js/bootstrap.js') }}"></script>
 <!-- AdminLTE App -->

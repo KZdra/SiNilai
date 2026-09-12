@@ -19,7 +19,14 @@ class DatabaseSeeder extends Seeder
         $this->call(AccountSeeder::class);
         $this->call(ClassSeeder::class);
         $this->call(MapelSeeder::class);
-        // $this->call(DummyDataSeeder::class);
+        $this->call(P5MasterSeeder::class);
         $this->call(SettingSeeder::class);
+        
+        // =========================================================================
+        // ALL-IN-ONE DUMMY SEEDER
+        // Cukup aktifkan 1 baris ini jika ingin database langsung terisi data dummy
+        // lengkap (User, Kelas, Siswa, Nilai, TP, P5, Eskul, Portal Siswa, Audit):
+        // =========================================================================
+        // $this->call(CompleteDummyDataSeeder::class);
     }
 }

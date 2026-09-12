@@ -37,6 +37,8 @@ return [
 
     'cbt' => [
         'sync_token' => env('CBT_SYNC_TOKEN'),
+        'url' => env('CBT_API_URL', 'http://localhost:8001/api/v1'),
+        'key' => env('CBT_API_KEY', env('CBT_SYNC_TOKEN')),
     ],
 
 ];

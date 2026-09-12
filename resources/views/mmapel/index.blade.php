@@ -77,10 +77,11 @@
             // INIz
             var mapelTable = $('#mapelTable').DataTable({
                 "responsive": true,
+                "processing": true,
+                "serverSide": true,
                 "ajax": {
                     "url": "{{ route('mapel.getAll') }}",
                     "type": "GET",
-                    "dataSrc": 'data',
                     "error": function(xhr, error, thrown) {
                         Swal.fire({
                             icon: 'error',
@@ -92,8 +93,9 @@
                 },
                 "columns": [{
                         "data": null,
+                        "orderable": false,
                         "render": function(data, type, row, meta) {
-                            return meta.row + 1;
+                            return meta.row + meta.settings._iDisplayStart + 1;
                         }
                     },
                     {

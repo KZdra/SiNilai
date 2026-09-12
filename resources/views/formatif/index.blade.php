@@ -33,9 +33,7 @@
                                     @else
                                         <select name="class_id" id="class_id" class="form-control">
                                             <option value="" selected disabled>Pilih Kelas</option>
-                                            @foreach ($classList as $index => $class)
-                                                <option value="{{ $class->id }}">{{ $class->class_name }}</option>
-                                            @endforeach
+                                            @include('partials.select_class_options')
                                         </select>
                                     @endif
                                 </div>
@@ -50,11 +48,7 @@
                                     <label for="fst_id">Fase/Semester/Tahun Ajaran</label>
                                     <select name="fst_id" id="fst_id" class="form-control">
                                         <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran</option>
-                                        @foreach ($fstList as $index => $fst)
-                                            <option value="{{ $fst->id }}">
-                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran . '/' . ucfirst($fst->ta) }}
-                                            </option>
-                                        @endforeach
+                                        @include('partials.select_fst_options')
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-success">Submit</button>
@@ -83,7 +77,7 @@
                         <div class="card-body p-2">
 
                             <div class="table-responsive">
-                                <table class="table table-striped table-bordered" id="valueTable" style="width: 100%;">
+                                <table class="table table-striped table-bordered" id="valueTable">
                                     <thead id="valueTableHead">
                                     </thead>
                                     <tbody></tbody>
@@ -188,7 +182,9 @@
                     return;
                 }
                 $("#pickClass").hide(300);
-                $("#pickFst").show(300);
+                $("#pickFst").show(300, function() {
+                    if (window.initSelect2) window.initSelect2('#pickFst');
+                });
             })
 
             $('#fstForm').submit(function(e) {
@@ -219,7 +215,9 @@
                         }
                         $('#mapel_id').html(html);
                         $("#pickFst").hide(300);
-                        $("#pickMapel").show(300);
+                        $("#pickMapel").show(300, function() {
+                            if (window.initSelect2) window.initSelect2('#pickMapel');
+                        });
                     },
                     error: function() {
                         SwalHelper.showError('Gagal mengambil data Mata Pelajaran.');

@@ -32,6 +32,7 @@
                                         <th>Semester</th>
                                         <th>Tahun Ajaran</th>
                                         <th>Sem</th>
+                                        <th>Status Kunci</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -112,15 +113,17 @@
         $(document).ready(function() {
             let table = $('#valueTable').DataTable({
                 "responsive": true,
+                "processing": true,
+                "serverSide": true,
                 "ajax": {
                     "url": "{{ route('mfst.getData') }}",
-                    "type": "GET",
-                    "dataSrc": 'data'
+                    "type": "GET"
                 },
                 "columns": [{
                         "data": null,
+                        "orderable": false,
                         "render": function(data, type, row, meta) {
-                            return meta.row + 1; // Index + 1
+                            return meta.row + meta.settings._iDisplayStart + 1; // Index + 1
                         }
                     },
                     {
@@ -148,6 +151,15 @@
                         }
                     },
                     {
+                        "data": "is_locked",
+                        "render": function(data, type, row) {
+                            if (data == 1) {
+                                return '<span class="badge badge-danger"><i class="fas fa-lock mr-1"></i>Terkunci</span>';
+                            }
+                            return '<span class="badge badge-success"><i class="fas fa-lock-open mr-1"></i>Terbuka</span>';
+                        }
+                    },
+                    {
                         "data": null,
                         "render": function(data, type, row) {
                             if (row.id) {
@@ -158,6 +170,9 @@
                                                     Aksi
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right">
+                                                    <button class="dropdown-item toggleLockBtn" data-id='${row.id}' data-locked='${row.is_locked}'><i
+                                                            class="fas ${row.is_locked == 1 ? 'fa-unlock text-success' : 'fa-lock text-warning'}"></i>&nbsp;${row.is_locked == 1 ? 'Buka Kunci Nilai' : 'Kunci Nilai'}</button>
+                                                    <div class="dropdown-divider"></div>
                                                     <button class="dropdown-item editFstBtn" data-id='${row.id}' data-fase='${row.fase}' data-semester='${row.semester}' data-tahun_ajaran='${row.tahun_ajaran}' data-ta='${row.ta}'><i
                                                             class="fas fa-pen text-info"></i>&nbsp;Edit</button>
                                                     <div class="dropdown-divider"></div>
@@ -180,10 +195,10 @@
             // Tampilkan Modal Input Nilai
             $(document).on("click", "#inputFstBtn", function() {
                 $('#fst_id').val('');
-                $('#fase').val('');
-                $('#semester').val('');
+                $('#fase').val('').trigger('change');
+                $('#semester').val('').trigger('change');
                 $('#tahun_ajaran').val('');
-                $('#ta').val('');
+                $('#ta').val('').trigger('change');
                 $('#tpModalLabel').text('Input Fase/Semester/Tahun Ajaran');
                 $('#tpModal').modal('show');
             });
@@ -233,12 +248,11 @@
                 let tahun_ajaran = $(this).data('tahun_ajaran');
                 let ta = $(this).data('ta');
 
-
                 $('#fst_id').val(id);
-                $('#fase').val(fase);
-                $('#semester').val(semester);
+                $('#fase').val(fase).trigger('change');
+                $('#semester').val(semester).trigger('change');
                 $('#tahun_ajaran').val(tahun_ajaran);
-                $('#ta').val(ta);
+                $('#ta').val(ta).trigger('change');
                 $('#tpModalLabel').text('Edit Fase/Semester/Tahun Ajaran');
                 $('#tpModal').modal('show');
             });
@@ -284,7 +298,50 @@
                         });
                     }
                 });
-            })
+            });
+
+            $(document).on('click', '.toggleLockBtn', function() {
+                let id = $(this).data('id');
+                let isLocked = $(this).data('locked') == 1;
+                let actionText = isLocked ? 'Buka Kunci Nilai' : 'Kunci Nilai';
+                let confirmText = isLocked
+                    ? 'Guru dapat kembali menginput dan mengedit nilai pada semester ini.'
+                    : 'Seluruh input dan perubahan nilai pada semester ini akan dikunci (Read-Only).';
+
+                Swal.fire({
+                    title: `${actionText}?`,
+                    text: confirmText,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: isLocked ? '#28a745' : '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: `Ya, ${actionText}!`,
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/mfst/${id}/toggle-lock`,
+                            method: "POST",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                $('#valueTable').DataTable().ajax.reload(null, false);
+                            },
+                            error: function(xhr) {
+                                Swal.fire("Gagal!", xhr.responseJSON?.message || "Terjadi kesalahan!", "error");
+                            }
+                        });
+                    }
+                });
+            });
         });
     </script>
 @endsection

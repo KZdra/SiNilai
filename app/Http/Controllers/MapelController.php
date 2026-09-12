@@ -13,10 +13,13 @@ class MapelController extends Controller
         return view('mmapel.index');
     }
     // Api Sections
-    public function getAll()
+    public function getAll(Request $request)
     {
-        $data = DB::table('mata_pelajarans')->get();
-        return response()->json(['data' => $data], 200);
+        $query = DB::table('mata_pelajarans')->select('id', 'nama_mapel');
+        if (!$request->has('order')) {
+            $query->orderBy('nama_mapel', 'asc');
+        }
+        return \App\Services\DataTableHelper::process($query, $request, ['nama_mapel'], [1 => 'nama_mapel'], 'id');
     }
     public function store(Request $request)
     {

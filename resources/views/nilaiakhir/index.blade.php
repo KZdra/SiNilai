@@ -14,6 +14,8 @@
                         Export Ranking Siswa</button>
                     <button class="mt-2 btn btn-info" id="expBtn4" style="display: none;"><i class="fas fa-print"></i>
                         Print Raport Berurutan</button>
+                    <button class="mt-2 btn btn-dark" id="expBtnLeger" style="display: none;"><i class="fas fa-table mr-1"></i>
+                        Download Leger Lengkap (Excel)</button>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -37,9 +39,7 @@
                                     @else
                                         <select name="class_id" id="class_id" class="form-control">
                                             <option value="" selected disabled>Pilih Kelas</option>
-                                            @foreach ($classList as $index => $class)
-                                                <option value="{{ $class->id }}">{{ $class->class_name }}</option>
-                                            @endforeach
+                                            @include('partials.select_class_options')
                                         </select>
                                     @endif
                                 </div>
@@ -55,11 +55,7 @@
                                     <select name="fst_id" id="fst_id" class="form-control">
                                         <option value="" selected disabled> Pilih Fase/Semester/Tahun Ajaran dan
                                             faseSemester</option>
-                                        @foreach ($fstList as $index => $fst)
-                                            <option value="{{ $fst->id }}">
-                                                {{ ucwords($fst->fase) . '/' . $fst->semester . '/' . $fst->tahun_ajaran . '/' . ucfirst($fst->ta) }}
-                                            </option>
-                                        @endforeach
+                                        @include('partials.select_fst_options')
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-success">Submit</button>
@@ -186,8 +182,9 @@
                     SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
                     return;
                 }
-                $("#pickFst").show()
-                $("#pickClass").hide()
+                $("#pickFst").show();
+                if (window.initSelect2) window.initSelect2('#pickFst');
+                $("#pickClass").hide();
 
             })
             $('#fstForm').submit(function(e) {
@@ -274,6 +271,7 @@
                 $("#expBtn2").show(400);
                 $("#expBtn4").show(400);
                 $("#expBtn3").show(500);
+                $("#expBtnLeger").show(500);
 
             });
 
@@ -344,6 +342,48 @@
                 });
             });
 
+            $('#expBtnLeger').on('click', function() {
+                let legerUrl = @json(route('nilaiakhir.exportleger', ['class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']));
+                legerUrl = legerUrl.replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
+
+                Swal.fire({
+                    title: 'Membuat Leger Nilai...',
+                    text: 'Menyusun nilai komprehensif, ranking, dan statistik kelas...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                $.ajax({
+                    url: legerUrl,
+                    method: 'GET',
+                    xhrFields: { responseType: 'blob' },
+                    success: function(data, _, xhr) {
+                        Swal.close();
+                        var fileName = `Leger_Nilai_${class_name}.xlsx`;
+                        var contentDisposition = xhr.getResponseHeader('Content-Disposition');
+                        if (contentDisposition) {
+                            var matches = /filename="([^"]*)"/.exec(contentDisposition);
+                            if (matches != null && matches[1]) {
+                                fileName = matches[1];
+                            }
+                        }
+
+                        var a = document.createElement('a');
+                        var url = window.URL.createObjectURL(data);
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.append(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                        SwalHelper.showSuccess('Leger Nilai Berhasil Diunduh!');
+                    },
+                    error: function() {
+                        Swal.fire('Gagal', 'Tidak dapat mengunduh leger nilai.', 'error');
+                    }
+                });
+            });
+
             $('#expBtn2').on('click', function() {
                 let rankingUrl = @json(route('nilaiakhir.exportranking', ['class_id' => '__VALUE_ID__', 'fst_id' => '__FST_ID__']));
                 rankingUrl = rankingUrl.replace('__VALUE_ID__', class_id).replace('__FST_ID__', fst_id);
@@ -379,15 +419,35 @@
             });
 
             function exportpdf(url) {
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        let newWindow = window.open(data.pdf_url,
-                            '_blank');
-                        setTimeout(() => newWindow.print(),
-                            1000);
-                        // console.log(data);
-                    });
+                Swal.fire({
+                    title: 'Menyiapkan Dokumen Raport...',
+                    text: 'Sedang menghasilkan PDF resmi, mohon tunggu...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    if (data && data.pdf_url) {
+                        let newWindow = window.open(data.pdf_url, '_blank');
+                        if (newWindow) {
+                            setTimeout(() => newWindow.print(), 1000);
+                        }
+                    } else {
+                        SwalHelper.showError('URL PDF tidak valid.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    SwalHelper.showError('Gagal menyiapkan PDF Raport.');
+                });
             }
 
             // --- Bulk Print Berurutan Logic ---
@@ -443,12 +503,19 @@
                 let originalHtml = btn.html();
                 btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyiapkan PDF...');
                 
-                fetch(exportUrl2)
+                fetch(exportUrl2, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
                     .then(response => response.json())
                     .then(data => {
                         btn.prop('disabled', false).html(originalHtml);
                         let newWindow = window.open(data.pdf_url, '_blank');
-                        setTimeout(() => newWindow.print(), 1000);
+                        if (newWindow) {
+                            setTimeout(() => newWindow.print(), 1000);
+                        }
                     })
                     .catch(err => {
                         btn.prop('disabled', false).html(originalHtml);

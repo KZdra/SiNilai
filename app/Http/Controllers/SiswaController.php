@@ -8,20 +8,31 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use App\Services\DataTableHelper;
 
 class SiswaController extends Controller
 {
     public function index()
     {
-        $data = DB::table('students as s')
+        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
+        $className = null;
+        if (Auth::user()->class_id !== null) {
+            $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
+        }
+
+        return view('msiswa.index', compact('classList', 'className'));
+    }
+
+    public function getData(Request $request)
+    {
+        $query = DB::table('students as s')
             ->select(
                 's.id',
                 's.nis',
                 's.nisn',
                 's.nama',
                 's.class_id',
-                'class.class_name',
-                'class.id as class_id',
+                DB::raw("COALESCE(class.class_name, 'Alumni / Belum Ada Kelas') as class_name"),
                 's.jenis_kelamin',
                 's.tempat_lahir',
                 's.tanggal_lahir',
@@ -40,19 +51,53 @@ class SiswaController extends Controller
             )
             ->leftJoin('class', 's.class_id', '=', 'class.id');
 
-        // Role Management: Jika bukan admin dan punya class_id, filter berdasarkan kelasnya
-        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
-            $data = $data->where('s.class_id', Auth::user()->class_id);
+        if (Auth::check() && Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $query->where('s.class_id', Auth::user()->class_id);
+        } elseif ($request->filled('class_id')) {
+            $query->where('s.class_id', $request->class_id);
+        } elseif ($request->filled('class_name')) {
+            $query->where('class.class_name', $request->class_name);
         }
 
-        $data = $data->orderBy('s.nama', 'asc')->get();
-        $classList = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc')->get();
-        $className = null;
-        if (Auth::user()->class_id !== null) {
-            $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
+        if ($request->filled('search_keyword')) {
+            $kw = $request->search_keyword;
+            $query->where(function($q) use ($kw) {
+                $q->where('s.nama', 'like', "%{$kw}%")
+                  ->orWhere('s.nis', 'like', "%{$kw}%")
+                  ->orWhere('s.nisn', 'like', "%{$kw}%");
+            });
         }
 
-        return view('msiswa.index', compact('data', 'classList', 'className'));
+        $searchableColumns = [
+            's.nama',
+            's.nis',
+            's.nisn',
+            's.tempat_lahir',
+            's.alamat',
+            'class.class_name',
+        ];
+
+        $orderableColumns = [
+            1 => 's.nisn',
+            2 => 's.nis',
+            3 => 's.nama',
+            4 => 'class.class_name',
+            5 => 's.jenis_kelamin',
+            6 => 's.tempat_lahir',
+            7 => 's.tanggal_lahir',
+            8 => 's.agama',
+            10 => 's.alamat',
+            16 => 's.sakit',
+            17 => 's.izin',
+            18 => 's.alpa',
+        ];
+
+        // Default ordering if not ordered
+        if (!$request->has('order')) {
+            $query->orderBy('s.nama', 'asc');
+        }
+
+        return DataTableHelper::process($query, $request, $searchableColumns, $orderableColumns, 's.id');
     }
     public function store(Request $request)
     {

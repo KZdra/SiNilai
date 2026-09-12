@@ -10,8 +10,16 @@ class ClassController extends Controller
 {
     public function index()
     {
-        $data = DB::table('class')->select('id', 'class_name')->orderBy('class_name','asc')->get();
-        return view('mkelas.index', compact('data'));
+        return view('mkelas.index');
+    }
+
+    public function getData(Request $request)
+    {
+        $query = DB::table('class')->select('id', 'class_name');
+        if (!$request->has('order')) {
+            $query->orderBy('class_name', 'asc');
+        }
+        return \App\Services\DataTableHelper::process($query, $request, ['class_name'], [1 => 'class_name'], 'id');
     }
     public function store(Request $request)
     {

@@ -31,24 +31,16 @@
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label>Fase / Semester / Tahun Ajaran Aktif</label>
-                                <select name="fst_id" class="form-control select2" onchange="document.getElementById('filterForm').submit();">
-                                    @foreach($fsts as $fst)
-                                        <option value="{{ $fst->id }}" {{ $selectedFstId == $fst->id ? 'selected' : '' }}>
-                                            Fase {{ $fst->fase }} - Semester {{ $fst->semester }} ({{ $fst->tahun_ajaran }} {{ $fst->ta }})
-                                        </option>
-                                    @endforeach
+                                <select name="fst_id" class="form-control" onchange="document.getElementById('filterForm').submit();">
+                                    @include('partials.select_fst_options', ['fstList' => $fsts, 'selectedId' => $selectedFstId])
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label>Kelas</label>
-                                <select name="class_id" class="form-control select2" onchange="document.getElementById('filterForm').submit();">
-                                    @foreach($classes as $c)
-                                        <option value="{{ $c->id }}" {{ $selectedClassId == $c->id ? 'selected' : '' }}>
-                                            {{ $c->class_name }}
-                                        </option>
-                                    @endforeach
+                                <select name="class_id" class="form-control" onchange="document.getElementById('filterForm').submit();">
+                                    @include('partials.select_class_options', ['classList' => $classes, 'selectedId' => $selectedClassId])
                                 </select>
                             </div>
                         </div>
@@ -122,11 +114,7 @@
                         <label>Pilih Semester Sumber</label>
                         <select name="source_fst_id" class="form-control" required>
                             <option value="">-- Pilih Semester --</option>
-                            @foreach($otherFsts as $fst)
-                                <option value="{{ $fst->id }}">
-                                    Fase {{ $fst->fase }} - Semester {{ $fst->semester }} ({{ $fst->tahun_ajaran }} {{ $fst->ta }})
-                                </option>
-                            @endforeach
+                            @include('partials.select_fst_options', ['fstList' => $otherFsts])
                         </select>
                     </div>
                 </div>

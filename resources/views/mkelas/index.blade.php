@@ -22,25 +22,15 @@
                     <div class="card">
                         <div class="card-body p-2">
 
-                            <table class="table table-striped table-bordered" id="classTable">
+                            <table class="table table-striped table-bordered w-100" id="classTable">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
+                                        <th style="width: 60px;">No</th>
                                         <th>Kelas</th>
-                                        <th>Aksi</th>
+                                        <th style="width: 150px;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($data as $index => $class)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $class->class_name }}</td>
-                                            <td> <button class="btn btn-primary editClassBtn" data-id="{{ $class->id }}"
-                                                    data-name="{{ $class->class_name }}">Edit</button> <button
-                                                    class="btn btn-danger delBtn"
-                                                    data-id="{{ $class->id }}">Delete</button></td>
-                                        </tr>
-                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
@@ -85,9 +75,40 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
-            // Init
-            $('#classTable').DataTable();
-            ///
+            // Init DataTable with Server-Side AJAX
+            let table = $('#classTable').DataTable({
+                responsive: true,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('class.getData') }}",
+                    type: "GET"
+                },
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        }
+                    },
+                    { data: 'class_name', defaultContent: '-' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            let safeName = (row.class_name || '').replace(/"/g, '&quot;');
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary editClassBtn" data-id="${row.id}" data-name="${safeName}">Edit</button>
+                                    <button class="btn btn-sm btn-danger delBtn" data-id="${row.id}">Delete</button>
+                                </div>
+                            `;
+                        }
+                    }
+                ]
+            });
+
             // Tampilkan Modal Tambah Kelas
             $('#addClassBtn').click(function() {
                 $('#class_id').val('');
@@ -117,21 +138,18 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
-                        setTimeout(function() {
-                            $('#classModal').modal('hide');
-                            location.reload(); // Refresh halaman setelah berhasil
-                        }, 2000);
-
+                        $('#classModal').modal('hide');
+                        table.ajax.reload(null, false);
                     },
                     error: function(res) {
-                        console.log(res)
-                        Swal.fire('Error', 'Terjadi kesalahan, coba lagi!', 'error');
+                        console.log(res);
+                        Swal.fire('Error', res.responseJSON?.message || 'Terjadi kesalahan, coba lagi!', 'error');
                     }
                 });
             });
 
             // Tampilkan Modal Edit Kelas
-            $('.editClassBtn').click(function() {
+            $(document).on('click', '.editClassBtn', function() {
                 let id = $(this).data('id');
                 let name = $(this).data('name');
 
@@ -142,7 +160,7 @@
             });
 
             // Delete Action
-            $('.delBtn').click(function() {
+            $(document).on('click', '.delBtn', function() {
                 let id = $(this).data('id');
                 Swal.fire({
                     title: "Are you sure?",
@@ -168,21 +186,16 @@
                                     showConfirmButton: false,
                                     timer: 1500
                                 });
-
-                                setTimeout(function() {
-                                    location
-                                .reload(); // Refresh halaman setelah berhasil
-                                }, 2000);
+                                table.ajax.reload(null, false);
                             },
                             error: function(r) {
-                                console.log(r)
-                                Swal.fire("Gagal!", "Terjadi kesalahan, coba lagi!",
-                                    "error");
+                                console.log(r);
+                                Swal.fire("Gagal!", "Terjadi kesalahan, coba lagi!", "error");
                             }
                         });
                     }
                 });
-            })
+            });
         });
     </script>
 @endsection

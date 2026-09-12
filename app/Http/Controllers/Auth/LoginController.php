@@ -36,6 +36,14 @@ class LoginController extends Controller
         return 'username';
     }
 
+    protected function authenticated(Request $request, $user)
+    {
+        if ($user->role_id == 3) {
+            return redirect()->route('portal.dashboard');
+        }
+        return redirect()->intended($this->redirectPath());
+    }
+
     public function logout(Request $request)
     {
         // 1. Hapus sesi lokal aplikasi SiNilai

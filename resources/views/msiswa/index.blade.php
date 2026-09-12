@@ -9,6 +9,9 @@
                     <h1 class="m-0">{{ __('Master Siswa') }}</h1>
                     <button class="mt-2 btn btn-success" id="addStudentBtn">Tambah Siswa</button>
                     <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV SISWA</button>
+                    @if (Auth::user()->role_id == 1)
+                        <button class="mt-2 btn btn-primary" id="btnGenAccounts"><i class="fas fa-users-cog mr-1"></i> Generate Akun Portal Siswa</button>
+                    @endif
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->
@@ -29,13 +32,11 @@
                                 <label for="class_filter"> Filter Kelas</label>
                                 <select class="form-control" id="class_filter" name="class_filter">
                                     <option value="" selected>Semua Kelas</option>
-                                    @foreach ($classList as $index => $class)
-                                        <option value="{{ $class->class_name }}">{{ $class->class_name }}</option>
-                                    @endforeach
+                                    @include('partials.select_class_options', ['useNameAsValue' => true])
                                 </select>
                             </div>
                             @endif
-                            <table class="table table-striped table-bordered" id="studentTable">
+                            <table class="table table-striped table-bordered w-100" id="studentTable">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -62,61 +63,6 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($data as $index => $student)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $student->nisn }}</td>
-                                            <td>{{ $student->nis }}</td>
-                                            <td>{{ $student->nama }}</td>
-                                            <td>{{ $student->class_name ?? 'Belum Di Set' }}</td>
-                                            <td>{{ $student->jenis_kelamin }}</td>
-                                            <td>{{ $student->tempat_lahir }}</td>
-                                            <td>{{ $student->tanggal_lahir }}</td>
-                                            <td>{{ ucwords($student->agama) }}</td>
-                                            <td>{{ $student->pendidikan_sebelumnya }}</td>
-                                            <td>{{ $student->alamat }}</td>
-                                            <td>{{ $student->nama_ayah }}</td>
-                                            <td>{{ $student->nama_ibu }}</td>
-                                            <td>{{ $student->pekerjaan_ayah }}</td>
-                                            <td>{{ $student->pekerjaan_ibu }}</td>
-                                            <td>{{ $student->alamat_orang_tua }}</td>
-                                            <td>{{ $student->sakit }}</td>
-                                            <td>{{ $student->izin }}</td>
-                                            <td>{{ $student->alpa }}</td>
-                                            <td>
-                                                @if ($student->foto_siswa_path)
-                                                    <img src="{{ asset('storage/' . $student->foto_siswa_path) }}"
-                                                        alt="" class="img-fluid img-thumbnail"
-                                                        style="width: 200px;height:300px;">
-                                                @else
-                                                    Belum Ada Foto
-                                                @endif
-                                            </td>
-                                            <td> <button class="btn btn-primary editStudentBtn"
-                                                    data-id="{{ $student->id }}" data-nis="{{ $student->nis }}"
-                                                    data-nisn="{{ $student->nisn }}"
-                                                    data-student_name="{{ $student->nama }}"
-                                                    data-class_id="{{ $student->class_id }}"
-                                                    data-jenis_kelamin="{{ $student->jenis_kelamin }}"
-                                                    data-tempat_lahir="{{ $student->tempat_lahir }}"
-                                                    data-tanggal_lahir="{{ $student->tanggal_lahir }}"
-                                                    data-agama="{{ $student->agama }}"
-                                                    data-pendidikan_sebelumnya="{{ $student->pendidikan_sebelumnya }}"
-                                                    data-alamat="{{ $student->alamat }}"
-                                                    data-nama_ayah="{{ $student->nama_ayah }}"
-                                                    data-nama_ibu="{{ $student->nama_ibu }}"
-                                                    data-pekerjaan_ayah="{{ $student->pekerjaan_ayah }}"
-                                                    data-pekerjaan_ibu="{{ $student->pekerjaan_ibu }}"
-                                                    data-alamat_orang_tua="{{ $student->alamat_orang_tua }}"
-                                                    data-sakit="{{$student->sakit}}"
-                                                    data-izin="{{$student->izin}}"
-                                                    data-alpa="{{$student->alpa}}">Edit</button>
-                                                <button class="btn btn-danger delBtn"
-                                                    data-id="{{ $student->id }}">Delete</button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-
                                 </tbody>
                             </table>
                         </div>
@@ -156,15 +102,13 @@
                                 <label for="class_id">Kelas</label>
                                 <select class="form-control" id="class_id" name="class_id">
                                     <option value="" selected disabled>Pilih Kelas</option>
-                                    @foreach ($classList as $index => $class)
-                                        <option value="{{ $class->id }}">{{ $class->class_name }}</option>
-                                    @endforeach
+                                    @include('partials.select_class_options')
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="jenis_kelamin">Jenis Kelamin</label>
                                 <select class="form-control" id="jenis_kelamin" name="jenis_kelamin">
-                                    <option value="" selected disabled>Pilih Kelas</option>
+                                    <option value="" selected disabled>Pilih Jenis Kelamin</option>
                                     <option value="L">Laki-Laki</option>
                                     <option value="P">Perempuan</option>
                                 </select>
@@ -289,22 +233,113 @@
 @section('scripts')
     <script type="module">
         $(document).ready(function() {
-            // Init
+            // Init DataTable with Server-Side AJAX
             let table = $('#studentTable').DataTable({
-                responsive: true
+                responsive: true,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('student.getData') }}",
+                    type: "GET",
+                    data: function(d) {
+                        d.class_name = $('#class_filter').val();
+                    }
+                },
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        }
+                    },
+                    { data: 'nisn', defaultContent: '-' },
+                    { data: 'nis', defaultContent: '-' },
+                    { data: 'nama', defaultContent: '-' },
+                    { data: 'class_name', defaultContent: '-' },
+                    { data: 'jenis_kelamin', defaultContent: '-' },
+                    { data: 'tempat_lahir', defaultContent: '-' },
+                    { data: 'tanggal_lahir', defaultContent: '-' },
+                    {
+                        data: 'agama',
+                        render: function(data) {
+                            return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
+                        }
+                    },
+                    { data: 'pendidikan_sebelumnya', defaultContent: '-' },
+                    { data: 'alamat', defaultContent: '-' },
+                    { data: 'nama_ayah', defaultContent: '-' },
+                    { data: 'nama_ibu', defaultContent: '-' },
+                    { data: 'pekerjaan_ayah', defaultContent: '-' },
+                    { data: 'pekerjaan_ibu', defaultContent: '-' },
+                    { data: 'alamat_orang_tua', defaultContent: '-' },
+                    { data: 'sakit', defaultContent: '0' },
+                    { data: 'izin', defaultContent: '0' },
+                    { data: 'alpa', defaultContent: '0' },
+                    {
+                        data: 'foto_siswa_path',
+                        render: function(data) {
+                            if (data) {
+                                return `<img src="/storage/${data}" alt="" class="img-fluid img-thumbnail" style="width: 70px; max-height: 90px; object-fit: cover;">`;
+                            }
+                            return 'Belum Ada Foto';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            let safeNama = (row.nama || '').replace(/"/g, '&quot;');
+                            let safeTl = (row.tempat_lahir || '').replace(/"/g, '&quot;');
+                            let safePendidikan = (row.pendidikan_sebelumnya || '').replace(/"/g, '&quot;');
+                            let safeAlamat = (row.alamat || '').replace(/"/g, '&quot;');
+                            let safeAyah = (row.nama_ayah || '').replace(/"/g, '&quot;');
+                            let safeIbu = (row.nama_ibu || '').replace(/"/g, '&quot;');
+                            let safePekerjaanAyah = (row.pekerjaan_ayah || '').replace(/"/g, '&quot;');
+                            let safePekerjaanIbu = (row.pekerjaan_ibu || '').replace(/"/g, '&quot;');
+                            let safeAlamatOrtu = (row.alamat_orang_tua || '').replace(/"/g, '&quot;');
+
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary editStudentBtn"
+                                        data-id="${row.id}"
+                                        data-nis="${row.nis || ''}"
+                                        data-nisn="${row.nisn || ''}"
+                                        data-student_name="${safeNama}"
+                                        data-class_id="${row.class_id || ''}"
+                                        data-jenis_kelamin="${row.jenis_kelamin || ''}"
+                                        data-tempat_lahir="${safeTl}"
+                                        data-tanggal_lahir="${row.tanggal_lahir || ''}"
+                                        data-agama="${row.agama || ''}"
+                                        data-pendidikan_sebelumnya="${safePendidikan}"
+                                        data-alamat="${safeAlamat}"
+                                        data-nama_ayah="${safeAyah}"
+                                        data-nama_ibu="${safeIbu}"
+                                        data-pekerjaan_ayah="${safePekerjaanAyah}"
+                                        data-pekerjaan_ibu="${safePekerjaanIbu}"
+                                        data-alamat_orang_tua="${safeAlamatOrtu}"
+                                        data-sakit="${row.sakit || 0}"
+                                        data-izin="${row.izin || 0}"
+                                        data-alpa="${row.alpa || 0}">Edit</button>
+                                    <button class="btn btn-sm btn-danger delBtn" data-id="${row.id}">Delete</button>
+                                </div>
+                            `;
+                        }
+                    }
+                ]
             });
-            ///
-            // Tampilkan Modal Tambah Kelas
+
+            // Tampilkan Modal Tambah Siswa
             $('#addStudentBtn').click(function() {
                 $('#student_id').val('');
                 $('#nisn').val('');
                 $('#nis').val('');
                 $('#student_name').val('');
-                $('#class_id').val('');
-                $('#jenis_kelamin').val('');
+                $('#class_id').val('').trigger('change');
+                $('#jenis_kelamin').val('').trigger('change');
                 $('#tempat_lahir').val('');
                 $('#tanggal_lahir').val('');
-                $('#agama').val('');
+                $('#agama').val('').trigger('change');
                 $('#pendidikan_sebelumnya').val('');
                 $('#alamat').val('');
                 $('#nama_ayah').val('');
@@ -320,21 +355,20 @@
                 $('#studentModal').modal('show');
             });
 
-            // Simpan atau Update Kelas
+            // Simpan atau Update Siswa
             $('#studentForm').submit(function(e) {
                 e.preventDefault();
                 let id = $('#student_id').val();
                 let url = id ? `/siswa/${id}` : "{{ route('student.store') }}";
 
                 let formData = new FormData(this);
-                formData.append('nis', $('#nis').val())
-                formData.append('student_name', $('#student_name').val())
-                formData.append('class_id', $('#class_id').val())
+                formData.append('nis', $('#nis').val());
                 formData.append('student_name', $('#student_name').val());
-                formData.append('jenis_kelamin', $('#jenis_kelamin').val());
+                formData.append('class_id', $('#class_id').val() || '');
+                formData.append('jenis_kelamin', $('#jenis_kelamin').val() || '');
                 formData.append('tempat_lahir', $('#tempat_lahir').val());
                 formData.append('tanggal_lahir', $('#tanggal_lahir').val());
-                formData.append('agama', $('#agama').val());
+                formData.append('agama', $('#agama').val() || '');
                 formData.append('pendidikan_sebelumnya', $('#pendidikan_sebelumnya').val());
                 formData.append('alamat', $('#alamat').val());
                 formData.append('nama_ayah', $('#nama_ayah').val());
@@ -342,13 +376,12 @@
                 formData.append('pekerjaan_ayah', $('#pekerjaan_ayah').val());
                 formData.append('pekerjaan_ibu', $('#pekerjaan_ibu').val());
                 formData.append('alamat_orang_tua', $('#alamat_orang_tua').val());
-                formData.append('sakit', $('#sakit').val());
-                formData.append('izin', $('#izin').val());
-                formData.append('alpa', $('#alpa').val());
+                formData.append('sakit', $('#sakit').val() || 0);
+                formData.append('izin', $('#izin').val() || 0);
+                formData.append('alpa', $('#alpa').val() || 0);
                 if (id) {
                     formData.append('_method', 'PUT');
                 }
-                // Menambahkan file gambar jika ada
                 let fotoSiswa = $('#foto_siswa')[0].files[0];
                 if (fotoSiswa) {
                     formData.append('foto_siswa', fotoSiswa);
@@ -369,20 +402,17 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
-                        setTimeout(function() {
-                            $('#studentModal').modal('hide');
-                            location.reload(); // Refresh halaman setelah berhasil
-                        }, 2000);
-
+                        $('#studentModal').modal('hide');
+                        table.ajax.reload(null, false);
                     },
                     error: function(res) {
-                        console.log(res)
-                        Swal.fire('Error', 'Terjadi kesalahan, coba lagi!', 'error');
+                        console.log(res);
+                        Swal.fire('Error', res.responseJSON?.message || 'Terjadi kesalahan, coba lagi!', 'error');
                     }
                 });
             });
 
-            // Tampilkan Modal Edit Kelas
+            // Tampilkan Modal Edit Siswa
             $(document).on('click', '.editStudentBtn', function() {
                 let id = $(this).data('id');
                 let nisn = $(this).data('nisn');
@@ -403,15 +433,16 @@
                 let sakit = $(this).data('sakit');
                 let izin = $(this).data('izin');
                 let alpa = $(this).data('alpa');
+
                 $('#student_id').val(id);
                 $('#nisn').val(nisn);
                 $('#nis').val(nis);
                 $('#student_name').val(student_name);
-                $('#class_id').val(class_id);
-                $('#jenis_kelamin').val(jenis_kelamin);
+                $('#class_id').val(class_id).trigger('change');
+                $('#jenis_kelamin').val(jenis_kelamin).trigger('change');
                 $('#tempat_lahir').val(tempat_lahir);
                 $('#tanggal_lahir').val(tanggal_lahir);
-                $('#agama').val(agama?.toLowerCase());
+                $('#agama').val(agama ? agama.toLowerCase() : '').trigger('change');
                 $('#pendidikan_sebelumnya').val(pendidikan_sebelumnya);
                 $('#alamat').val(alamat);
                 $('#nama_ayah').val(nama_ayah);
@@ -425,8 +456,7 @@
                 $('#alpa').val(alpa);
                 $('#studentModalLabel').text('Edit Siswa');
                 $('#studentModal').modal('show');
-            })
-
+            });
 
             // Delete Action
             $(document).on('click', '.delBtn', function() {
@@ -455,29 +485,25 @@
                                     showConfirmButton: false,
                                     timer: 1500
                                 });
-
-                                setTimeout(function() {
-                                    location
-                                        .reload(); // Refresh halaman setelah berhasil
-                                }, 2000);
+                                table.ajax.reload(null, false);
                             },
                             error: function(r) {
-                                console.log(r)
-                                Swal.fire("Gagal!", "Terjadi kesalahan, coba lagi!",
-                                    "error");
+                                console.log(r);
+                                Swal.fire("Gagal!", "Terjadi kesalahan, coba lagi!", "error");
                             }
                         });
                     }
                 });
-            })
-            //
+            });
+
+            // Upload CSV
             $('#upCsvBtn').click(function() {
                 $('#csv').val(null);
                 $('#upCsvModal').modal('show');
             });
+
             $('#csvForm').on('submit', function(e) {
                 e.preventDefault();
-
                 let formData = new FormData(this);
 
                 $.ajax({
@@ -498,10 +524,8 @@
                             showConfirmButton: false,
                             timer: 2000
                         });
-                        setTimeout(function() {
-                            $('#upCsvModal').modal('hide');
-                            location.reload(); // Refresh halaman setelah berhasil
-                        }, 2000);
+                        $('#upCsvModal').modal('hide');
+                        table.ajax.reload();
                     },
                     error: function(xhr) {
                         Swal.fire({
@@ -512,10 +536,37 @@
                     }
                 });
             });
+
             $('#class_filter').on('change', function() {
-                var val = this.value;
-                table.column(3).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true,
-                    false).draw(); // Ganti angka 2 dengan index kolom kelas
+                table.ajax.reload();
+            });
+
+            $('#btnGenAccounts').on('click', function() {
+                Swal.fire({
+                    title: 'Generate Akun Portal Siswa?',
+                    text: 'Sistem akan membuat akun login untuk seluruh siswa yang belum memiliki akun (Username: NISN/NIS, Password default: siswa123).',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#007bff',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Buat Akun!',
+                    cancelButtonText: 'Batal'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        Swal.fire({
+                            title: 'Membuat Akun Siswa...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+
+                        $.post('{{ route("portal.generate_accounts") }}', { _token: '{{ csrf_token() }}' }, function(resp) {
+                            Swal.fire('Berhasil!', resp.message, 'success');
+                            table.ajax.reload(null, false);
+                        }).fail(function(xhr) {
+                            Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan.', 'error');
+                        });
+                    }
+                });
             });
         });
     </script>

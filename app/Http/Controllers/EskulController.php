@@ -12,10 +12,13 @@ class EskulController extends Controller
 
         return view('meskul.index');
     }
-    public function getdata()
+    public function getdata(Request $request)
     {
-        $data = DB::table('m_eskul')->get();
-        return response()->json(['data' => $data], 200);
+        $query = DB::table('m_eskul')->select('id', 'nama_eskul');
+        if (!$request->has('order')) {
+            $query->orderBy('nama_eskul', 'asc');
+        }
+        return \App\Services\DataTableHelper::process($query, $request, ['nama_eskul'], [1 => 'nama_eskul'], 'id');
     }
     public function store(Request $request)
     {

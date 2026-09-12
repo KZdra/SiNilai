@@ -27,39 +27,21 @@
                     <div class="card">
                         <div class="card-body p-2">
 
-                            <table class="table" id="usersTable">
+                            <table class="table table-striped table-bordered w-100" id="usersTable">
                                 <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>Nama</th>
-                                        <th>Nip</th>
-                                        <th>Mengajar Di</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($users as $user)
-                                        <tr>
-                                            <td>{{ $user->username }}</td>
-                                            <td>{{ $user->name }}</td>
-                                            <td>{{ $user->nip }}</td>
-                                            <td>{{ $user->class_name ?? 'Belum Diatur' }}</td>
-                                            <td>{{ $user->email }}</td>
-                                            <td>{{ ucwords($user->role_name) }}</td>
-                                            <td><button class="btn btn-primary editUserBtn" data-id="{{ $user->id }}"
-                                                    data-class_id="{{ $user->class_id }}"
-                                                    data-role_id="{{ $user->role_id }}" data-nama="{{ $user->name }}"
-                                                    data-nip="{{ $user->nip }}" data-username="{{ $user->username }}"
-                                                    data-email="{{ $user->email }}">
-                                                    Edit</button>
-                                                <button class="btn btn-danger delUserBtn" data-id="{{$user->id}}">Delete</button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                     <tr>
+                                         <th>Username</th>
+                                         <th>Nama</th>
+                                         <th>Nip</th>
+                                         <th>Mengajar Di</th>
+                                         <th>Email</th>
+                                         <th>Role</th>
+                                         <th>Aksi</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                 </tbody>
+                             </table>
                         </div>
                         <!-- /.card-body -->
                     </div>
@@ -95,9 +77,7 @@
                                             <label for="class_id">Mengajar Di</label>
                                             <select name="class_id" id="class_id" class="form-control">
                                                 <option value="" disabled selected> Pilih Kelas Mengajar</option>
-                                                @foreach ($classList as $class)
-                                                    <option value="{{ $class->id }}">{{ $class->class_name }}</option>
-                                                @endforeach
+                                                @include('partials.select_class_options')
                                             </select>
                                         </div>
                                         <div class="form-group">
@@ -138,13 +118,59 @@
     <script type="module">
         $(document).ready(function() {
             let table = $('#usersTable').DataTable({
-                responsive: true
+                responsive: true,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('users.getData') }}",
+                    type: "GET"
+                },
+                columns: [
+                    { data: 'username', defaultContent: '-' },
+                    { data: 'name', defaultContent: '-' },
+                    { data: 'nip', defaultContent: '-' },
+                    {
+                        data: 'class_name',
+                        render: function(data) {
+                            return data || 'Belum Diatur';
+                        }
+                    },
+                    { data: 'email', defaultContent: '-' },
+                    {
+                        data: 'role_name',
+                        render: function(data) {
+                            return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            let safeName = (row.name || '').replace(/"/g, '&quot;');
+                            let safeUname = (row.username || '').replace(/"/g, '&quot;');
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary editUserBtn"
+                                        data-id="${row.id}"
+                                        data-class_id="${row.class_id || ''}"
+                                        data-role_id="${row.role_id || ''}"
+                                        data-nama="${safeName}"
+                                        data-nip="${row.nip || ''}"
+                                        data-username="${safeUname}"
+                                        data-email="${row.email || ''}">Edit</button>
+                                    <button class="btn btn-sm btn-danger delUserBtn" data-id="${row.id}">Delete</button>
+                                </div>
+                            `;
+                        }
+                    }
+                ]
             });
-            // Tampilkan Modal Tambah Kelas
+
+            // Tampilkan Modal Tambah User
             $('#inputUserBtn').click(function() {
                 $('#user_id').val('');
-                $('#class_id').val('');
-                $('#role_id').val('');
+                $('#class_id').val('').trigger('change');
+                $('#role_id').val('').trigger('change');
                 $('#username').val('');
                 $('#nama').val('');
                 $('#nip').val('');
@@ -154,7 +180,7 @@
                 $('#userModal').modal('show');
             });
 
-            // Simpan atau Update Kelas
+            // Simpan atau Update User
             $('#userForm').submit(function(e) {
                 e.preventDefault();
                 let id = $('#user_id').val();
@@ -181,20 +207,17 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
-                        setTimeout(function() {
-                            $('#userModal').modal('hide');
-                            location.reload(); // Refresh halaman setelah berhasil
-                        }, 2000);
-
+                        $('#userModal').modal('hide');
+                        table.ajax.reload(null, false);
                     },
                     error: function(res) {
-                        console.log(res)
-                        Swal.fire('Error', 'Terjadi kesalahan, coba lagi!', 'error');
+                        console.log(res);
+                        Swal.fire('Error', res.responseJSON?.message || 'Terjadi kesalahan, coba lagi!', 'error');
                     }
                 });
             });
-            //
-            // Tampilkan Modal Edit Kelas
+
+            // Tampilkan Modal Edit User
             $(document).on('click', '.editUserBtn', function() {
                 let id = $(this).data('id');
                 let role_id = $(this).data('role_id');
@@ -205,8 +228,8 @@
                 let email = $(this).data('email');
 
                 $('#user_id').val(id);
-                $('#class_id').val(class_id);
-                $('#role_id').val(role_id);
+                $('#class_id').val(class_id).trigger('change');
+                $('#role_id').val(role_id).trigger('change');
                 $('#username').val(username);
                 $('#nama').val(nama);
                 $('#nip').val(nip);
@@ -243,21 +266,16 @@
                                     showConfirmButton: false,
                                     timer: 1500
                                 });
-
-                                setTimeout(function() {
-                                    location
-                                        .reload(); // Refresh halaman setelah berhasil
-                                }, 2000);
+                                table.ajax.reload(null, false);
                             },
                             error: function(r) {
-                                console.log(r)
-                                Swal.fire("Gagal!", "Terjadi kesalahan, coba lagi!",
-                                    "error");
+                                console.log(r);
+                                Swal.fire("Gagal!", "Terjadi kesalahan, coba lagi!", "error");
                             }
                         });
                     }
                 });
-            })
-        })
+            });
+        });
     </script>
 @endsection

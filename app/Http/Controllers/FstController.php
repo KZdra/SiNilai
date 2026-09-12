@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class FstController extends Controller
 {
@@ -14,8 +15,19 @@ class FstController extends Controller
     }
     public function getData(Request $request)
     {
-        $data = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->get();
-        return response()->json(['data' => $data], 200);
+        $query = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta', 'is_locked', 'locked_at');
+        if (!$request->has('order')) {
+            $query->orderBy('id', 'asc');
+        }
+        $searchableColumns = ['fase', 'semester', 'tahun_ajaran', 'ta'];
+        $orderableColumns = [
+            1 => 'fase',
+            2 => 'semester',
+            3 => 'tahun_ajaran',
+            4 => 'ta',
+            5 => 'is_locked',
+        ];
+        return \App\Services\DataTableHelper::process($query, $request, $searchableColumns, $orderableColumns, 'id');
     }
     public function store(Request $request)
     {
@@ -68,5 +80,35 @@ class FstController extends Controller
             return response()->json(['message' => $e->getMessage()], 201);
             // return response()->json(['message' => 'Terjadi Kesalahan Input atau Sistem!'], 201);
         }
+    }
+
+    /**
+     * Toggle lock status for a semester (Admin only).
+     */
+    public function toggleLock(Request $request, $id)
+    {
+        if (Auth::user()->role_id != 1) {
+            return response()->json(['message' => 'Hanya Admin yang dapat mengunci / membuka semester.'], 403);
+        }
+
+        $fst = DB::table('m_fst_pembelajaran')->where('id', $id)->first();
+        if (!$fst) {
+            return response()->json(['message' => 'Data semester tidak ditemukan.'], 404);
+        }
+
+        $newLock = !$fst->is_locked;
+        DB::table('m_fst_pembelajaran')->where('id', $id)->update([
+            'is_locked'  => $newLock,
+            'locked_at'  => $newLock ? Carbon::now() : null,
+            'locked_by'  => $newLock ? Auth::id() : null,
+            'updated_at' => Carbon::now(),
+        ]);
+
+        $statusText = $newLock ? 'dikunci (Read-Only)' : 'dibuka kembali';
+        return response()->json([
+            'status'    => 'success',
+            'message'   => "Semester {$fst->tahun_ajaran} berhasil {$statusText}!",
+            'is_locked' => $newLock,
+        ]);
     }
 }

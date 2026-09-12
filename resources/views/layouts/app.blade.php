@@ -16,13 +16,30 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @yield('styles')
     <style>
+        html, body {
+            min-height: 100% !important;
+        }
+        .wrapper {
+            min-height: 100vh !important;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-wrapper {
+            flex: 1 0 auto;
+            min-height: calc(100vh - 57px - 57px) !important;
+        }
+        .main-footer {
+            flex-shrink: 0;
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
+        }
         .main-sidebar {
-            background-color: #102C57 !important
+            background-color: #102C57 !important;
         }
     </style>
 </head>
 
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
 
         <!-- Navbar -->
@@ -94,8 +111,7 @@
     <!-- ./wrapper -->
 
     <!-- REQUIRED SCRIPTS -->
-
-    @vite('resources/js/app.js')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- AdminLTE App -->
     <script src="{{ asset('js/adminlte.min.js') }}" defer></script>
 

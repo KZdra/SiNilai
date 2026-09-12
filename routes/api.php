@@ -15,4 +15,7 @@ Route::middleware(['throttle:cbt-sync', 'cbt.auth'])->prefix('cbt')->group(funct
     // Mata Pelajaran
     Route::get('/mapel', [CbtSyncController::class, 'mapel']);
     Route::get('/subjects', [CbtSyncController::class, 'mapel']);
+
+    // Scores Sync (Push from CBT)
+    Route::post('/scores', [CbtSyncController::class, 'storeScores']);
 });

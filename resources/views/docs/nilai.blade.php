@@ -220,7 +220,7 @@
             </tr>
             <tr>
                 <td style="text-align:center;width:50%;font-size:10.5pt;border:none">……………………………</td>
-                <td style="text-align:center;width:50%;font-size:10.5pt;border:none">{{ Auth::user()->name }}</td>
+                <td style="text-align:center;width:50%;font-size:10.5pt;border:none">{{ $walas ? $walas->name : (Auth::check() ? Auth::user()->name : 'Wali Kelas') }}</td>
             </tr>
         </table>
 
@@ -235,6 +235,38 @@
                 <td style="width:50%;border:none;font-size:10.5pt;text-align: center">
                     {{ $formattedStudents[0]['school_data']->nama_kepala_sekolah ?? 'Belum Di Atur' }}<br>NIP.
                     {{ $formattedStudents[0]['school_data']->nip_kepala_sekolah ?? '-' }}</td>
+            </tr>
+        </table>
+
+        @if (!empty($formattedStudents[0]['catatan']))
+        <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
+            <tr>
+                <td style="font-weight: bold; background-color: #f2f2f2; padding: 4px 8px; font-size: 9.5pt;">
+                    Catatan Perkembangan Peserta Didik (Wali Kelas):
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 8px; font-style: italic; font-size: 9pt;">
+                    "{{ $formattedStudents[0]['catatan'] }}"
+                </td>
+            </tr>
+        </table>
+        @endif
+
+        {{-- QR Code Verifikasi Dokumen Sah --}}
+        <table style="width: 100%; border-collapse: collapse; margin-top: 14px; border-top: 1px dashed #999;">
+            <tr>
+                <td style="border: none; width: 80px; vertical-align: middle; text-align: center; padding-top: 8px;">
+                    @if(!empty($formattedStudents[0]['qr_code']))
+                        <img src="{{ $formattedStudents[0]['qr_code'] }}" width="70" height="70" alt="QR Verifikasi">
+                    @endif
+                </td>
+                <td style="border: none; vertical-align: middle; padding-left: 10px; padding-top: 8px;">
+                    <div style="font-size: 8pt; font-weight: bold; color: #102C57;">DOKUMEN INI TELAH TERVERIFIKASI RESMI SECARA DIGITAL</div>
+                    <div style="font-size: 7.5pt; color: #444; margin-top: 2px;">
+                        Pindai (scan) kode QR di samping untuk memverifikasi keaslian dan status kelulusan/kenaikan kelas peserta didik ini pada basis data resmi sekolah.
+                    </div>
+                </td>
             </tr>
         </table>
     </div>
