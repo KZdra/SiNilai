@@ -31,7 +31,7 @@ class PublicVerificationController extends Controller
             )
             ->first();
 
-        $school = DB::table('data_sekolah')->first();
+        $school = \App\Services\MasterDataCache::getSchoolData();
 
         // Get Wali Kelas name from user assigned to this class
         $waliKelas = DB::table('users')

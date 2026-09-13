@@ -48,6 +48,7 @@ class DataSekolahContoller extends Controller
                 'nip_kepala_sekolah' => $r->nip_kepala_sekolah === '' ? null : $r->nip_kepala_sekolah,
             ]
         );
+        \App\Services\MasterDataCache::clearSchoolData();
         return response()->json(['message' => 'Data Sekolah Berhasil Di Atur!'], 201);
     } catch (\Exception $e) {
         return response()->json(['message' => 'Terjadi Kesalahan Server!'], 500);
@@ -57,6 +58,7 @@ class DataSekolahContoller extends Controller
     public function destroy(Request $r ,$id){
         try {
             DB::table('data_sekolah')->where('id',$id)->delete();
+            \App\Services\MasterDataCache::clearSchoolData();
             return response()->json(['message' => 'Data Sekolah Berhasil Di Hapus!'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

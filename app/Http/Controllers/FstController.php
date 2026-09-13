@@ -45,6 +45,7 @@ class FstController extends Controller
                 'ta' => $bagong['ta'],
                 'created_at' => Carbon::now()
             ]);
+            \App\Services\MasterDataCache::clearFst();
             return response()->json(['message' => 'Data berhasil ditambahkan!'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -66,6 +67,7 @@ class FstController extends Controller
                 'ta' => $bagong['ta'],
                 'updated_at' => Carbon::now()
             ]);
+            \App\Services\MasterDataCache::clearFst($id);
             return response()->json(['message' => 'Data berhasil diUpdate!'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -75,6 +77,7 @@ class FstController extends Controller
     {
         try {
             DB::table('m_fst_pembelajaran')->where('id', '=', $id)->delete();
+            \App\Services\MasterDataCache::clearFst($id);
             return response()->json(['message' => 'Data berhasil di Hapus!'], 201);
         } catch (\Exception $e) {
 
@@ -104,6 +107,7 @@ class FstController extends Controller
             'locked_by'  => $newLock ? Auth::id() : null,
             'updated_at' => Carbon::now(),
         ]);
+        \App\Services\MasterDataCache::clearFst($id);
 
         $statusText = $newLock ? 'dikunci (Read-Only)' : 'dibuka kembali';
         return response()->json([

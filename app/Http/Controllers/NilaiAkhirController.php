@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\MasterDataCache;
 
 class NilaiAkhirController extends Controller
 {
@@ -473,7 +474,7 @@ class NilaiAkhirController extends Controller
         }
         $classList = $query->get();
 
-        $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran', 'ta')->orderBy('id', 'asc')->get();
+        $fstList = MasterDataCache::getAllFst();
 
         $className = null;
         if (Auth::user()->class_id !== null) {
@@ -556,8 +557,8 @@ class NilaiAkhirController extends Controller
 
         $students = $this->getStudentAllScores($resolvedClassId, $studentId, $fstId);
         $studentsTP = $this->getStudentAllTp($resolvedClassId, $studentId, $fstId);
-        $fst = DB::table('m_fst_pembelajaran')->select('fase', 'semester', 'tahun_ajaran', 'ta')->where('id', $fstId)->first();
-        $schoolData = DB::table('data_sekolah')->first();
+        $fst = MasterDataCache::getFst($fstId);
+        $schoolData = MasterDataCache::getSchoolData();
         $studentEskul = DB::table('nilai_eskuls as ns')->select('ns.id', 'ns.nilai_eskul', 'ms.nama_eskul')->join('m_eskul as ms', 'ns.eskul_id', '=', 'ms.id')
             ->where('ns.student_id', $studentId)->where('ns.fst_id', $fstId)->get();
 
@@ -578,19 +579,23 @@ class NilaiAkhirController extends Controller
 
             $effectiveClassId = $resolvedClassId ?: ($students[0]->class_id ?? 1);
 
-            DB::table('catatan_walikelas')->insert([
-                'student_id'         => $studentId,
-                'class_id'           => $effectiveClassId,
-                'fst_id'             => $fstId,
-                'sakit'              => $sakit,
-                'izin'               => $izin,
-                'alpa'               => $alpa,
-                'catatan'            => null,
-                'status_kenaikan'    => $statusKenaikan,
-                'verification_token' => $token,
-                'created_at'         => now(),
-                'updated_at'         => now(),
-            ]);
+            DB::table('catatan_walikelas')->updateOrInsert(
+                [
+                    'student_id' => $studentId,
+                    'fst_id'     => $fstId,
+                ],
+                [
+                    'class_id'           => $effectiveClassId,
+                    'sakit'              => $sakit,
+                    'izin'               => $izin,
+                    'alpa'               => $alpa,
+                    'catatan'            => null,
+                    'status_kenaikan'    => $statusKenaikan,
+                    'verification_token' => $token,
+                    'created_at'         => now(),
+                    'updated_at'         => now(),
+                ]
+            );
         } else {
             if (!$catatanWalas->verification_token) {
                 DB::table('catatan_walikelas')->where('id', $catatanWalas->id)->update(['verification_token' => $token]);
@@ -611,7 +616,7 @@ class NilaiAkhirController extends Controller
             $qrCodeDataUri = null;
         }
 
-        $defaultClassName = $resolvedClassId ? (DB::table('class')->where('id', $resolvedClassId)->value('class_name') ?? 'Alumni / Lulus') : 'Alumni / Lulus';
+        $defaultClassName = $resolvedClassId ? (MasterDataCache::getClassName($resolvedClassId) ?? 'Alumni / Lulus') : 'Alumni / Lulus';
         $formattedStudents = [];
 
         foreach ($students as $student) {
@@ -647,7 +652,7 @@ class NilaiAkhirController extends Controller
 
         if (empty($formattedStudents)) {
             $rawStudent = DB::table('students')->where('id', $studentId)->first();
-            $className = DB::table('class')->where('id', $resolvedClassId)->value('class_name') ?? 'Alumni / Lulus';
+            $className = MasterDataCache::getClassName($resolvedClassId) ?? 'Alumni / Lulus';
             $formattedStudents[] = [
                 'student_id'            => $studentId,
                 'class_id'              => $resolvedClassId,
@@ -843,8 +848,8 @@ class NilaiAkhirController extends Controller
 
         $class = DB::table('class')->where('id', $classId)->first();
         $className = $class ? $class->class_name : 'Kelas';
-        $fst = DB::table('m_fst_pembelajaran')->where('id', $fstId)->first();
-        $schoolData = DB::table('data_sekolah')->first();
+        $fst = MasterDataCache::getFst($fstId);
+        $schoolData = MasterDataCache::getSchoolData();
 
         // Wali Kelas
         $walas = DB::table('users')->where('class_id', $classId)->first();

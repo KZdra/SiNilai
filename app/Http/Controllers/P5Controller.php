@@ -327,8 +327,8 @@ class P5Controller extends Controller
         $student->class_id = $targetClassId;
         $student->class_name = $classObj ? $classObj->class_name : '-';
 
-        $fst = DB::table('m_fst_pembelajaran')->where('id', $fstId)->first();
-        $schoolData = DB::table('data_sekolah')->first();
+        $fst = \App\Services\MasterDataCache::getFst($fstId);
+        $schoolData = \App\Services\MasterDataCache::getSchoolData();
 
         // Ambil semua projek P5 di kelas & semester ini (atau yang dinilai untuk siswa ini)
         $projeks = DB::table('p5_projek as p')

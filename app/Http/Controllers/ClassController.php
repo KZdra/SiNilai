@@ -32,6 +32,7 @@ class ClassController extends Controller
                 'class_name'=> $request->class_name,
                 'created_at'=> Carbon::now()
             ]);
+            \App\Services\MasterDataCache::clearClasses();
             return response()->json(['message' => 'Kelas berhasil ditambahkan!'],201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()],500);
@@ -48,6 +49,7 @@ class ClassController extends Controller
                 'class_name'=> $request->class_name,
                 'updated_at'=> Carbon::now()
             ]);
+            \App\Services\MasterDataCache::clearClasses($id);
             return response()->json(['message' => 'Kelas berhasil diUpdate!'],201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()],500);
@@ -57,6 +59,7 @@ class ClassController extends Controller
     {
         try {
             DB::table('class')->where('id','=',$id)->delete();
+            \App\Services\MasterDataCache::clearClasses($id);
             return response()->json(['message' => 'Kelas berhasil diHapus!'],201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()],500);

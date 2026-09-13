@@ -503,7 +503,7 @@ class SiswaController extends Controller
             abort(404, 'Data siswa tidak ditemukan.');
         }
 
-        $schoolData = DB::table('data_sekolah')->first();
+        $schoolData = \App\Services\MasterDataCache::getSchoolData();
         $tgl_print = $request->input('tgl_print', now());
 
         $pdf = Pdf::loadView('docs.cover_identitas', compact('student', 'schoolData', 'tgl_print'));
@@ -539,7 +539,7 @@ class SiswaController extends Controller
             return back()->with('error', 'Tidak ada data siswa.');
         }
 
-        $schoolData = DB::table('data_sekolah')->first();
+        $schoolData = \App\Services\MasterDataCache::getSchoolData();
         $tgl_print = $request->input('tgl_print', now());
 
         $pdf = Pdf::loadView('docs.cover_identitas_class', compact('students', 'schoolData', 'tgl_print'));
