@@ -138,6 +138,7 @@ class SiswaController extends Controller
         try {
             DB::table('students')->insert([
                 'nis' => $request->nis,
+                'nisn' => $request->nisn,
                 'nama' => $request->student_name,
                 'class_id' => $request->class_id,
                 'jenis_kelamin' => $request->jenis_kelamin,
@@ -167,6 +168,7 @@ class SiswaController extends Controller
     {
         $request->validate([
             'nis' => 'required',
+            'nisn' => 'nullable|numeric',
             'student_name' => 'required|string|max:255',
             'class_id' => 'required|integer',
             'jenis_kelamin' => 'required|string',
@@ -209,6 +211,7 @@ class SiswaController extends Controller
         try {
             DB::table('students')->where('id', '=', $id)->update([
                 'nis' => $request->nis,
+                'nisn' => $request->nisn,
                 'nama' => ucwords(strtolower($request->student_name)),
                 'class_id' => $request->class_id,
                 'jenis_kelamin' => $request->jenis_kelamin,

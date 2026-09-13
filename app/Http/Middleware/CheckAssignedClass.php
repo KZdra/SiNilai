@@ -23,7 +23,7 @@ class CheckAssignedClass
 
         $user = Auth::user();
 
-        if ($user && $user->role_id != 1 && $user->class_id === null) {
+        if ($user && !in_array($user->role_id, [1, 3]) && $user->class_id === null) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Anda Belum Ditugaskan Menjadi Wali Kelas. Silahkan Hubungi Admin.'], 403);
             }

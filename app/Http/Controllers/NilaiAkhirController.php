@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class NilaiAkhirController extends Controller
@@ -549,21 +550,21 @@ class NilaiAkhirController extends Controller
         return response()->json(["data" => $data], 200);
     }
 
-    public function exportPDF(Request $request)
+    public function generateSingleRaportPdf($studentId, $classId, $fstId, $type = 'nilai', $tgl_print = null, $keputusan = null)
     {
-        $classId = $this->resolveHistoricalClassId($request->student_id, $request->fst_id, $request->class_id);
+        $resolvedClassId = $this->resolveHistoricalClassId($studentId, $fstId, $classId);
 
-        $students = $this->getStudentAllScores($classId, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
-        $studentsTP = $this->getStudentAllTp($classId, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
-        $fst = DB::table('m_fst_pembelajaran')->select('fase', 'semester', 'tahun_ajaran', 'ta')->where('id', $request->fst_id)->first();
+        $students = $this->getStudentAllScores($resolvedClassId, $studentId, $fstId);
+        $studentsTP = $this->getStudentAllTp($resolvedClassId, $studentId, $fstId);
+        $fst = DB::table('m_fst_pembelajaran')->select('fase', 'semester', 'tahun_ajaran', 'ta')->where('id', $fstId)->first();
         $schoolData = DB::table('data_sekolah')->first();
-        $studentEskul = DB::table('nilai_eskuls as ns')->select('ns.id', 'ns.nilai_eskul', 'ms.nama_eskul')->join('m_eskul as ms','ns.eskul_id','=','ms.id')
-        ->where('ns.student_id',$request->student_id)->where('ns.fst_id',$request->fst_id)->get();
+        $studentEskul = DB::table('nilai_eskuls as ns')->select('ns.id', 'ns.nilai_eskul', 'ms.nama_eskul')->join('m_eskul as ms', 'ns.eskul_id', '=', 'ms.id')
+            ->where('ns.student_id', $studentId)->where('ns.fst_id', $fstId)->get();
 
         // Ambil catatan wali kelas, presensi semester, dan status keputusan
         $catatanWalas = DB::table('catatan_walikelas')
-            ->where('student_id', $request->student_id)
-            ->where('fst_id', $request->fst_id)
+            ->where('student_id', $studentId)
+            ->where('fst_id', $fstId)
             ->first();
 
         $token = $catatanWalas ? ($catatanWalas->verification_token ?: \Illuminate\Support\Str::random(32)) : \Illuminate\Support\Str::random(32);
@@ -573,14 +574,14 @@ class NilaiAkhirController extends Controller
             $izin  = isset($students[0]) ? ($students[0]->izin ?? 0) : 0;
             $alpa  = isset($students[0]) ? ($students[0]->alpa ?? 0) : 0;
             $catatan = null;
-            $statusKenaikan = $request->keputusan;
+            $statusKenaikan = $keputusan;
 
-            $effectiveClassId = $classId ?: ($students[0]->class_id ?? 1);
+            $effectiveClassId = $resolvedClassId ?: ($students[0]->class_id ?? 1);
 
             DB::table('catatan_walikelas')->insert([
-                'student_id'         => $request->student_id,
+                'student_id'         => $studentId,
                 'class_id'           => $effectiveClassId,
-                'fst_id'             => $request->fst_id,
+                'fst_id'             => $fstId,
                 'sakit'              => $sakit,
                 'izin'               => $izin,
                 'alpa'               => $alpa,
@@ -598,7 +599,7 @@ class NilaiAkhirController extends Controller
             $izin  = $catatanWalas->izin;
             $alpa  = $catatanWalas->alpa;
             $catatan = $catatanWalas->catatan;
-            $statusKenaikan = $catatanWalas->status_kenaikan ?: $request->keputusan;
+            $statusKenaikan = $catatanWalas->status_kenaikan ?: $keputusan;
         }
 
         // Generate QR Code data URI untuk verifikasi publik raport
@@ -610,18 +611,15 @@ class NilaiAkhirController extends Controller
             $qrCodeDataUri = null;
         }
 
+        $defaultClassName = $resolvedClassId ? (DB::table('class')->where('id', $resolvedClassId)->value('class_name') ?? 'Alumni / Lulus') : 'Alumni / Lulus';
         $formattedStudents = [];
-        $tgl_print = $request->tgl_print;
-        $keputusan = $statusKenaikan;
-        $defaultClassName = $classId ? (DB::table('class')->where('id', $classId)->value('class_name') ?? 'Alumni / Lulus') : 'Alumni / Lulus';
 
         foreach ($students as $student) {
             $studentArray = (array) $student;
 
-            // Informasi siswa
             $studentInfo = [
                 'student_id'            => $studentArray['student_id'],
-                'class_id'              => $studentArray['class_id'] ?? $classId,
+                'class_id'              => $studentArray['class_id'] ?? $resolvedClassId,
                 'student_name'          => $studentArray['student_name'],
                 'class_name'            => $studentArray['class_name'] ?? $defaultClassName,
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'] ?? 0,
@@ -636,10 +634,8 @@ class NilaiAkhirController extends Controller
                 'foto_siswa_path'       => $studentArray['foto_siswa_path'] ?? null,
             ];
 
-            // Nilai mata pelajaran (otomatis tanpa hardcoding)
             $mapelScores = array_diff_key($studentArray, $studentInfo);
 
-            // Gabungkan semua ke dalam satu array
             $formattedStudents[] = array_merge($studentInfo, [
                 'nilai_per_mapel' => $mapelScores,
                 'school_data'     => $schoolData,
@@ -650,11 +646,11 @@ class NilaiAkhirController extends Controller
         }
 
         if (empty($formattedStudents)) {
-            $rawStudent = DB::table('students')->where('id', $request->student_id)->first();
-            $className = DB::table('class')->where('id', $classId)->value('class_name') ?? 'Alumni / Lulus';
+            $rawStudent = DB::table('students')->where('id', $studentId)->first();
+            $className = DB::table('class')->where('id', $resolvedClassId)->value('class_name') ?? 'Alumni / Lulus';
             $formattedStudents[] = [
-                'student_id'            => $request->student_id,
-                'class_id'              => $classId,
+                'student_id'            => $studentId,
+                'class_id'              => $resolvedClassId,
                 'student_name'          => $rawStudent ? $rawStudent->nama : 'Siswa',
                 'class_name'            => $className,
                 'avg_nilai_semua_mapel' => 0,
@@ -675,9 +671,10 @@ class NilaiAkhirController extends Controller
             ];
         }
 
-        $type = $request->input('type', 'nilai');
-        $rawStudent = DB::table('students')->where('id', $request->student_id)->first();
-        $walas = DB::table('users')->where('class_id', $classId)->where('role_id', 2)->first();
+        $rawStudent = DB::table('students')->where('id', $studentId)->first();
+        $walas = DB::table('users')->where('class_id', $resolvedClassId)->where('role_id', 2)->first();
+
+        $keputusan = $statusKenaikan;
 
         $suffix = '';
         if ($type === 'cover') {
@@ -710,13 +707,88 @@ class NilaiAkhirController extends Controller
 
         Storage::disk('public')->put($pdfPath, $pdf->output());
 
+        return [
+            'pdf'               => $pdf,
+            'pdf_path'          => $pdfPath,
+            'safe_student_name' => $safeStudentName,
+            'concated'          => $concated,
+            'suffix'            => $suffix,
+        ];
+    }
+
+    public function exportPDF(Request $request)
+    {
+        $result = $this->generateSingleRaportPdf(
+            $request->student_id,
+            $request->class_id,
+            $request->fst_id,
+            $request->input('type', 'nilai'),
+            $request->tgl_print,
+            $request->keputusan
+        );
+
+        $pdfPath = $result['pdf_path'];
+
+        if ($request->has('download')) {
+            $filename = "{$result['safe_student_name']}{$result['suffix']}.pdf";
+            return response()->download(Storage::disk('public')->path($pdfPath), $filename);
+        }
+
         // Jika diakses langsung sebagai navigasi dokumen di tab browser (misal klik link biasa)
         if ($request->header('Sec-Fetch-Dest') === 'document' || $request->has('direct') || !$request->ajax()) {
-            return redirect(asset('storage/' . $pdfPath));
+            return redirect(url('storage/' . $pdfPath));
         }
 
         // Default: response JSON untuk AJAX / fetch JavaScript
-        return response()->json(['pdf_url' => asset('storage/' . $pdfPath)]);
+        return response()->json(['pdf_url' => url('storage/' . $pdfPath)]);
+    }
+
+    public function exportServer(Request $request)
+    {
+        $request->validate([
+            'class_id' => 'required|integer',
+            'fst_id'   => 'required|integer',
+        ]);
+
+        $classId   = $request->class_id;
+        $fstId     = $request->fst_id;
+        $type      = $request->input('type', 'all');
+        $tgl_print = $request->input('tgl_print', now()->toDateString());
+        $keputusan = $request->input('keputusan', null);
+
+        $class = DB::table('class')->where('id', $classId)->first();
+        if (!$class) {
+            return response()->json(['status' => 'error', 'message' => 'Kelas tidak ditemukan.'], 404);
+        }
+
+        $students = DB::table('students')->where('class_id', $classId)->orderBy('nama', 'asc')->get();
+        if ($students->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'Tidak ada siswa pada kelas ini.'], 400);
+        }
+
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $exportedCount = 0;
+        $lastFolder = '';
+
+        foreach ($students as $student) {
+            try {
+                $res = $this->generateSingleRaportPdf($student->id, $classId, $fstId, $type, $tgl_print, $keputusan);
+                $lastFolder = dirname($res['pdf_path']);
+                $exportedCount++;
+            } catch (\Exception $e) {
+                Log::error("Gagal export raport server untuk siswa ID {$student->id}: " . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'status'         => 'success',
+            'message'        => "Berhasil meng-export {$exportedCount} rapor siswa ke server arsip ({$lastFolder}).",
+            'exported_count' => $exportedCount,
+            'total_students' => $students->count(),
+            'folder'         => $lastFolder,
+        ]);
     }
 
     public function ExportNilaiAkhirExcel(Request $request)

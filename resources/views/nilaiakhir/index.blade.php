@@ -151,6 +151,10 @@
                             <i class="fas fa-cog mr-1"></i> Pengaturan Rapor
                         </button>
 
+                        <button class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" id="btnExportServer">
+                            <i class="fas fa-server mr-1"></i> Export Rapor ke Server
+                        </button>
+
                         <button class="btn btn-info btn-sm font-weight-bold shadow-sm" id="expBtn4">
                             <i class="fas fa-print mr-1"></i> Print Rapor Berurutan
                         </button>
@@ -269,6 +273,64 @@
                                 <button class="btn btn-success px-3 font-weight-bold shadow-sm" id="bpPrintBtn"><i class="fas fa-print mr-1"></i> Print Sekarang</button>
                                 <button class="btn btn-primary px-3" id="bpNextBtn">Berikutnya <i class="fas fa-chevron-right ml-1"></i></button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── MODAL: EXPORT RAPOR KE SERVER (ARSIP RAPORT) ────────── -->
+            <div class="modal fade" id="ExportServerModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+                        <div class="modal-header bg-warning text-dark py-3">
+                            <h5 class="modal-title font-weight-bold">
+                                <i class="fas fa-server mr-2"></i>Export Rapor ke Server Arsip
+                            </h5>
+                            <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body py-4">
+                            <div class="alert alert-info border-0 shadow-sm small mb-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Fitur ini akan meng-generate seluruh PDF rapor siswa pada kelas terpilih dan menyimpannya langsung ke server storage (<code>storage/app/public/raport/...</code>). Administrator dapat melihat dan mengunduhnya kapan saja melalui menu <strong>Arsip Raport</strong>.
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold text-dark mb-2 d-block small text-uppercase">Pilihan Dokumen Yang Disimpan:</label>
+                                <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                                    <label class="btn btn-outline-primary btn-sm active" style="flex: 1;">
+                                        <input type="radio" name="server_doc_type" value="all" checked> Lengkap (Semua)
+                                    </label>
+                                    <label class="btn btn-outline-primary btn-sm" style="flex: 1;">
+                                        <input type="radio" name="server_doc_type" value="nilai"> Nilai Saja
+                                    </label>
+                                    <label class="btn btn-outline-primary btn-sm" style="flex: 1;">
+                                        <input type="radio" name="server_doc_type" value="cover"> Cover Saja
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded border small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Kelas:</span>
+                                    <strong id="modalServerClass" class="text-dark">-</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Periode:</span>
+                                    <strong id="modalServerFst" class="text-dark">-</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Total Siswa:</span>
+                                    <strong id="modalServerTotal" class="text-primary">-</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-2">
+                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" id="btnConfirmExportServer">
+                                <i class="fas fa-cloud-upload-alt mr-1"></i> Mulai Export ke Server
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -739,10 +801,86 @@
                     if (newWindow) {
                         setTimeout(() => newWindow.print(), 1000);
                     }
+
+                    // Otomatis lompat ke urutan siswa berikutnya
+                    if (currentPrintIndex < tableData.length - 1) {
+                        currentPrintIndex++;
+                        updateBulkPrintUI();
+                    }
                 })
                 .catch(err => {
                     btn.prop('disabled', false).html(originalHtml);
                     SwalHelper.showError('Gagal menyiapkan PDF.');
+                });
+            });
+
+            // ── EXPORT RAPOR KE SERVER (ARSIP RAPORT) ─────────────────
+            $('#btnExportServer').click(function() {
+                if (!class_id || !fst_id) {
+                    SwalHelper.showError('Pilih Kelas dan Periode terlebih dahulu.');
+                    return;
+                }
+
+                let dt = $('#valueTable').DataTable();
+                let total = dt.rows().data().length;
+                if (total === 0) {
+                    SwalHelper.showError('Tidak ada data siswa untuk diekspor.');
+                    return;
+                }
+
+                $('#modalServerClass').text(class_name);
+                $('#modalServerFst').text(fst_name);
+                $('#modalServerTotal').text(`${total} Siswa`);
+                $('#ExportServerModal').modal('show');
+            });
+
+            $('#btnConfirmExportServer').click(function() {
+                let docType = $('input[name="server_doc_type"]:checked').val() || 'all';
+                let tgl = sessionStorage.getItem('tgl_print') ?? '';
+                let kpt = sessionStorage.getItem('keputusan') ?? '';
+
+                $('#ExportServerModal').modal('hide');
+
+                Swal.fire({
+                    title: 'Meng-export Rapor ke Server...',
+                    html: 'Sedang membuat PDF rapor seluruh siswa dan menyimpannya ke arsip server.<br>Mohon tunggu sebentar...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: "{{ route('nilaiakhir.exportserver') }}",
+                    method: "POST",
+                    data: {
+                        class_id: class_id,
+                        fst_id: fst_id,
+                        type: docType,
+                        tgl_print: tgl,
+                        keputusan: kpt,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            html: `${res.message}<br><small class="text-muted">Berkas tersimpan di folder: <code>${res.folder}</code></small>`,
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-archive mr-1"></i> Buka Arsip Raport',
+                            cancelButtonText: 'Tutup',
+                            confirmButtonColor: '#28a745'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.open("{{ route('raport_explorer.index') }}", '_blank');
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        let msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengekspor ke server.';
+                        SwalHelper.showError(msg);
+                    }
                 });
             });
 

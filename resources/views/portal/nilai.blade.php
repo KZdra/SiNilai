@@ -28,11 +28,8 @@
             </form>
 
             @if ($activeFst)
-                <a href="{{ route('nilaiakhir.print', ['student_id' => $student->id, 'class_id' => ($class ? $class->id : $student->class_id), 'fst_id' => $activeFst->id]) }}" target="_blank" class="btn btn-primary shadow-sm font-weight-bold btnDownloadRaport"
-                   data-student-id="{{ $student->id }}"
-                   data-class-id="{{ $class ? $class->id : $student->class_id }}"
-                   data-fst-id="{{ $activeFst->id }}">
-                    <i class="fas fa-print mr-1"></i>Unduh E-Raport (PDF)
+                <a href="{{ route('portal.raport.download', ['fst_id' => $activeFst->id]) }}" class="btn btn-primary shadow-sm font-weight-bold btnDownloadRaport">
+                    <i class="fas fa-file-download mr-1"></i>Unduh E-Raport (PDF)
                 </a>
             @endif
         </div>
@@ -143,46 +140,15 @@
 
 @section('scripts')
 <script type="module">
-    $('.btnDownloadRaport').on('click', function(e) {
-        e.preventDefault();
-        let stdId = $(this).data('student-id');
-        let clsId = $(this).data('class-id');
-        let fstId = $(this).data('fst-id');
-        let fallbackUrl = $(this).attr('href');
-
+    $('.btnDownloadRaport').on('click', function() {
         Swal.fire({
-            title: 'Menyiapkan E-Raport...',
-            text: 'Menghasilkan dokumen resmi PDF...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
-
-        $.ajax({
-            url: '{{ route("nilaiakhir.print") }}',
-            method: 'GET',
-            data: {
-                student_id: stdId,
-                class_id: clsId,
-                fst_id: fstId
-            },
-            success: function(res) {
-                Swal.close();
-                if (res.pdf_url) {
-                    window.open(res.pdf_url, '_blank');
-                } else if (fallbackUrl) {
-                    window.open(fallbackUrl, '_blank');
-                } else {
-                    SwalHelper.showError('URL file tidak ditemukan.', 'Gagal');
-                }
-            },
-            error: function() {
-                Swal.close();
-                if (fallbackUrl) {
-                    window.open(fallbackUrl, '_blank');
-                } else {
-                    SwalHelper.showError('Tidak dapat mengunduh E-Raport.', 'Gagal');
-                }
-            }
+            icon: 'info',
+            title: 'Mengunduh E-Raport...',
+            text: 'Berkas PDF sedang disiapkan dan diunduh ke perangkat Anda.',
+            timer: 3500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
         });
     });
 </script>

@@ -235,6 +235,38 @@
             </div>
         </div>
 
+        <!-- ── MODAL: CETAK COVER KELAS BERURUTAN ───────────────────────── -->
+        <div class="modal fade" id="BulkPrintCoverModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+                    <div class="modal-header bg-info text-white py-3">
+                        <h5 class="modal-title font-weight-bold">
+                            <i class="fas fa-id-card mr-2"></i>Cetak Cover & Identitas Berurutan
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body text-center py-4">
+                        <h6 id="bpcProgress" class="text-secondary font-weight-bold mb-1">Siswa 1 dari X</h6>
+                        <h3 id="bpcStudentName" class="text-primary font-weight-bold my-2">-</h3>
+                        <p id="bpcStudentDetail" class="text-muted small mb-3">Kelas: - | NIS: -</p>
+
+                        <div class="alert alert-light border text-muted small py-2 px-3 mb-3">
+                            <i class="fas fa-info-circle mr-1 text-info"></i>
+                            Setelah klik <strong>Print Sekarang</strong>, dialog cetak akan terbuka dan antrean otomatis beralih ke siswa berikutnya.
+                        </div>
+
+                        <div class="d-flex justify-content-center mt-3" style="gap: 12px;">
+                            <button class="btn btn-secondary px-3" id="bpcPrevBtn"><i class="fas fa-chevron-left mr-1"></i> Sebelumnya</button>
+                            <button class="btn btn-success px-3 font-weight-bold shadow-sm" id="bpcPrintBtn"><i class="fas fa-print mr-1"></i> Print Sekarang</button>
+                            <button class="btn btn-primary px-3" id="bpcNextBtn">Berikutnya <i class="fas fa-chevron-right ml-1"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     <!-- /.content -->
 @endsection
@@ -339,15 +371,82 @@
                 ]
             });
 
-            // Cetak Cover & Identitas Satu Kelas Sekaligus
+            // Cetak Cover & Identitas Kelas Berurutan
+            let coverStudentList = [];
+            let currentCoverIndex = 0;
+
+            function updateCoverPrintUI() {
+                if (currentCoverIndex < 0) currentCoverIndex = 0;
+                if (currentCoverIndex >= coverStudentList.length) currentCoverIndex = coverStudentList.length - 1;
+
+                let std = coverStudentList[currentCoverIndex];
+                $('#bpcProgress').text(`Siswa ${currentCoverIndex + 1} dari ${coverStudentList.length}`);
+                $('#bpcStudentName').text(std.nama || 'Siswa');
+                $('#bpcStudentDetail').text(`Kelas: ${std.class_name || '-'} | NIS: ${std.nis || '-'} | NISN: ${std.nisn || '-'}`);
+
+                $('#bpcPrevBtn').prop('disabled', currentCoverIndex === 0);
+                $('#bpcNextBtn').prop('disabled', currentCoverIndex === coverStudentList.length - 1);
+            }
+
             $('#btnPrintCoverClass').click(function(e) {
                 e.preventDefault();
                 let classFilter = $('#class_filter').val();
-                let url = "{{ route('student.print_cover_class') }}";
-                if (classFilter) {
-                    url += `?class_name=${encodeURIComponent(classFilter)}`;
+
+                Swal.fire({
+                    title: 'Memuat Data Siswa...',
+                    text: 'Mengambil antrean cover siswa kelas...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                $.ajax({
+                    url: "{{ route('student.getData') }}",
+                    type: "GET",
+                    data: {
+                        class_name: classFilter
+                    },
+                    success: function(res) {
+                        Swal.close();
+                        coverStudentList = res.data || [];
+                        if (coverStudentList.length === 0) {
+                            SwalHelper.showError('Tidak ada data siswa untuk dicetak pada kelas ini.');
+                            return;
+                        }
+                        currentCoverIndex = 0;
+                        updateCoverPrintUI();
+                        $('#BulkPrintCoverModal').modal('show');
+                    },
+                    error: function() {
+                        Swal.close();
+                        SwalHelper.showError('Gagal memuat data siswa untuk cetak cover.');
+                    }
+                });
+            });
+
+            $('#bpcPrevBtn').click(function() {
+                currentCoverIndex--;
+                updateCoverPrintUI();
+            });
+
+            $('#bpcNextBtn').click(function() {
+                currentCoverIndex++;
+                updateCoverPrintUI();
+            });
+
+            $('#bpcPrintBtn').click(function() {
+                let std = coverStudentList[currentCoverIndex];
+                let printUrl = "/siswa/print-cover/" + std.id;
+
+                let newWin = window.open(printUrl, '_blank');
+                if (newWin) {
+                    setTimeout(() => newWin.print(), 1000);
                 }
-                window.open(url, '_blank');
+
+                // Otomatis lompat ke urutan siswa berikutnya
+                if (currentCoverIndex < coverStudentList.length - 1) {
+                    currentCoverIndex++;
+                    updateCoverPrintUI();
+                }
             });
 
             // Tampilkan Modal Tambah Siswa
@@ -383,6 +482,7 @@
                 let url = id ? `/siswa/${id}` : "{{ route('student.store') }}";
 
                 let formData = new FormData(this);
+                formData.append('nisn', $('#nisn').val());
                 formData.append('nis', $('#nis').val());
                 formData.append('student_name', $('#student_name').val());
                 formData.append('class_id', $('#class_id').val() || '');

@@ -55,7 +55,8 @@ class FstController extends Controller
         $bagong = $request->validate([
             'fase' => 'required|string',
             'semester' => 'required|string',
-            'tahun_ajaran' => 'required|string'
+            'tahun_ajaran' => 'required|string',
+            'ta' => 'required|string'
         ]);
         try {
             DB::table('m_fst_pembelajaran')->where('id', $id)->update([

@@ -52,6 +52,7 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
         Route::get('/excel', [NilaiAkhirController::class, 'ExportNilaiAkhirExcel'])->name('exportexcel');
         Route::get('/ranking', [NilaiAkhirController::class, 'exportRankingExcel'])->name('exportranking');
         Route::get('/leger', [NilaiAkhirController::class, 'exportLegerExcel'])->name('exportleger');
+        Route::post('/export-server', [NilaiAkhirController::class, 'exportServer'])->name('exportserver');
     });
 
     // ── Audit Trail Nilai ──────────────────────────────────────

@@ -6,8 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use chillerlan\QRCode\QRCode;
+use App\Http\Controllers\NilaiAkhirController;
 
 class PortalSiswaController extends Controller
 {
@@ -221,6 +223,45 @@ class PortalSiswaController extends Controller
         }
 
         return view('portal.nilai', compact('student', 'class', 'currentClass', 'fstList', 'activeFst', 'scores', 'eskulScores'));
+    }
+
+    /**
+     * Download Berkas PDF E-Raport Siswa Langsung
+     */
+    public function downloadRaport(Request $request)
+    {
+        $student = $this->getLoggedInStudent();
+        if (!$student) {
+            abort(403, 'Siswa tidak teridentifikasi.');
+        }
+
+        $fstId = $request->input('fst_id');
+        $fst = $fstId ? DB::table('m_fst_pembelajaran')->where('id', $fstId)->first() : DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+        if (!$fst) {
+            abort(404, 'Data periode FST pembelajaran tidak ditemukan.');
+        }
+
+        $class = $this->getHistoricalClass($student->id, $fst->id, $student->class_id);
+        $classId = $class ? $class->id : $student->class_id;
+
+        $tgl_print = $request->input('tgl_print', now()->toDateString());
+        $type = $request->input('type', 'all'); // default rapor lengkap (cover + nilai)
+
+        $nilaiController = app(NilaiAkhirController::class);
+        $res = $nilaiController->generateSingleRaportPdf($student->id, $classId, $fst->id, $type, $tgl_print, null);
+
+        $pdfPath = $res['pdf_path'];
+        $cleanStudentName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $student->nama);
+        $filename = "E-Raport_{$cleanStudentName}_{$res['concated']}.pdf";
+
+        $fullPath = Storage::disk('public')->path($pdfPath);
+        if (!file_exists($fullPath)) {
+            abort(500, 'Berkas PDF gagal dibuat.');
+        }
+
+        return response()->download($fullPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     /**
