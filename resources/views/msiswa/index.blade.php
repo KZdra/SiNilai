@@ -7,8 +7,8 @@
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Master Siswa') }}</h1>
-                    <button class="mt-2 btn btn-success" id="addStudentBtn">Tambah Siswa</button>
-                    <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV SISWA</button>
+                    <button class="mt-2 btn btn-success" id="addStudentBtn"><i class="fas fa-user-plus mr-1"></i> Tambah Siswa</button>
+                    <button class="mt-2 btn btn-info" id="upCsvBtn"><i class="fas fa-file-excel mr-1"></i> Import Excel Siswa</button>
                     @if (Auth::user()->role_id == 1)
                         <button class="mt-2 btn btn-primary" id="btnGenAccounts"><i class="fas fa-users-cog mr-1"></i> Generate Akun Portal Siswa</button>
                     @endif
@@ -195,31 +195,39 @@
                 </div>
             </div>
         </div>
-        {{-- Modal CSV --}}
+        {{-- Modal Import Excel Siswa --}}
         <div class="modal fade" id="upCsvModal" tabindex="-1" role="dialog" aria-labelledby="upCsvModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="upCsvModalLabel">Upload CSV Siswa</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-success text-white py-3">
+                        <h5 class="modal-title font-weight-bold" id="upCsvModalLabel">
+                            <i class="fas fa-file-excel mr-2"></i>Upload Berkas Siswa (.xlsx)
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form id="csvForm" enctype="multipart/form-data">
-                        <div class="modal-body">
-                            <h5>Klik Dibawah Ini Untuk Download Template Nya</h5>
-                            <a href="{{ route('student.download') }}" class="btn btn-success mt-2 mb-2"
-                                target="blank"><i class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
-                            <h5>Upload CSV:</h5>
-                            <div class="form-group">
-                                <label for="csv">File CSV</label>
-                                <input type="file" class="form-control" id="csv" name="csv" required>
+                        <div class="modal-body p-4">
+                            <div class="alert alert-light border mb-3">
+                                <h6 class="font-weight-bold text-dark mb-1"><i class="fas fa-info-circle text-info mr-1"></i> Format Template Resmi:</h6>
+                                <p class="small text-muted mb-2">Unduh format Excel berikut yang sudah disesuaikan dengan kolom NIS, NISN, Nama, Kelas, Biodata, Orang Tua, dan Presensi.</p>
+                                <a href="{{ route('student.download') }}" class="btn btn-success btn-block font-weight-bold text-decoration-none"
+                                    target="_blank"><i class="fas fa-file-excel mr-1"></i> Download Template Excel (.xlsx)</a>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label for="csv" class="font-weight-bold text-dark">Pilih Berkas Excel Hasil Pengisian:</label>
+                                <input type="file" class="form-control-file border rounded p-2 w-100" id="csv" name="file" accept=".xlsx, .xls, .csv" required>
+                                <small class="form-text text-muted mt-1">Mendukung berkas <code>.xlsx</code>, <code>.xls</code>, atau <code>.csv</code> (Maks. 10 MB).</small>
                             </div>
                         </div>
-                        <div class="modal-footer">
+                        <div class="modal-footer bg-light py-2">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                            <button type="submit" class="btn btn-primary">Simpan</button>
+                            <button type="submit" class="btn btn-success font-weight-bold" id="btnSubmitImport">
+                                <i class="fas fa-upload mr-1"></i> Proses & Simpan
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -505,33 +513,36 @@
             $('#csvForm').on('submit', function(e) {
                 e.preventDefault();
                 let formData = new FormData(this);
+                let btn = $('#btnSubmitImport');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...');
 
                 $.ajax({
                     url: "{{ route('student.import') }}",
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}",
-                        '_method': 'post'
                     },
                     type: "POST",
                     data: formData,
                     processData: false,
                     contentType: false,
                     success: function(response) {
+                        btn.prop('disabled', false).html('<i class="fas fa-upload mr-1"></i> Proses & Simpan');
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil!',
                             text: response.message,
-                            showConfirmButton: false,
-                            timer: 2000
+                            confirmButtonText: 'OK'
                         });
                         $('#upCsvModal').modal('hide');
                         table.ajax.reload();
                     },
                     error: function(xhr) {
+                        btn.prop('disabled', false).html('<i class="fas fa-upload mr-1"></i> Proses & Simpan');
                         Swal.fire({
                             icon: 'error',
-                            title: 'Gagal!',
-                            text: xhr.responseJSON?.message || "Terjadi kesalahan!",
+                            title: 'Gagal Mengimpor Siswa',
+                            text: xhr.responseJSON?.message || "Terjadi kesalahan saat memproses berkas Excel!",
+                            confirmButtonText: 'Tutup'
                         });
                     }
                 });
