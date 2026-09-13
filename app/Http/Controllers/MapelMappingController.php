@@ -157,4 +157,32 @@ class MapelMappingController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
+    public function deactivateAll(Request $request)
+    {
+        $request->validate([
+            'class_id' => 'required|integer',
+            'fst_id' => 'required|integer',
+        ]);
+
+        try {
+            $mapels = DB::table('mata_pelajarans')->get();
+            foreach ($mapels as $mapel) {
+                DB::table('mapel_class_fst')->updateOrInsert(
+                    [
+                        'mapel_id' => $mapel->id,
+                        'class_id' => $request->class_id,
+                        'fst_id' => $request->fst_id,
+                    ],
+                    [
+                        'is_active' => 0,
+                        'updated_at' => Carbon::now()
+                    ]
+                );
+            }
+            return response()->json(['message' => 'Semua mata pelajaran berhasil dinonaktifkan.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
 }

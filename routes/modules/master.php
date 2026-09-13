@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/import', [SiswaController::class, 'import'])->name('import');
         Route::put('/{id}', [SiswaController::class, 'update'])->name('update');
         Route::delete('/{id}', [SiswaController::class, 'destroy'])->name('destroy');
+        Route::get('/print-cover/{id}', [SiswaController::class, 'printCover'])->name('print_cover');
+        Route::get('/print-cover-class', [SiswaController::class, 'printCoverClass'])->name('print_cover_class');
     });
 
     // ── Mata Pelajaran ─────────────────────────────────────────
@@ -54,6 +56,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/toggle', [MapelMappingController::class, 'toggleMapel'])->name('toggle');
         Route::post('/copy', [MapelMappingController::class, 'copyFromPrevious'])->name('copy');
         Route::post('/activate-all', [MapelMappingController::class, 'activateAll'])->name('activate_all');
+        Route::post('/deactivate-all', [MapelMappingController::class, 'deactivateAll'])->name('deactivate_all');
     });
 
     // ── Ekstrakurikuler (Master) ───────────────────────────────
@@ -63,6 +66,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [EskulController::class, 'store'])->name('store');
         Route::put('/{id}', [EskulController::class, 'update'])->name('update');
         Route::delete('/{id}', [EskulController::class, 'destroy'])->name('destroy');
+
+        // Master Predikat & Template Narasi Rapor
+        Route::get('/predikat/get', [EskulController::class, 'getPredikatData'])->name('predikat.getdata');
+        Route::post('/predikat', [EskulController::class, 'storePredikat'])->name('predikat.store');
+        Route::put('/predikat/{id}', [EskulController::class, 'updatePredikat'])->name('predikat.update');
+        Route::delete('/predikat/{id}', [EskulController::class, 'destroyPredikat'])->name('predikat.destroy');
     });
 
     // ── FST (Fase / Semester / Tahun Ajaran) ──────────────────

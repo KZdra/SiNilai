@@ -9,6 +9,7 @@
                     <h1 class="m-0">{{ __('Master Siswa') }}</h1>
                     <button class="mt-2 btn btn-success" id="addStudentBtn"><i class="fas fa-user-plus mr-1"></i> Tambah Siswa</button>
                     <button class="mt-2 btn btn-info" id="upCsvBtn"><i class="fas fa-file-excel mr-1"></i> Import Excel Siswa</button>
+                    <button class="mt-2 btn btn-secondary" id="btnPrintCoverClass"><i class="fas fa-id-card mr-1"></i> Cetak Cover Kelas</button>
                     @if (Auth::user()->role_id == 1)
                         <button class="mt-2 btn btn-primary" id="btnGenAccounts"><i class="fas fa-users-cog mr-1"></i> Generate Akun Portal Siswa</button>
                     @endif
@@ -328,13 +329,25 @@
                                         data-alamat_orang_tua="${safeAlamatOrtu}"
                                         data-sakit="${row.sakit || 0}"
                                         data-izin="${row.izin || 0}"
-                                        data-alpa="${row.alpa || 0}">Edit</button>
-                                    <button class="btn btn-sm btn-danger delBtn" data-id="${row.id}">Delete</button>
+                                        data-alpa="${row.alpa || 0}" title="Edit Data Siswa"><i class="fas fa-edit"></i> Edit</button>
+                                    <a href="/siswa/print-cover/${row.id}" target="_blank" class="btn btn-sm btn-info" title="Cetak Cover & Identitas Rapor"><i class="fas fa-id-card mr-1"></i>Cover</a>
+                                    <button class="btn btn-sm btn-danger delBtn" data-id="${row.id}" title="Hapus Siswa"><i class="fas fa-trash"></i></button>
                                 </div>
                             `;
                         }
                     }
                 ]
+            });
+
+            // Cetak Cover & Identitas Satu Kelas Sekaligus
+            $('#btnPrintCoverClass').click(function(e) {
+                e.preventDefault();
+                let classFilter = $('#class_filter').val();
+                let url = "{{ route('student.print_cover_class') }}";
+                if (classFilter) {
+                    url += `?class_name=${encodeURIComponent(classFilter)}`;
+                }
+                window.open(url, '_blank');
             });
 
             // Tampilkan Modal Tambah Siswa

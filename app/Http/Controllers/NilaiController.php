@@ -170,6 +170,112 @@ class NilaiController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
+    public function storeBulk(Request $request)
+    {
+        $request->validate([
+            'class_id' => 'required',
+            'mapel_id' => 'required',
+            'fst_id' => 'required',
+            'students' => 'required|array',
+        ]);
+
+        if ($this->isSemesterLocked($request->fst_id)) {
+            return response()->json(['message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat diubah.'], 403);
+        }
+
+        DB::beginTransaction();
+        try {
+            $class_id = $request->class_id;
+            $mapel_id = $request->mapel_id;
+            $fst_id = $request->fst_id;
+            $studentsData = $request->students;
+            $now = Carbon::now();
+            $savedCount = 0;
+
+            $fields = [
+                'value_daily', 'value_daily_2', 'value_daily_3', 'value_daily_4', 'value_daily_5',
+                'value_daily_6', 'value_daily_7', 'value_daily_8', 'value_daily_9', 'value_daily_10',
+                'value_sts', 'value_sas'
+            ];
+
+            foreach ($studentsData as $item) {
+                $student_id = $item['student_id'] ?? null;
+                if (!$student_id) continue;
+
+                $updateData = [];
+                $hasAnyScore = false;
+                foreach ($fields as $field) {
+                    $rawVal = $item[$field] ?? null;
+                    if ($rawVal !== null && $rawVal !== '') {
+                        $num = is_numeric($rawVal) ? round(floatval($rawVal), 2) : null;
+                        if ($num !== null) {
+                            $num = max(0, min(100, $num));
+                            $updateData[$field] = $num;
+                            $hasAnyScore = true;
+                        } else {
+                            $updateData[$field] = null;
+                        }
+                    } else {
+                        $updateData[$field] = null;
+                    }
+                }
+
+                $existing = DB::table('values')
+                    ->where('student_id', $student_id)
+                    ->where('mapel_id', $mapel_id)
+                    ->where('fst_id', $fst_id)
+                    ->first();
+
+                if ($existing) {
+                    $updateData['updated_at'] = $now;
+                    DB::table('values')->where('id', $existing->id)->update($updateData);
+
+                    \App\Services\NilaiAuditService::log(
+                        $student_id,
+                        $mapel_id,
+                        $fst_id,
+                        'UPDATE_BULK',
+                        (array) $existing,
+                        $updateData
+                    );
+                    $savedCount++;
+                } else if ($hasAnyScore) {
+                    $insertData = array_merge($updateData, [
+                        'class_id' => $class_id,
+                        'mapel_id' => $mapel_id,
+                        'fst_id' => $fst_id,
+                        'student_id' => $student_id,
+                        'created_at' => $now,
+                        'updated_at' => $now
+                    ]);
+                    DB::table('values')->insert($insertData);
+
+                    \App\Services\NilaiAuditService::log(
+                        $student_id,
+                        $mapel_id,
+                        $fst_id,
+                        'INPUT_BULK',
+                        null,
+                        $insertData
+                    );
+                    $savedCount++;
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil menyimpan {$savedCount} data nilai siswa!",
+                'saved_count' => $savedCount
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error in NilaiController::storeBulk: ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal menyimpan nilai: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function update(Request $request, $id)
     {
 

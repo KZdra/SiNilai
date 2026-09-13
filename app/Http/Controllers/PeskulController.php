@@ -23,7 +23,12 @@ class PeskulController extends Controller
         if (Auth::user()->class_id !== null) {
             $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
         }
-        return view('peskul.index', compact('eskulList', 'classList', 'fstList', 'className'));
+        $predikatList = DB::table('m_predikat_eskul')
+            ->where('is_active', true)
+            ->orderBy('urutan', 'asc')
+            ->get();
+
+        return view('peskul.index', compact('eskulList', 'classList', 'fstList', 'className', 'predikatList'));
     }
     public function getdata(Request $request)
     {

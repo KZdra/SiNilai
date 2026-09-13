@@ -26,12 +26,17 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
     // ── Manajemen User ─────────────────────────────────────────
     Route::prefix('muser')->name('muser.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/data-guru', [UserController::class, 'getData'])->name('data_guru');
+        Route::get('/data-siswa', [UserController::class, 'getDataSiswa'])->name('data_siswa');
         Route::post('/', [UserController::class, 'store'])->name('store');
         Route::put('/{id}', [UserController::class, 'update'])->name('update');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+        Route::post('/reset-password/{id}', [UserController::class, 'resetPassword'])->name('reset_password');
+        Route::post('/generate-siswa', [UserController::class, 'generateSiswaAccounts'])->name('generate_siswa');
+        Route::post('/activate-single-siswa', [UserController::class, 'activateSingleSiswa'])->name('activate_single_siswa');
     });
 
-    // ── Data Users (legacy endpoint — bisa dihapus jika tidak dipakai) ──
+    // ── Data Users (legacy endpoint) ──
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/data', [UserController::class, 'getData'])->name('getData');

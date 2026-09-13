@@ -433,6 +433,8 @@ class NilaiAkhirController extends Controller
                 s.id AS student_id,
                 {$selectedClassIdSql},
                 s.nama AS student_name,
+                s.nis AS student_nis,
+                s.nisn AS student_nisn,
                 c.class_name,
                 " . implode(', ', $columns) . "
             FROM students AS s
@@ -454,7 +456,7 @@ class NilaiAkhirController extends Controller
             $query .= " WHERE (s.class_id = :classId OR EXISTS (SELECT 1 FROM `values` val WHERE val.student_id = s.id AND val.class_id = :classIdVal AND val.fst_id = :fstIdVal) OR EXISTS (SELECT 1 FROM catatan_walikelas cw WHERE cw.student_id = s.id AND cw.class_id = :classIdCw AND cw.fst_id = :fstIdCw)) ";
         }
 
-        $query .= " GROUP BY s.id, s.nama, c.class_name ORDER BY c.class_name, s.nama";
+        $query .= " GROUP BY s.id, s.nama, s.nis, s.nisn, c.class_name ORDER BY c.class_name, s.nama";
 
         // Jalankan query
         return DB::select($query, $bindings);
@@ -554,7 +556,7 @@ class NilaiAkhirController extends Controller
         $students = $this->getStudentAllScores($classId, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $studentsTP = $this->getStudentAllTp($classId, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $fst = DB::table('m_fst_pembelajaran')->select('fase', 'semester', 'tahun_ajaran', 'ta')->where('id', $request->fst_id)->first();
-        $schoolData = DB::table('data_sekolah')->select('nama_sekolah', 'alamat_sekolah', 'nama_kepala_sekolah', 'nip_kepala_sekolah')->first();
+        $schoolData = DB::table('data_sekolah')->first();
         $studentEskul = DB::table('nilai_eskuls as ns')->select('ns.id', 'ns.nilai_eskul', 'ms.nama_eskul')->join('m_eskul as ms','ns.eskul_id','=','ms.id')
         ->where('ns.student_id',$request->student_id)->where('ns.fst_id',$request->fst_id)->get();
 
@@ -673,8 +675,29 @@ class NilaiAkhirController extends Controller
             ];
         }
 
+        $type = $request->input('type', 'nilai');
+        $rawStudent = DB::table('students')->where('id', $request->student_id)->first();
         $walas = DB::table('users')->where('class_id', $classId)->where('role_id', 2)->first();
-        $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents', 'tgl_print', 'keputusan', 'walas'));
+
+        $suffix = '';
+        if ($type === 'cover') {
+            $pdf = Pdf::loadView('docs.cover_identitas', [
+                'student' => $rawStudent,
+                'schoolData' => $schoolData,
+                'tgl_print' => $tgl_print,
+            ]);
+            $suffix = '_Cover';
+        } elseif ($type === 'all') {
+            $includeCover = true;
+            $rawStudentData = $rawStudent;
+            $rawSchoolData = $schoolData;
+            $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents', 'tgl_print', 'keputusan', 'walas', 'includeCover', 'rawStudentData', 'rawSchoolData'));
+            $suffix = '_Lengkap';
+        } else {
+            $includeCover = false;
+            $pdf = Pdf::loadView('docs.nilai', compact('formattedStudents', 'tgl_print', 'keputusan', 'walas', 'includeCover'));
+            $suffix = '';
+        }
 
         $cleanTA   = $fst && !empty($fst->tahun_ajaran) ? str_replace(['/', ' '], ['-', '_'], $fst->tahun_ajaran) : 'TA';
         $cleanFase = $fst && !empty($fst->fase) ? 'Fase_' . ucwords($fst->fase) : 'Fase';
@@ -683,7 +706,7 @@ class NilaiAkhirController extends Controller
 
         $safeClassName   = str_replace(['/', '\\', ' '], '_', $formattedStudents[0]['class_name']);
         $safeStudentName = str_replace(['/', '\\', ' '], '_', $formattedStudents[0]['student_name']);
-        $pdfPath         = "raport/{$safeClassName}/{$concated}/{$safeStudentName}.pdf";
+        $pdfPath         = "raport/{$safeClassName}/{$concated}/{$safeStudentName}{$suffix}.pdf";
 
         Storage::disk('public')->put($pdfPath, $pdf->output());
 

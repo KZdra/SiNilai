@@ -13,8 +13,15 @@
             font-style: normal;
         }
 
+        @font-face {
+            font-family: 'Ba';
+            src: url('{{ public_path('fonts/bookantiqua.ttf') }}') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
         body {
-            font-family: "Ba";
+            font-family: "Ba", "Book Antiqua", serif;
             font-size: 10pt;
             margin-top: 0.5cm;
             margin-bottom: 0.5cm;
@@ -78,6 +85,15 @@
 </head>
 
 <body>
+    @if (!empty($includeCover) && $includeCover && !empty($rawStudentData))
+        @include('docs.partials.cover_and_identity', [
+            'student' => $rawStudentData,
+            'schoolData' => $rawSchoolData ?? ($formattedStudents[0]['school_data'] ?? null),
+            'tgl_print' => $tgl_print ?? now()
+        ])
+        <div style="page-break-after: always;"></div>
+    @endif
+
     @if ($formattedStudents[0]['fst']->ta == 'akhir')
         <h2 style="text-align: center;" class="hjdul">LAPORAN HASIL BELAJAR<br>AKHIR SEMESTER</h2>
     @elseif ($formattedStudents[0]['fst']->ta == 'tengah')

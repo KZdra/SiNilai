@@ -16,18 +16,9 @@ class TpController extends Controller
     // Master Sections
     public function index()
     {
-        $query = DB::table('class')->select('id', 'class_name')->orderBy('class_name', 'asc');
-        if (Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
-            $query->where('id', Auth::user()->class_id);
-        }
-        $classList = $query->get();
-        $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('id', 'asc')->get();
+        $mapelList = DB::table('mata_pelajarans')->select('id', 'nama_mapel')->orderBy('nama_mapel', 'asc')->get();
         $fstList = DB::table('m_fst_pembelajaran')->select('id', 'fase', 'semester', 'tahun_ajaran','ta')->orderBy('id', 'asc')->get();
-        $className = null;
-        if (Auth::user()->class_id !== null) {
-            $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
-        }
-        return view('mtp.index', compact('mapelList', 'classList', 'fstList', 'className'));
+        return view('mtp.index', compact('mapelList', 'fstList'));
     }
     public function getdata(Request $r)
     {
@@ -125,34 +116,28 @@ class TpController extends Controller
      */
     public function downloadTemplate(Request $request)
     {
-        $classId = $request->input('class_id') ?: (Auth::user()->class_id ?? null);
         $mapelId = $request->input('mapel_id');
         $fstId   = $request->input('fst_id');
 
-        $class = $classId ? DB::table('class')->where('id', $classId)->first() : null;
         $mapel = $mapelId ? DB::table('mata_pelajarans')->where('id', $mapelId)->first() : null;
         $fst   = $fstId   ? DB::table('m_fst_pembelajaran')->where('id', $fstId)->first() : null;
 
         $existingTps = [];
         if ($mapelId && $fstId) {
-            $tpQuery = DB::table('m_tp')
+            $existingTps = DB::table('m_tp')
                 ->where('mapel_id', $mapelId)
-                ->where('fst_id', $fstId);
-
-            if ($classId) {
-                $tpQuery->where(function($q) use ($classId) {
-                    $q->whereNull('class_id')->orWhere('class_id', $classId);
-                });
-            }
-
-            $existingTps = $tpQuery->orderBy('id', 'asc')->get()->unique('tp_deskripsi')->values();
+                ->where('fst_id', $fstId)
+                ->orderBy('id', 'asc')
+                ->get()
+                ->unique('tp_deskripsi')
+                ->values();
         }
 
-        $cleanClass = $class ? str_replace(['/', '\\', ' '], '_', $class->class_name) : 'Semua_Kelas';
-        $cleanMapel = $mapel ? '_' . str_replace(['/', '\\', ' '], '_', $mapel->nama_mapel) : '';
-        $filename   = "Template_TP_{$cleanClass}{$cleanMapel}.xlsx";
+        $cleanMapel = $mapel ? str_replace(['/', '\\', ' '], '_', $mapel->nama_mapel) : 'Mapel';
+        $cleanFst   = $fst ? '_Fase_' . str_replace(['/', '\\', ' '], '_', $fst->fase . '_Sem_' . $fst->semester) : '';
+        $filename   = "Template_TP_{$cleanMapel}{$cleanFst}.xlsx";
 
-        return Excel::download(new TpTemplateExport($class, $mapel, $fst, $existingTps), $filename);
+        return Excel::download(new TpTemplateExport(null, $mapel, $fst, $existingTps), $filename);
     }
 
     /**

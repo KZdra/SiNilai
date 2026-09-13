@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Services\DataTableHelper;
+use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
@@ -490,5 +491,60 @@ class SiswaController extends Controller
         }
 
         abort(404, 'Berkas template siswa tidak ditemukan.');
+    }
+
+    public function printCover($id, Request $request)
+    {
+        $student = DB::table('students')->where('id', $id)->first();
+        if (!$student) {
+            abort(404, 'Data siswa tidak ditemukan.');
+        }
+
+        $schoolData = DB::table('data_sekolah')->first();
+        $tgl_print = $request->input('tgl_print', now());
+
+        $pdf = Pdf::loadView('docs.cover_identitas', compact('student', 'schoolData', 'tgl_print'));
+
+        $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $student->nama);
+        $fileName = "Cover_Identitas_{$safeName}.pdf";
+
+        return $pdf->stream($fileName);
+    }
+
+    public function printCoverClass(Request $request)
+    {
+        $classId = $request->input('class_id');
+        $className = $request->input('class_name');
+
+        if (Auth::check() && Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $classId = Auth::user()->class_id;
+        }
+
+        $query = DB::table('students as s')
+            ->leftJoin('class as c', 's.class_id', '=', 'c.id')
+            ->select('s.*');
+
+        if (!empty($classId)) {
+            $query->where('s.class_id', $classId);
+        } elseif (!empty($className)) {
+            $query->where('c.class_name', $className);
+        }
+
+        $students = $query->orderBy('s.nama', 'asc')->get();
+
+        if ($students->isEmpty()) {
+            return back()->with('error', 'Tidak ada data siswa.');
+        }
+
+        $schoolData = DB::table('data_sekolah')->first();
+        $tgl_print = $request->input('tgl_print', now());
+
+        $pdf = Pdf::loadView('docs.cover_identitas_class', compact('students', 'schoolData', 'tgl_print'));
+
+        $label = !empty($className) ? $className : (!empty($classId) ? (DB::table('class')->where('id', $classId)->value('class_name') ?? 'Kelas') : 'Semua_Kelas');
+        $safeClass = preg_replace('/[^a-zA-Z0-9_-]/', '_', $label);
+        $fileName = "Cover_Identitas_Kelas_{$safeClass}.pdf";
+
+        return $pdf->stream($fileName);
     }
 }

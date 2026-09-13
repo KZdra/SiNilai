@@ -9,7 +9,7 @@
                     <h1 class="m-0 font-weight-bold text-dark">
                         <i class="fas fa-bullseye text-primary mr-2"></i>{{ __('Master Tujuan Pembelajaran (TP)') }}
                     </h1>
-                    <p class="text-muted small mb-0">Kelola dan rumuskan capaian pembelajaran (TP) Kurikulum Merdeka per kelas, semester, dan mata pelajaran.</p>
+                    <p class="text-muted small mb-0">Kelola dan rumuskan Tujuan Pembelajaran (TP) Kurikulum Merdeka per mata pelajaran & periode semester (berlaku untuk semua kelas paralel).</p>
                 </div>
                 <div class="col-sm-6 text-right">
                     <ol class="breadcrumb float-sm-right bg-transparent p-0 mb-0">
@@ -25,11 +25,11 @@
     <div class="content">
         <div class="container-fluid">
 
-            <!-- Panel Filter Terpadu (Unified Filter Bar) -->
+            <!-- Panel Filter Terpadu (Periode & Mata Pelajaran) -->
             <div class="card card-outline card-primary shadow-sm mb-3">
                 <div class="card-header bg-white py-2">
                     <h5 class="card-title font-weight-bold text-dark mb-0">
-                        <i class="fas fa-filter text-primary mr-1"></i> Filter Kelas & Mata Pelajaran
+                        <i class="fas fa-filter text-primary mr-1"></i> Filter Periode Semester & Mata Pelajaran
                     </h5>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -38,29 +38,19 @@
                     </div>
                 </div>
                 <div class="card-body py-3">
+                    <div class="alert alert-light border py-2 px-3 mb-3 small d-flex align-items-center">
+                        <i class="fas fa-info-circle text-primary fa-lg mr-2"></i>
+                        <div>
+                            <strong>Konsep Kurikulum Merdeka:</strong> Tujuan Pembelajaran (TP) dirumuskan untuk <strong>1 Mata Pelajaran</strong> dan <strong>1 Periode Semester (Fase/TA)</strong>. TP yang Anda buat atau unggah di sini otomatis berlaku sebagai acuan penilaian di <strong>seluruh kelas paralel</strong>.
+                        </div>
+                    </div>
+
                     <form id="unifiedFilterForm">
                         <div class="row align-items-end">
-                            <!-- Dropdown 1: Kelas -->
-                            <div class="col-md-4 col-sm-6 col-12 mb-2">
-                                <label for="filter_class_id" class="font-weight-bold small text-muted text-uppercase mb-1">
-                                    <i class="fas fa-school mr-1 text-primary"></i> 1. Kelas
-                                </label>
-                                @if ($className)
-                                    <select name="class_id" id="filter_class_id" class="form-control font-weight-bold" disabled>
-                                        <option value="{{ Auth::user()->class_id }}" selected>{{ $className }}</option>
-                                    </select>
-                                @else
-                                    <select name="class_id" id="filter_class_id" class="form-control font-weight-bold" required>
-                                        <option value="" selected disabled>-- Pilih Kelas --</option>
-                                        @include('partials.select_class_options', ['classList' => $classList])
-                                    </select>
-                                @endif
-                            </div>
-
-                            <!-- Dropdown 2: Fase / Semester / Tahun Ajaran -->
-                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                            <!-- Dropdown 1: Fase / Semester / Tahun Ajaran -->
+                            <div class="col-md-6 col-12 mb-2">
                                 <label for="filter_fst_id" class="font-weight-bold small text-muted text-uppercase mb-1">
-                                    <i class="fas fa-calendar-alt mr-1 text-warning"></i> 2. Periode / Semester
+                                    <i class="fas fa-calendar-alt mr-1 text-warning"></i> 1. Periode / Semester (Fase & TA)
                                 </label>
                                 <select name="fst_id" id="filter_fst_id" class="form-control font-weight-bold" required>
                                     <option value="" selected disabled>-- Pilih Periode Semester --</option>
@@ -68,13 +58,16 @@
                                 </select>
                             </div>
 
-                            <!-- Dropdown 3: Mata Pelajaran (Dynamic AJAX) -->
-                            <div class="col-md-4 col-12 mb-2">
+                            <!-- Dropdown 2: Mata Pelajaran -->
+                            <div class="col-md-6 col-12 mb-2">
                                 <label for="filter_mapel_id" class="font-weight-bold small text-muted text-uppercase mb-1">
-                                    <i class="fas fa-book mr-1 text-success"></i> 3. Mata Pelajaran
+                                    <i class="fas fa-book mr-1 text-success"></i> 2. Mata Pelajaran
                                 </label>
-                                <select name="mapel_id" id="filter_mapel_id" class="form-control font-weight-bold" required disabled>
-                                    <option value="" selected disabled>Pilih Kelas & Periode Terlebih Dahulu...</option>
+                                <select name="mapel_id" id="filter_mapel_id" class="form-control font-weight-bold" required>
+                                    <option value="" selected disabled>-- Pilih Mata Pelajaran --</option>
+                                    @foreach ($mapelList as $mp)
+                                        <option value="{{ $mp->id }}">{{ $mp->nama_mapel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -86,7 +79,7 @@
             <div id="initialPlaceholder" class="card shadow-sm border-0 py-5 text-center">
                 <div class="card-body">
                     <i class="fas fa-layer-group fa-4x text-muted mb-3"></i>
-                    <h5 class="font-weight-bold text-secondary">Silakan Pilih Kelas, Periode, dan Mata Pelajaran</h5>
+                    <h5 class="font-weight-bold text-secondary">Silakan Pilih Periode Semester dan Mata Pelajaran</h5>
                     <p class="text-muted small mb-0">Gunakan filter di atas untuk memuat daftar Tujuan Pembelajaran yang tersimpan atau menambah TP baru.</p>
                 </div>
             </div>
@@ -97,13 +90,13 @@
                     <!-- Left: Active Context Badges -->
                     <div class="mb-2 mb-md-0">
                         <span class="badge badge-light border text-dark px-3 py-2 mr-1">
-                            <i class="fas fa-school text-primary mr-1"></i> <span id="badgeClassText">-</span>
-                        </span>
-                        <span class="badge badge-light border text-dark px-3 py-2 mr-1">
                             <i class="fas fa-book text-success mr-1"></i> <span id="badgeMapelText">-</span>
                         </span>
                         <span class="badge badge-light border text-dark px-3 py-2 mr-1">
                             <i class="fas fa-calendar-alt text-warning mr-1"></i> <span id="badgeFstText">-</span>
+                        </span>
+                        <span class="badge badge-success px-3 py-2 mr-1" title="TP ini digunakan bersama untuk semua kelas rombel yang mengambil mapel ini">
+                            <i class="fas fa-users mr-1"></i> Berlaku Seluruh Kelas Paralel
                         </span>
                         <span class="badge badge-primary px-3 py-2">
                             <i class="fas fa-list-ol mr-1"></i> Total: <b id="badgeTotalTp">0</b> TP
@@ -162,9 +155,11 @@
                         <div class="alert alert-info py-2 px-3 mb-3 small d-flex justify-content-between align-items-center">
                             <div>
                                 <strong>Target Mapel:</strong> <span id="modalAddMapel">-</span> |
-                                <strong>Kelas:</strong> <span id="modalAddClass">-</span> |
                                 <strong>Periode:</strong> <span id="modalAddFst">-</span>
                             </div>
+                            <span class="badge badge-light border text-primary">
+                                <i class="fas fa-globe mr-1"></i> Berlaku Semua Kelas
+                            </span>
                         </div>
 
                         <p class="text-muted small mb-2">
@@ -280,7 +275,7 @@
                                 <input type="radio" id="modeReplace" name="import_mode" class="custom-control-input" value="replace" checked>
                                 <label class="custom-control-label font-weight-normal" for="modeReplace">
                                     <strong>Ganti Seluruh TP (Replace)</strong>
-                                    <span class="d-block text-muted small">Menghapus TP lama di kelas & mapel ini, lalu menggantinya dengan TP dari berkas Excel.</span>
+                                    <span class="d-block text-muted small">Menghapus TP lama di mapel dan periode semester ini, lalu menggantinya dengan TP dari Excel (berlaku ke semua kelas).</span>
                                 </label>
                             </div>
                             <div class="custom-control custom-radio mt-2">
@@ -308,11 +303,9 @@
     <script type="module">
         $(document).ready(function() {
             const csrfToken = "{{ csrf_token() }}";
-            let activeClassId = "{{ Auth::user()->class_id ?? '' }}";
             let activeFstId   = "";
             let activeMapelId = "";
 
-            let activeClassName = "{{ $className ?? '' }}";
             let activeFstName   = "";
             let activeMapelName = "";
 
@@ -321,7 +314,6 @@
 
             // ── Auto-select FST Semester pertama / default jika tersedia ───
             if ($('#filter_fst_id option').length > 1) {
-                // Pilih opsi pertama yang valid jika belum terpilih
                 let firstValidFst = $('#filter_fst_id option:not(:disabled)').first().val();
                 if (firstValidFst) {
                     $('#filter_fst_id').val(firstValidFst);
@@ -330,93 +322,35 @@
                 }
             }
 
-            // Jika user adalah wali kelas, activeClassId sudah terisi
-            if (activeClassId) {
-                activeClassName = $('#filter_class_id option:selected').text() || "{{ $className ?? '' }}";
-                fetchMapels();
-            }
-
             // ── Event Handlers Filter ────────────────────────────────────
-            $('#filter_class_id').on('change', function() {
-                activeClassId   = $(this).val();
-                activeClassName = $('#filter_class_id option:selected').text();
-                resetMapelDropdown();
-                fetchMapels();
-            });
-
             $('#filter_fst_id').on('change', function() {
                 activeFstId   = $(this).val();
                 activeFstName = $('#filter_fst_id option:selected').text();
-                resetMapelDropdown();
-                fetchMapels();
+                checkAndLoad();
             });
 
             $('#filter_mapel_id').on('change', function() {
                 activeMapelId   = $(this).val();
                 activeMapelName = $('#filter_mapel_id option:selected').text();
-                if (activeMapelId) {
-                    loadTpDataTable();
-                }
+                checkAndLoad();
             });
 
-            function resetMapelDropdown() {
-                $('#filter_mapel_id').html('<option value="" selected disabled>Loading Mata Pelajaran...</option>').prop('disabled', true);
-                $('#tpDataCard').hide();
-                $('#initialPlaceholder').show();
-                activeMapelId = "";
-            }
-
-            // Fetch Mata Pelajaran via AJAX berdasarkan Kelas & FST
-            function fetchMapels() {
-                let classVal = activeClassId || $('#filter_class_id').val();
-                let fstVal   = activeFstId   || $('#filter_fst_id').val();
-
-                if (!classVal || !fstVal) {
-                    $('#filter_mapel_id').html('<option value="" selected disabled>Pilih Kelas & Periode Terlebih Dahulu...</option>').prop('disabled', true);
-                    return;
+            function checkAndLoad() {
+                if (activeFstId && activeMapelId) {
+                    loadTpDataTable();
+                } else {
+                    $('#tpDataCard').hide();
+                    $('#initialPlaceholder').show();
                 }
-
-                $.ajax({
-                    url: "{{ route('value.getMapel') }}",
-                    type: "GET",
-                    data: {
-                        class_id: classVal,
-                        fst_id: fstVal
-                    },
-                    beforeSend: function() {
-                        $('#filter_mapel_id').html('<option value="" selected disabled><i class="fas fa-spinner fa-spin"></i> Memuat mata pelajaran...</option>').prop('disabled', true);
-                    },
-                    success: function(response) {
-                        let html = '<option value="" selected disabled>-- Pilih Mata Pelajaran --</option>';
-                        if (response.length === 0) {
-                            html = '<option value="" selected disabled>Belum ada mapel aktif untuk kelas & semester ini.</option>';
-                            $('#filter_mapel_id').html(html).prop('disabled', true);
-                        } else {
-                            response.forEach(function(item) {
-                                html += `<option value="${item.id}">${item.nama_mapel}</option>`;
-                            });
-                            $('#filter_mapel_id').html(html).prop('disabled', false);
-
-                            // Jika sebelumnya sudah ada mapel yang dipilih, pertahankan
-                            if (activeMapelId) {
-                                $('#filter_mapel_id').val(activeMapelId);
-                            }
-                        }
-                    },
-                    error: function() {
-                        $('#filter_mapel_id').html('<option value="" selected disabled>Gagal mengambil data mapel.</option>').prop('disabled', true);
-                    }
-                });
             }
 
             // ── Load / Reload DataTable Tujuan Pembelajaran ──────────────
             function loadTpDataTable() {
-                if (!activeClassId || !activeFstId || !activeMapelId) {
+                if (!activeFstId || !activeMapelId) {
                     return;
                 }
 
                 // Update Badges
-                $('#badgeClassText').text(activeClassName);
                 $('#badgeFstText').text(activeFstName);
                 $('#badgeMapelText').text(activeMapelName);
 
@@ -433,7 +367,6 @@
                         url: "{{ route('mastertp.getdata') }}",
                         type: "GET",
                         data: {
-                            class_id: activeClassId,
                             fst_id: activeFstId,
                             mapel_id: activeMapelId
                         },
@@ -502,11 +435,11 @@
 
             // ── Download Template Excel Handler ──────────────────────────
             function triggerDownloadTemplate() {
-                if (!activeClassId || !activeMapelId || !activeFstId) {
-                    Swal.fire('Perhatian', 'Silahkan pilih Kelas, Periode, dan Mata Pelajaran terlebih dahulu.', 'warning');
+                if (!activeMapelId || !activeFstId) {
+                    Swal.fire('Perhatian', 'Silahkan pilih Periode Semester dan Mata Pelajaran terlebih dahulu.', 'warning');
                     return;
                 }
-                let url = `{{ route('mastertp.template') }}?class_id=${activeClassId}&mapel_id=${activeMapelId}&fst_id=${activeFstId}`;
+                let url = `{{ route('mastertp.template') }}?mapel_id=${activeMapelId}&fst_id=${activeFstId}`;
                 window.location.href = url;
             }
 
@@ -515,12 +448,11 @@
 
             // ── Modal Tambah TP Manual Handlers ──────────────────────────
             $('#btnOpenAddModal').click(function() {
-                if (!activeClassId || !activeMapelId || !activeFstId) {
-                    Swal.fire('Perhatian', 'Silahkan pilih Kelas, Periode, dan Mata Pelajaran terlebih dahulu.', 'warning');
+                if (!activeMapelId || !activeFstId) {
+                    Swal.fire('Perhatian', 'Silahkan pilih Periode Semester dan Mata Pelajaran terlebih dahulu.', 'warning');
                     return;
                 }
 
-                $('#modalAddClass').text(activeClassName);
                 $('#modalAddMapel').text(activeMapelName);
                 $('#modalAddFst').text(activeFstName);
 
@@ -588,7 +520,6 @@
                     method: "POST",
                     headers: { 'X-CSRF-TOKEN': csrfToken },
                     data: {
-                        class_id: activeClassId,
                         fst_id: activeFstId,
                         mapel_id: activeMapelId,
                         tp_deskripsi: descriptions
@@ -642,7 +573,6 @@
                     method: "PUT",
                     headers: { 'X-CSRF-TOKEN': csrfToken },
                     data: {
-                        class_id: activeClassId,
                         mapel_id: activeMapelId,
                         tp_deskripsi: [desc]
                     },
@@ -705,8 +635,8 @@
 
             // ── Modal Import Excel Handlers ──────────────────────────────
             $('#btnOpenImportModal').click(function() {
-                if (!activeClassId || !activeMapelId || !activeFstId) {
-                    Swal.fire('Perhatian', 'Silahkan pilih Kelas, Periode, dan Mata Pelajaran terlebih dahulu.', 'warning');
+                if (!activeMapelId || !activeFstId) {
+                    Swal.fire('Perhatian', 'Silahkan pilih Periode Semester dan Mata Pelajaran terlebih dahulu.', 'warning');
                     return;
                 }
                 $('#import_file').val(null);
@@ -722,7 +652,6 @@
                 }
 
                 let formData = new FormData(this);
-                formData.append('class_id', activeClassId);
                 formData.append('mapel_id', activeMapelId);
                 formData.append('fst_id', activeFstId);
 

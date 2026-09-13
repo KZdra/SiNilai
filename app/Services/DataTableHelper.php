@@ -25,7 +25,8 @@ class DataTableHelper
         array $searchableColumns = [],
         array $orderableColumns = [],
         string $countField = '*',
-        ?\Closure $transformer = null
+        ?\Closure $transformer = null,
+        array $extra = []
     ) {
         // If not a server-side request (draw param missing), return standard format
         if (!$request->has('draw')) {
@@ -78,11 +79,11 @@ class DataTableHelper
             $data = $data->map($transformer);
         }
 
-        return response()->json([
+        return response()->json(array_merge([
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
             'data' => $data,
-        ]);
+        ], $extra));
     }
 }

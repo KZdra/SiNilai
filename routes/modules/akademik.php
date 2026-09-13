@@ -23,6 +23,7 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
     Route::prefix('nilai')->name('value.')->group(function () {
         Route::get('/', [NilaiController::class, 'index'])->name('index');
         Route::post('/', [NilaiController::class, 'store'])->name('store');
+        Route::post('/bulk', [NilaiController::class, 'storeBulk'])->name('storeBulk');
         Route::get('/get', [NilaiController::class, 'getData'])->name('getByClass');
         Route::get('/getmapel', [NilaiController::class, 'getMapel'])->name('getMapel');
         Route::get('/template', [NilaiController::class, 'downloadTemplate'])->name('download');
