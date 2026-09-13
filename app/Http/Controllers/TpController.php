@@ -6,6 +6,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Exports\TpTemplateExport;
 
 class TpController extends Controller
 {
@@ -104,6 +108,133 @@ class TpController extends Controller
 
             return response()->json(['message' => $e->getMessage()], 500);
             // return response()->json(['message' => 'Terjadi Kesalahan Input atau Sistem!'], 500);
+        }
+    }
+
+    /**
+     * Unduh berkas template Excel (.xlsx) untuk Master Tujuan Pembelajaran
+     */
+    public function downloadTemplate(Request $request)
+    {
+        $classId = $request->input('class_id') ?: (Auth::user()->class_id ?? null);
+        $mapelId = $request->input('mapel_id');
+        $fstId   = $request->input('fst_id');
+
+        $class = $classId ? DB::table('class')->where('id', $classId)->first() : null;
+        $mapel = $mapelId ? DB::table('mata_pelajarans')->where('id', $mapelId)->first() : null;
+        $fst   = $fstId   ? DB::table('m_fst_pembelajaran')->where('id', $fstId)->first() : null;
+
+        $existingTps = [];
+        if ($classId && $mapelId && $fstId) {
+            $existingTps = DB::table('m_tp')
+                ->where('class_id', $classId)
+                ->where('mapel_id', $mapelId)
+                ->where('fst_id', $fstId)
+                ->orderBy('id', 'asc')
+                ->get();
+        }
+
+        $cleanClass = $class ? str_replace(['/', '\\', ' '], '_', $class->class_name) : 'Kelas';
+        $cleanMapel = $mapel ? '_' . str_replace(['/', '\\', ' '], '_', $mapel->nama_mapel) : '';
+        $filename   = "Template_TP_{$cleanClass}{$cleanMapel}.xlsx";
+
+        return Excel::download(new TpTemplateExport($class, $mapel, $fst, $existingTps), $filename);
+    }
+
+    /**
+     * Impor berkas Excel (.xlsx / .xls) Tujuan Pembelajaran secara massal
+     */
+    public function importExcel(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file'        => 'required|file|max:10240',
+            'class_id'    => 'required|integer',
+            'mapel_id'    => 'required|integer',
+            'fst_id'      => 'required|integer',
+            'import_mode' => 'nullable|in:replace,append',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $file       = $request->file('file');
+        $classId    = (int) $request->input('class_id');
+        $mapelId    = (int) $request->input('mapel_id');
+        $fstId      = (int) $request->input('fst_id');
+        $importMode = $request->input('import_mode', 'replace');
+
+        try {
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $sheet       = $spreadsheet->getActiveSheet();
+            $highestRow  = $sheet->getHighestDataRow();
+
+            // Deteksi kolom deskripsi TP dari baris 4
+            $highestCol    = $sheet->getHighestColumn();
+            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+
+            $tpColLetter = null;
+            for ($c = 1; $c <= $highestColIdx; $c++) {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                $header = strtolower(trim((string) $sheet->getCell("{$letter}4")->getValue()));
+                if (str_contains($header, 'deskripsi') || str_contains($header, 'tujuan pembelajaran') || str_contains($header, 'kompetensi')) {
+                    $tpColLetter = $letter;
+                    break;
+                }
+            }
+
+            // Fallback: jika tidak ketemu via header, default kolom C (atau B jika hanya 2 kolom)
+            if (!$tpColLetter) {
+                $tpColLetter = ($highestColIdx >= 3) ? 'C' : 'B';
+            }
+
+            $tpsToInsert = [];
+            for ($row = 5; $row <= $highestRow; $row++) {
+                $desc = trim((string) $sheet->getCell("{$tpColLetter}{$row}")->getValue());
+
+                // Lewati jika kosong atau berupa teks petunjuk
+                if (empty($desc) || str_starts_with($desc, 'Petunjuk:')) {
+                    continue;
+                }
+
+                $tpsToInsert[] = [
+                    'class_id'     => $classId,
+                    'mapel_id'     => $mapelId,
+                    'fst_id'       => $fstId,
+                    'tp_deskripsi' => $desc,
+                    'created_at'   => Carbon::now(),
+                    'updated_at'   => Carbon::now(),
+                ];
+            }
+
+            if (empty($tpsToInsert)) {
+                return response()->json(['message' => 'Tidak ada deskripsi Tujuan Pembelajaran yang ditemukan dalam berkas Excel.'], 422);
+            }
+
+            DB::beginTransaction();
+
+            // Jika mode replace, hapus TP lama untuk kelas, mapel, dan periode ini
+            if ($importMode === 'replace') {
+                DB::table('m_tp')
+                    ->where('class_id', $classId)
+                    ->where('mapel_id', $mapelId)
+                    ->where('fst_id', $fstId)
+                    ->delete();
+            }
+
+            DB::table('m_tp')->insert($tpsToInsert);
+            DB::commit();
+
+            $total = count($tpsToInsert);
+            $actionText = ($importMode === 'replace') ? 'mengganti dengan' : 'menambahkan';
+            return response()->json([
+                'status'  => 'success',
+                'message' => "Berhasil {$actionText} {$total} Tujuan Pembelajaran dari Excel!"
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal membaca berkas Excel: ' . $e->getMessage()], 500);
         }
     }
     //End Master Sections

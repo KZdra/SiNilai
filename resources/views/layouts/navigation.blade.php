@@ -37,6 +37,13 @@
             </li>
 
             <li class="nav-item">
+                <a href="{{ route('nilai_import.index') }}" class="nav-link {{ request()->is('upload-nilai-excel*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-file-excel text-success"></i>
+                    <p class="font-weight-bold">{{ __('Upload Nilai (Excel)') }}</p>
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a href="{{ route('mastertp.index') }}" class="nav-link {{ request()->is('mastertp*') ? 'active' : '' }}">
                     <i class="nav-icon fas fa-bullseye text-success"></i>
                     <p>{{ __('Tujuan Pembelajaran') }}</p>
@@ -75,12 +82,6 @@
                 </a>
             </li>
 
-            <li class="nav-item">
-                <a href="{{ route('raport_explorer.index') }}" class="nav-link {{ request()->is('raport-explorer*') ? 'active' : '' }}">
-                    <i class="nav-icon fas fa-folder-open text-warning"></i>
-                    <p class="font-weight-bold">{{ __('Arsip Raport (Storage)') }}</p>
-                </a>
-            </li>
 
             <!-- ── SEKSI 2: DATA MASTER ──────────────────────────── -->
             <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">
@@ -177,6 +178,13 @@
                 </li>
 
                 <li class="nav-item">
+                    <a href="{{ route('raport_explorer.index') }}" class="nav-link {{ request()->is('raport-explorer*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-folder-open text-warning"></i>
+                        <p class="font-weight-bold">{{ __('Arsip Raport (Storage)') }}</p>
+                    </a>
+                </li>
+
+                <li class="nav-item">
                     <a href="{{ route('muser.index') }}" class="nav-link {{ request()->is('muser*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user-cog text-primary"></i>
                         <p>{{ __('Manajemen Pengguna') }}</p>
@@ -205,6 +213,17 @@
                 </li>
             @endif
 
+            @else
+                <!-- ── SEKSI GURU MAPEL (NON-WALAS) ─────────────────── -->
+                <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">
+                    {{ __('Penilaian (Guru Mapel)') }}
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('nilai_import.index') }}" class="nav-link {{ request()->is('upload-nilai-excel*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-file-excel text-success"></i>
+                        <p class="font-weight-bold">{{ __('Upload Nilai (Excel)') }}</p>
+                    </a>
+                </li>
             @endif
 
         </ul>

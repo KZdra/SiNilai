@@ -11,10 +11,33 @@ use Illuminate\Support\Facades\Storage;
 class RaportExplorerController extends Controller
 {
     /**
+     * Pastikan hanya Administrator (role_id = 1) yang dapat mengakses Penjelajah Arsip Raport.
+     */
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $this->checkAdmin();
+            return $next($request);
+        });
+    }
+
+    /**
+     * Helper proteksi akses khusus Administrator.
+     */
+    private function checkAdmin(): void
+    {
+        if (!Auth::check() || Auth::user()->role_id != 1) {
+            abort(403, 'Akses ditolak. Penjelajah Arsip Raport hanya dapat diakses oleh Administrator.');
+        }
+    }
+
+    /**
      * Tampilkan halaman utama penjelajah arsip raport.
      */
     public function index()
     {
+        $this->checkAdmin();
+
         $totalFiles = 0;
         $totalSizeBytes = 0;
 
@@ -41,23 +64,14 @@ class RaportExplorerController extends Controller
      */
     public function getTreeData()
     {
+        $this->checkAdmin();
+
         $disk = Storage::disk('public');
         if (!$disk->exists('raport')) {
             $disk->makeDirectory('raport');
         }
 
-        $user = Auth::user();
-        $isTeacherOnly = ($user && $user->role_id != 1 && $user->class_id !== null);
-
-        $classNameFilter = null;
-        if ($isTeacherOnly && $user) {
-            $classRecord = DB::table('class')->where('id', $user->class_id)->first();
-            if ($classRecord) {
-                $classNameFilter = str_replace(['/', '\\', ' '], '_', $classRecord->class_name);
-            }
-        }
-
-        $children = $this->buildDirectoryTree('raport', $classNameFilter);
+        $children = $this->buildDirectoryTree('raport');
 
         $rootNode = [
             'id'       => 'root_raport',
@@ -79,7 +93,7 @@ class RaportExplorerController extends Controller
     /**
      * Bangun struktur pohon direktori rekursif untuk jsTree.
      */
-    private function buildDirectoryTree(string $directory, ?string $classNameFilter = null): array
+    private function buildDirectoryTree(string $directory): array
     {
         $disk = Storage::disk('public');
         $nodes = [];
@@ -88,12 +102,6 @@ class RaportExplorerController extends Controller
         $directories = $disk->directories($directory);
         foreach ($directories as $dir) {
             $folderName = basename($dir);
-
-            // Jika ada filter kelas untuk wali kelas pada level pertama di dalam folder raport
-            if ($directory === 'raport' && $classNameFilter !== null && $folderName !== $classNameFilter) {
-                continue;
-            }
-
             $subChildren = $this->buildDirectoryTree($dir);
 
             // Icon kustom berdasarkan level folder
@@ -159,6 +167,8 @@ class RaportExplorerController extends Controller
      */
     public function download(Request $request)
     {
+        $this->checkAdmin();
+
         $path = $request->query('path');
         if (!$path || !str_starts_with($path, 'raport/') || !str_ends_with(strtolower($path), '.pdf')) {
             abort(400, 'Jalur file tidak valid.');

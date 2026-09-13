@@ -326,13 +326,16 @@ class NilaiAkhirController extends Controller
             "mapel" => []
         ];
 
-        foreach ($mapels as $mapel) {
-            // Ambil TP untuk mata pelajaran tertentu
+        // Eager fetch semua data TP untuk seluruh mapel siswa sekaligus dalam 1 query tunggal (mencegah N+1 query)
+        $mapelIds = $mapels->pluck('id')->toArray();
+        $allTpData = collect([]);
+
+        if (!empty($mapelIds)) {
             $tpQuery = DB::table('tpsiswas as v')
                 ->leftJoin('m_tp as tp', 'v.tp_id', '=', 'tp.id')
                 ->where('v.siswa_id', $student_id)
                 ->where('v.fst_id', $fstId)
-                ->where('v.mapel_id', $mapel->id);
+                ->whereIn('v.mapel_id', $mapelIds);
 
             if ($classId) {
                 $tpQuery->where(function($q) use ($classId) {
@@ -340,13 +343,19 @@ class NilaiAkhirController extends Controller
                 });
             }
 
-            $data = $tpQuery->select(
+            $allTpData = $tpQuery->select(
+                    'v.mapel_id',
                     'v.tp_id',
                     'tp.tp_deskripsi',
                     'v.kktp',
                     'v.tampilkan'
                 )
-                ->get();
+                ->get()
+                ->groupBy('mapel_id');
+        }
+
+        foreach ($mapels as $mapel) {
+            $data = $allTpData->get($mapel->id, collect([]));
 
             // Inisialisasi data mapel, meskipun tidak ada TP
             $result["mapel"][$mapel->nama_mapel] = [
@@ -505,6 +514,7 @@ class NilaiAkhirController extends Controller
         $classId = $this->resolveHistoricalClassId($request->student_id, $request->fst_id, $request->class_id);
         $students = $this->getStudentAllScores($classId, $request->student_id, $request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $formattedStudents = [];
+        $defaultClassName = $classId ? (DB::table('class')->where('id', $classId)->value('class_name') ?? 'Alumni / Lulus') : 'Alumni / Lulus';
 
         foreach ($students as $student) {
             $studentArray = (array) $student;
@@ -514,7 +524,7 @@ class NilaiAkhirController extends Controller
                 'student_id' => $studentArray['student_id'],
                 'class_id' => $studentArray['class_id'] ?? $classId,
                 'student_name' => $studentArray['student_name'],
-                'class_name' => $studentArray['class_name'] ?? (DB::table('class')->where('id', $classId)->value('class_name') ?? 'Alumni / Lulus'),
+                'class_name' => $studentArray['class_name'] ?? $defaultClassName,
                 'student_nis' => $studentArray['student_nis'],
                 'sakit' => $studentArray['sakit'] ?? 0,
                 'izin' => $studentArray['izin'] ?? 0,
@@ -601,6 +611,7 @@ class NilaiAkhirController extends Controller
         $formattedStudents = [];
         $tgl_print = $request->tgl_print;
         $keputusan = $statusKenaikan;
+        $defaultClassName = $classId ? (DB::table('class')->where('id', $classId)->value('class_name') ?? 'Alumni / Lulus') : 'Alumni / Lulus';
 
         foreach ($students as $student) {
             $studentArray = (array) $student;
@@ -610,7 +621,7 @@ class NilaiAkhirController extends Controller
                 'student_id'            => $studentArray['student_id'],
                 'class_id'              => $studentArray['class_id'] ?? $classId,
                 'student_name'          => $studentArray['student_name'],
-                'class_name'            => $studentArray['class_name'] ?? (DB::table('class')->where('id', $classId)->value('class_name') ?? 'Alumni / Lulus'),
+                'class_name'            => $studentArray['class_name'] ?? $defaultClassName,
                 'avg_nilai_semua_mapel' => $studentArray['avg_nilai_semua_mapel'] ?? 0,
                 'student_nis'           => $studentArray['student_nis'],
                 'sakit'                 => $sakit,

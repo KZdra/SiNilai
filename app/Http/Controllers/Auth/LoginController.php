@@ -36,6 +36,80 @@ class LoginController extends Controller
         return 'username';
     }
 
+    /**
+     * Override attemptLogin untuk mendukung:
+     * 1. Login standar (username)
+     * 2. Login via Email
+     * 3. Login Portal Siswa via NISN ataupun NIS (dengan auto-link ke akun user)
+     */
+    protected function attemptLogin(Request $request)
+    {
+        $loginValue = trim((string) $request->input($this->username()));
+        $password   = (string) $request->input('password');
+        $remember   = $request->boolean('remember');
+
+        // 1. Coba login standar berdasarkan field 'username'
+        if ($this->guard()->attempt([$this->username() => $loginValue, 'password' => $password], $remember)) {
+            return true;
+        }
+
+        // 2. Jika input berupa email, coba autentikasi dengan email
+        if (filter_var($loginValue, FILTER_VALIDATE_EMAIL)) {
+            if ($this->guard()->attempt(['email' => $loginValue, 'password' => $password], $remember)) {
+                return true;
+            }
+        }
+
+        // 3. Pencarian Akun Portal Siswa: Bisa menggunakan NISN ataupun NIS
+        $student = \Illuminate\Support\Facades\DB::table('students')
+            ->where('nis', $loginValue)
+            ->orWhere('nisn', $loginValue)
+            ->first();
+
+        if ($student) {
+            $user = \App\Models\User::where('student_id', $student->id)
+                ->orWhere(function ($q) use ($student) {
+                    if (!empty($student->nisn)) {
+                        $q->orWhere('username', $student->nisn);
+                    }
+                    if (!empty($student->nis)) {
+                        $q->orWhere('username', $student->nis);
+                    }
+                })
+                ->first();
+
+            // Jika user siswa ditemukan, cek password
+            if ($user && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+                // Pastikan student_id terhubung jika sebelumnya null
+                if (!$user->student_id) {
+                    $user->student_id = $student->id;
+                    $user->save();
+                }
+                $this->guard()->login($user, $remember);
+                return true;
+            }
+
+            // Jika user belum pernah di-generate, izinkan login perdana dengan default password 'siswa123'
+            if (!$user && $password === 'siswa123') {
+                $defaultUsername = !empty($student->nisn) ? $student->nisn : $student->nis;
+                $user = \App\Models\User::create([
+                    'name'       => $student->nama,
+                    'username'   => $defaultUsername,
+                    'email'      => strtolower(str_replace(' ', '', $defaultUsername)) . '@siswa.sekolah.id',
+                    'password'   => \Illuminate\Support\Facades\Hash::make('siswa123'),
+                    'role_id'    => 3, // Role Siswa
+                    'class_id'   => $student->class_id,
+                    'student_id' => $student->id,
+                ]);
+
+                $this->guard()->login($user, $remember);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected function authenticated(Request $request, $user)
     {
         if ($user->role_id == 3) {

@@ -33,7 +33,7 @@
                                          <th>Username</th>
                                          <th>Nama</th>
                                          <th>Nip</th>
-                                         <th>Mengajar Di</th>
+                                         <th>Wali Kelas</th>
                                          <th>Email</th>
                                          <th>Role</th>
                                          <th>Aksi</th>
@@ -74,9 +74,9 @@
                                                 name="nip" required>
                                         </div>
                                         <div class="form-group">
-                                            <label for="class_id">Mengajar Di</label>
+                                            <label for="class_id">Wali Kelas Untuk</label>
                                             <select name="class_id" id="class_id" class="form-control">
-                                                <option value="" disabled selected> Pilih Kelas Mengajar</option>
+                                                <option value="">-- Bukan Wali Kelas (Guru Mapel Murni) --</option>
                                                 @include('partials.select_class_options')
                                             </select>
                                         </div>
@@ -132,7 +132,7 @@
                     {
                         data: 'class_name',
                         render: function(data) {
-                            return data || 'Belum Diatur';
+                            return data ? `<span class="badge badge-info"><i class="fas fa-chalkboard-teacher mr-1"></i>${data}</span>` : `<span class="badge badge-light text-muted border">Bukan Walas</span>`;
                         }
                     },
                     { data: 'email', defaultContent: '-' },

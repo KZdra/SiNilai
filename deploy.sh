@@ -74,12 +74,13 @@ APP_DIR=""
 SERVER_IP=""
 APP_PORT="8002"
 REPO_URL="https://github.com/KZdra/SiNilai.git"
-REPO_BRANCH="prod"
+REPO_BRANCH="testing"
 DB_NAME="sinilai_db"
 DB_USER="cbt_user"
 DB_PASS="321aa321"
 DB_ROOT_PASS=""
 CBT_SYNC_TOKEN="cbt_sync_secret_token_2026"
+USE_REDIS="Y"
 
 # ===========================================================================
 # STEP 0: BANNER + KONFIRMASI
@@ -113,8 +114,8 @@ done
 read -p "$(echo -e "${CYAN}?${NC} Port Web SiNilai (jangan 80 jika CBT sudah pakai 80) [8002]: ")" INPUT_PORT
 APP_PORT="${INPUT_PORT:-8002}"
 
-read -p "$(echo -e "${CYAN}?${NC} Git Branch SiNilai [prod]: ")" INPUT_BRANCH
-REPO_BRANCH="${INPUT_BRANCH:-prod}"
+read -p "$(echo -e "${CYAN}?${NC} Git Branch SiNilai [testing]: ")" INPUT_BRANCH
+REPO_BRANCH="${INPUT_BRANCH:-testing}"
 
 read -p "$(echo -e "${CYAN}?${NC} Nama Database SiNilai [sinilai_db]: ")" INPUT_DB
 DB_NAME="${INPUT_DB:-sinilai_db}"
@@ -132,11 +133,15 @@ echo ""
 read -p "$(echo -e "${CYAN}?${NC} CBT Sync Token [cbt_sync_secret_token_2026]: ")" INPUT_TOKEN
 CBT_SYNC_TOKEN="${INPUT_TOKEN:-cbt_sync_secret_token_2026}"
 
+read -p "$(echo -e "${CYAN}?${NC} Aktifkan Redis untuk Cache & Session super cepat? [Y/n]: ")" INPUT_REDIS
+USE_REDIS="${INPUT_REDIS:-Y}"
+
 echo ""
 echo -e "${YELLOW}${BOLD}── Ringkasan Konfigurasi SiNilai ──────────────────${NC}"
 echo -e "  Direktori    : ${CYAN}$APP_DIR${NC}"
 echo -e "  Akses Web    : ${CYAN}http://$SERVER_IP:$APP_PORT${NC}"
 echo -e "  Database     : ${CYAN}$DB_NAME${NC} @ user ${CYAN}$DB_USER${NC} (Port 3306)"
+echo -e "  Redis Engine : ${CYAN}$([[ "$USE_REDIS" =~ ^[Yy]$ ]] && echo "Aktif (Port 6379)" || echo "Tidak aktif")${NC}"
 echo -e "  Branch       : ${CYAN}$REPO_BRANCH${NC}"
 echo -e "  CBT Token    : ${CYAN}$CBT_SYNC_TOKEN${NC}"
 echo ""
@@ -201,6 +206,21 @@ else
     apt-get install -y \
         php php-fpm php-cli php-mysql php-xml php-mbstring \
         php-curl php-zip php-bcmath php-gd php-intl php-readline
+fi
+
+# Instalasi Redis & Ekstensi PHP Redis jika diaktifkan
+if [[ "$USE_REDIS" =~ ^[Yy]$ ]]; then
+    info "Menginstal Redis Server dan ekstensi PHP Redis..."
+    apt-get install -y redis-server
+    systemctl enable redis-server 2>/dev/null || systemctl enable redis 2>/dev/null || true
+    systemctl start redis-server 2>/dev/null || systemctl start redis 2>/dev/null || true
+
+    if [[ -n "$PHP_TARGET" ]]; then
+        apt-get install -y php${PHP_TARGET}-redis 2>/dev/null || apt-get install -y php-redis 2>/dev/null || true
+    else
+        apt-get install -y php-redis 2>/dev/null || true
+    fi
+    success "Redis Server & PHP Redis extension aktif"
 fi
 
 INSTALLED_PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;' 2>/dev/null || echo "8.2")
@@ -359,6 +379,51 @@ fi
 info "Generate Laravel APP_KEY..."
 APP_KEY=$(cd "$APP_DIR" && run_as_app php artisan key:generate --show --no-ansi)
 
+if [[ "$USE_REDIS" =~ ^[Yy]$ ]]; then
+    SESSION_AND_CACHE_CONFIG="SESSION_DRIVER=redis
+SESSION_LIFETIME=180
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=
+SESSION_SECURE_COOKIE=false
+SESSION_COOKIE=sinilai_session
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=public
+QUEUE_CONNECTION=redis
+
+CACHE_STORE=redis
+CACHE_PREFIX=sinilai_cache_
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+REDIS_PREFIX=sinilai_
+REDIS_DB=0
+REDIS_CACHE_DB=1"
+else
+    SESSION_AND_CACHE_CONFIG="SESSION_DRIVER=file
+SESSION_LIFETIME=180
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=
+SESSION_SECURE_COOKIE=false
+SESSION_COOKIE=sinilai_session
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=public
+QUEUE_CONNECTION=database
+
+CACHE_STORE=database
+CACHE_PREFIX=sinilai_cache_
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379"
+fi
+
 cat > "$APP_DIR/.env" <<ENVFILE
 APP_NAME="SiNilai SMK ICB"
 APP_ENV=production
@@ -388,23 +453,15 @@ DB_DATABASE=${DB_NAME}
 DB_USERNAME=${DB_USER}
 DB_PASSWORD=${DB_PASS}
 
-SESSION_DRIVER=file
-SESSION_LIFETIME=180
-SESSION_ENCRYPT=false
-SESSION_PATH=/
-SESSION_DOMAIN=
-SESSION_SECURE_COOKIE=false
-SESSION_COOKIE=sinilai_session
-
-BROADCAST_CONNECTION=log
-FILESYSTEM_DISK=public
-QUEUE_CONNECTION=database
-
-CACHE_STORE=database
-CACHE_PREFIX=sinilai_cache_
+${SESSION_AND_CACHE_CONFIG}
 
 CBT_SYNC_TOKEN=${CBT_SYNC_TOKEN}
 ENVFILE
+
+if [[ -z "$APP_KEY" ]]; then
+    info "Mengisi APP_KEY ke file .env..."
+    cd "$APP_DIR" && run_as_app php artisan key:generate --force
+fi
 
 chown www-data:www-data "$APP_DIR/.env"
 chmod 640 "$APP_DIR/.env"
@@ -529,6 +586,12 @@ NGINXCONF
 # Buat symlink ke sites-enabled (TIDAK MENGHAPUS cbt-icb yang ada!)
 ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/sinilai
 
+# Buka firewall UFW jika aktif agar port web dapat diakses dari jaringan LAN/klien
+if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -qw "active"; then
+    ufw allow ${APP_PORT}/tcp comment "SiNilai Web Port" 2>/dev/null || true
+    info "Firewall UFW: Port ${APP_PORT}/tcp diizinkan masuk"
+fi
+
 if nginx -t; then
     systemctl reload nginx || systemctl restart nginx
     success "NGINX virtual host SiNilai aktif di port ${APP_PORT} (http://${SERVER_IP}:${APP_PORT})"
@@ -557,6 +620,28 @@ else
     warn "Koneksi DB: $DB_TEST"
 fi
 
+if [[ "$USE_REDIS" =~ ^[Yy]$ ]]; then
+    REDIS_TEST=$(run_as_app php -r "
+    try {
+        \$redis = new Redis();
+        \$connected = @\$redis->connect('127.0.0.1', 6379, 1.5);
+        if (\$connected) {
+            echo 'OK';
+        } else {
+            echo 'FAIL: Tidak dapat tersambung ke 127.0.0.1:6379';
+        }
+    } catch(Throwable \$e) {
+        echo 'FAIL: ' . \$e->getMessage();
+    }
+    " 2>/dev/null || echo "FAIL")
+
+    if [[ "$REDIS_TEST" == "OK" ]]; then
+        success "Koneksi Redis: OK (127.0.0.1:6379 -> In-Memory Cache & Session SiNilai)"
+    else
+        warn "Koneksi Redis: $REDIS_TEST (periksa: systemctl status redis-server)"
+    fi
+fi
+
 # ===========================================================================
 # SELESAI!
 # ===========================================================================
@@ -566,10 +651,11 @@ echo "╔═══════════════════════�
 echo "║          ✅  DEPLOY SINILAI BERHASIL SELESAI!               ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
-echo -e "  ${BOLD}URL SiNilai      :${NC} ${CYAN}http://${SERVER_IP}:${APP_PORT}${NC}"
-echo -e "  ${BOLD}Direktori        :${NC} ${APP_DIR}"
-echo -e "  ${BOLD}Database SiNilai :${NC} ${DB_NAME} @ user ${DB_USER}"
-echo -e "  ${BOLD}Log NGINX        :${NC} /var/log/nginx/sinilai-error.log"
+echo -e "  ${BOLD}URL SiNilai      :${NC} ${CYAN}http://${SERVER_IP}:${APP_PORT}${NC}
+  ${BOLD}Direktori        :${NC} ${APP_DIR}
+  ${BOLD}Database SiNilai :${NC} ${DB_NAME} @ user ${DB_USER}
+  ${BOLD}Redis Engine     :${NC} $([[ "$USE_REDIS" =~ ^[Yy]$ ]] && echo -e "${GREEN}Aktif (Port 6379 / Prefix: sinilai_)${NC}" || echo "Tidak aktif")
+  ${BOLD}Log NGINX        :${NC} /var/log/nginx/sinilai-error.log"
 echo ""
 echo -e "${YELLOW}${BOLD}Koneksi Sinkronisasi dengan CBT ICB:${NC}"
 echo -e "  Di file .env CBT ICB (/var/www/cbt-icb/.env), pastikan nilai ini terisi:"

@@ -42,9 +42,15 @@ class KenaikanKelasController extends Controller
         $classList = DB::table('class')->orderBy('class_name', 'asc')->get();
         $mapping = [];
 
+        // Eager count jumlah siswa per kelas dalam 1 query (mencegah N+1 query)
+        $studentCounts = DB::table('students')
+            ->select('class_id', DB::raw('count(*) as total'))
+            ->groupBy('class_id')
+            ->pluck('total', 'class_id');
+
         foreach ($classList as $cls) {
             $name = trim($cls->class_name);
-            $studentCount = DB::table('students')->where('class_id', $cls->id)->count();
+            $studentCount = $studentCounts[$cls->id] ?? 0;
 
             // Cek jika kelas XII / 12 -> Lulus / Alumni
             if (preg_match('/^(XII|12)\b/i', $name)) {

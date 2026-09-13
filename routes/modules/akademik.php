@@ -8,7 +8,7 @@ use App\Http\Controllers\PeskulController;
 use App\Http\Controllers\CatatanWalasController;
 use App\Http\Controllers\NilaiAuditController;
 use App\Http\Controllers\P5Controller;
-use App\Http\Controllers\RaportExplorerController;
+use App\Http\Controllers\NilaiImportController;
 
 /**
  * Modul Akademik
@@ -35,6 +35,13 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
         Route::get('/cbt-logs', [NilaiController::class, 'getCbtSyncLogs'])->name('cbtLogs');
     });
 
+    // ── Upload Nilai Excel Guru Mapel ──────────────────────────
+    Route::prefix('upload-nilai-excel')->name('nilai_import.')->group(function () {
+        Route::get('/', [NilaiImportController::class, 'index'])->name('index');
+        Route::get('/download', [NilaiImportController::class, 'downloadTemplate'])->name('download');
+        Route::post('/process', [NilaiImportController::class, 'importExcel'])->name('process');
+    });
+
     // ── Nilai Akhir ────────────────────────────────────────────
     Route::prefix('akhir')->name('nilaiakhir.')->group(function () {
         Route::get('/', [NilaiAkhirController::class, 'index'])->name('index');
@@ -44,14 +51,6 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
         Route::get('/excel', [NilaiAkhirController::class, 'ExportNilaiAkhirExcel'])->name('exportexcel');
         Route::get('/ranking', [NilaiAkhirController::class, 'exportRankingExcel'])->name('exportranking');
         Route::get('/leger', [NilaiAkhirController::class, 'exportLegerExcel'])->name('exportleger');
-    });
-
-    // ── Penjelajah Arsip Raport (jsTree) ───────────────────────
-    Route::prefix('raport-explorer')->name('raport_explorer.')->group(function () {
-        Route::get('/', [RaportExplorerController::class, 'index'])->name('index');
-        Route::get('/tree', [RaportExplorerController::class, 'getTreeData'])->name('tree');
-        Route::get('/download', [RaportExplorerController::class, 'download'])->name('download');
-        Route::delete('/delete', [RaportExplorerController::class, 'destroy'])->name('destroy');
     });
 
     // ── Audit Trail Nilai ──────────────────────────────────────
@@ -64,6 +63,8 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
     Route::prefix('mastertp')->name('mastertp.')->group(function () {
         Route::get('/', [TpController::class, 'index'])->name('index');
         Route::get('/all', [TpController::class, 'getdata'])->name('getdata');
+        Route::get('/template', [TpController::class, 'downloadTemplate'])->name('template');
+        Route::post('/import', [TpController::class, 'importExcel'])->name('import');
         Route::post('/', [TpController::class, 'store'])->name('store');
         Route::put('/{id}', [TpController::class, 'update'])->name('update');
         Route::delete('/{id}', [TpController::class, 'destroy'])->name('destroy');

@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use App\Models\Setting;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Exports\MultiClassTemplateNilaiExport;
+use App\Services\NilaiAuditService;
 
 class NilaiController extends Controller
 {
@@ -253,94 +257,326 @@ class NilaiController extends Controller
         }
     }
 
-    public function downloadTemplate()
+    public function downloadTemplate(Request $request)
     {
-        return response()->download(public_path('down/Template_InputNilaiSiswa.xlsx'));
+        $user = Auth::user();
+        $classId = $request->input('class_id') ?: ($user->class_id ?? null);
+        $mapelId = $request->input('mapel_id');
+        $fstId   = $request->input('fst_id');
+
+        $class = $classId ? DB::table('class')->where('id', $classId)->first() : null;
+        $mapel = $mapelId ? DB::table('mata_pelajarans')->where('id', $mapelId)->first() : null;
+        $fst   = $fstId   ? DB::table('m_fst_pembelajaran')->where('id', $fstId)->first() : null;
+
+        // Jika kelas dipilih (atau user adalah wali kelas), unduh template HANYA 1 SHEET khusus kelas tersebut
+        if ($class) {
+            $classes = [$class];
+            $cleanClass = str_replace(['/', '\\'], '_', $class->class_name);
+            $cleanMapel = $mapel ? '_' . str_replace(['/', '\\'], '_', $mapel->nama_mapel) : '';
+            $filename = "Template_Nilai_{$cleanClass}{$cleanMapel}.xlsx";
+        } else {
+            // Fallback untuk admin jika belum memilih kelas: semua sheet kelas
+            $classes = DB::table('class')->orderBy('id', 'asc')->get();
+            $filename = "Template_Nilai_Semua_Kelas.xlsx";
+        }
+
+        return Excel::download(new MultiClassTemplateNilaiExport($classes, $mapel, $fst), $filename);
     }
 
     public function import(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'csv' => 'required|mimes:csv,txt|max:2048'
+            'csv'        => 'nullable|file|max:10240',
+            'file'       => 'nullable|file|max:10240',
+            'excel'      => 'nullable|file|max:10240',
+            'excel_file' => 'nullable|file|max:10240',
+            'mapel_id'   => 'nullable|integer',
+            'fst_id'     => 'nullable|integer',
+            'class_id'   => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()], 422);
         }
 
-        if ($this->isSemesterLocked($request->fst_id)) {
+        $file = $request->file('csv') ?? $request->file('file') ?? $request->file('excel') ?? $request->file('excel_file');
+        if (!$file) {
+            return response()->json(['message' => 'Berkas Excel (.xlsx / .xls) tidak ditemukan.'], 400);
+        }
+
+        $user = Auth::user();
+        $targetClassId = (int) ($request->input('class_id') ?: ($user->class_id ?? 0));
+        $mapelId       = (int) ($request->input('mapel_id') ?? 0);
+        $fstId         = (int) ($request->input('fst_id') ?? 0);
+
+        if (!$targetClassId) {
+            return response()->json(['message' => 'Silahkan pilih kelas terlebih dahulu sebelum mengimpor nilai.'], 422);
+        }
+
+        $targetClass = DB::table('class')->where('id', $targetClassId)->first();
+        if (!$targetClass) {
+            return response()->json(['message' => 'Kelas yang dipilih tidak valid.'], 404);
+        }
+
+        if ($fstId && $this->isSemesterLocked($fstId)) {
             return response()->json(['message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat diubah.'], 403);
         }
 
-        $file = $request->file('csv');
-        $csvData = array_map('str_getcsv', file($file));
-
-        if (count($csvData) <= 1) {
-            return response()->json(['message' => 'File CSV kosong atau tidak valid.'], 400);
-        }
-
-        $header = array_shift($csvData); // Ambil header
         try {
-            DB::beginTransaction();
-            foreach ($csvData as $row) {
-                if (count($row) >= 2) {
-                    $nis = $row[0];
-                    $nama = $row[1];
-                    $className = $row[2] ?? null;
-                    $value_daily = $row[3] ?? null;
-                    $value_daily_2 = $row[4] ?? null;
-                    $value_daily_3 = $row[5] ?? null;
-                    $value_daily_4 = $row[6] ?? null;
-                    $value_daily_5 = $row[7] ?? null;
-                    $value_daily_6 = $row[8] ?? null;
-                    $value_daily_7 = $row[9] ?? null;
-                    $value_daily_8 = $row[10] ?? null;
-                    $value_daily_9 = $row[11] ?? null;
-                    $value_daily_10 = $row[12] ?? null;
-                    $value_sts = $row[13] ?? null;
-                    $value_sas = $row[14] ?? null;
-                    $studentId = DB::table('students')->where('nis', '=', $nis)->where('nama', 'like', "%{$nama}%")->value('id');
-                    DB::table('values')->updateOrInsert(
-                        ['student_id' => $studentId],
-                        [
-                            'class_id'=> $request->class_id,
-                            'mapel_id' => $request->mapel_id,
-                            'fst_id' => $request->fst_id,
-                            'value_daily' => $value_daily,
-                            'value_daily_2' => $value_daily_2,
-                            'value_daily_3' => $value_daily_3,
-                            'value_daily_4' => $value_daily_4,
-                            'value_daily_5' => $value_daily_5,
-                            'value_daily_6' => $value_daily_6,
-                            'value_daily_7' => $value_daily_7,
-                            'value_daily_8' => $value_daily_8,
-                            'value_daily_9' => $value_daily_9,
-                            'value_daily_10' => $value_daily_10,
-                            'value_sts' => $value_sts,
-                            'value_sas' => $value_sas,
-                            'created_at' => Carbon::now(),
-                            'updated_at' => Carbon::now()
-                        ]
-                    );
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $worksheets  = $spreadsheet->getAllSheets();
 
-                    if ($studentId) {
-                        \App\Services\NilaiAuditService::log(
-                            $studentId,
-                            $request->mapel_id,
-                            $request->fst_id,
-                            'IMPORT_CSV',
-                            null,
-                            ['value_daily' => $value_daily, 'value_sts' => $value_sts, 'value_sas' => $value_sas]
-                        );
+            // Tentukan sheet target:
+            // 1. Cari sheet dengan nama yang sama dengan nama kelas target (raw maupun sanitized)
+            $cleanTargetName = substr(str_replace(['\\', '/', '?', '*', ':', '[', ']'], '_', $targetClass->class_name), 0, 31);
+            $targetSheet = null;
+
+            foreach ($worksheets as $ws) {
+                $wsTitle = trim($ws->getTitle());
+                if (strcasecmp($wsTitle, trim($targetClass->class_name)) === 0 || strcasecmp($wsTitle, trim($cleanTargetName)) === 0) {
+                    $targetSheet = $ws;
+                    break;
+                }
+            }
+
+            // 2. Jika file hanya punya 1 sheet (template khusus 1 kelas), langsung gunakan sheet tersebut
+            if (!$targetSheet && count($worksheets) === 1) {
+                $targetSheet = $worksheets[0];
+            }
+
+            // 3. Cari sheet yang judulnya mengandung nama kelas
+            if (!$targetSheet) {
+                foreach ($worksheets as $ws) {
+                    $wsTitle = strtolower(trim($ws->getTitle()));
+                    $clsName = strtolower(trim($targetClass->class_name));
+                    if (str_contains($wsTitle, $clsName) || str_contains($clsName, $wsTitle)) {
+                        $targetSheet = $ws;
+                        break;
                     }
                 }
             }
+
+            // 4. Periksa header baris 2 (sel F2, B2, E2) jika ada teks nama kelas
+            if (!$targetSheet) {
+                foreach ($worksheets as $ws) {
+                    $cellVal = (string) ($ws->getCell('F2')->getValue() ?? $ws->getCell('B2')->getValue() ?? $ws->getCell('E2')->getValue() ?? '');
+                    if (str_contains(strtolower($cellVal), strtolower(trim($targetClass->class_name)))) {
+                        $targetSheet = $ws;
+                        break;
+                    }
+                }
+            }
+
+            // 5. Fallback ke sheet pertama yang BUKAN sheet TP jika tetap tidak teridentifikasi
+            if (!$targetSheet) {
+                foreach ($worksheets as $ws) {
+                    $wsTitle = strtolower(trim($ws->getTitle()));
+                    if (!str_contains($wsTitle, 'tp') && !str_contains($wsTitle, 'tujuan')) {
+                        $targetSheet = $ws;
+                        break;
+                    }
+                }
+                if (!$targetSheet) {
+                    $targetSheet = $worksheets[0];
+                }
+            }
+
+            $sheet = $targetSheet;
+            $totalImported = 0;
+            $totalSkipped  = 0;
+
+            // Deteksi mapping kolom dari baris 4
+            $colMap = [];
+            $highestCol = $sheet->getHighestColumn();
+            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+
+            for ($c = 1; $c <= $highestColIdx; $c++) {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                $head = strtolower(trim((string) $sheet->getCell("{$letter}4")->getValue()));
+                if (str_contains($head, 'nisn')) {
+                    $colMap['nisn'] = $letter;
+                } elseif (str_contains($head, 'nis')) {
+                    $colMap['nis'] = $letter;
+                } elseif (str_contains($head, 'nama')) {
+                    $colMap['nama'] = $letter;
+                } elseif (str_contains($head, 'sts')) {
+                    $colMap['sts'] = $letter;
+                } elseif (str_contains($head, 'sas')) {
+                    $colMap['sas'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*10/i', $head)) {
+                    $colMap['h10'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*1/i', $head)) {
+                    $colMap['h1'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*2/i', $head)) {
+                    $colMap['h2'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*3/i', $head)) {
+                    $colMap['h3'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*4/i', $head)) {
+                    $colMap['h4'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*5/i', $head)) {
+                    $colMap['h5'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*6/i', $head)) {
+                    $colMap['h6'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*7/i', $head)) {
+                    $colMap['h7'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*8/i', $head)) {
+                    $colMap['h8'] = $letter;
+                } elseif (preg_match('/(sumatif|harian)\s*9/i', $head)) {
+                    $colMap['h9'] = $letter;
+                }
+            }
+
+            $colNis  = $colMap['nis']  ?? 'B';
+            $colNisn = $colMap['nisn'] ?? 'C';
+            $colNama = $colMap['nama'] ?? 'D';
+            $colH1   = $colMap['h1']   ?? 'F';
+            $colH2   = $colMap['h2']   ?? 'G';
+            $colH3   = $colMap['h3']   ?? 'H';
+            $colH4   = $colMap['h4']   ?? 'I';
+            $colH5   = $colMap['h5']   ?? 'J';
+            $colH6   = $colMap['h6']   ?? 'K';
+            $colH7   = $colMap['h7']   ?? 'L';
+            $colH8   = $colMap['h8']   ?? 'M';
+            $colH9   = $colMap['h9']   ?? 'N';
+            $colH10  = $colMap['h10']  ?? 'O';
+            $colSts  = $colMap['sts']  ?? 'P';
+            $colSas  = $colMap['sas']  ?? 'Q';
+
+            $highestRow = $sheet->getHighestDataRow();
+
+            DB::beginTransaction();
+
+            for ($row = 5; $row <= $highestRow; $row++) {
+                $nis  = trim((string) $sheet->getCell("{$colNis}{$row}")->getValue());
+                $nisn = trim((string) $sheet->getCell("{$colNisn}{$row}")->getValue());
+                $nama = trim((string) $sheet->getCell("{$colNama}{$row}")->getValue());
+
+                if (empty($nis) && empty($nisn) && empty($nama)) {
+                    continue;
+                }
+
+                // HANYA COCOKKAN SISWA DI KELAS TARGET ($targetClass->id)
+                $student = DB::table('students')
+                    ->where('class_id', $targetClass->id)
+                    ->where(function ($q) use ($nis, $nisn, $nama) {
+                        if (!empty($nis)) {
+                            $q->where('nis', $nis);
+                        }
+                        if (!empty($nisn)) {
+                            $q->orWhere('nisn', $nisn);
+                        }
+                        if (empty($nis) && empty($nisn) && !empty($nama)) {
+                            $q->where('nama', 'like', "%{$nama}%");
+                        }
+                    })
+                    ->first();
+
+                if (!$student) {
+                    $totalSkipped++;
+                    continue;
+                }
+
+                $valH1  = $this->parseNumericValue($sheet->getCell("{$colH1}{$row}")->getValue());
+                $valH2  = $this->parseNumericValue($sheet->getCell("{$colH2}{$row}")->getValue());
+                $valH3  = $this->parseNumericValue($sheet->getCell("{$colH3}{$row}")->getValue());
+                $valH4  = $this->parseNumericValue($sheet->getCell("{$colH4}{$row}")->getValue());
+                $valH5  = $this->parseNumericValue($sheet->getCell("{$colH5}{$row}")->getValue());
+                $valH6  = $this->parseNumericValue($sheet->getCell("{$colH6}{$row}")->getValue());
+                $valH7  = $this->parseNumericValue($sheet->getCell("{$colH7}{$row}")->getValue());
+                $valH8  = $this->parseNumericValue($sheet->getCell("{$colH8}{$row}")->getValue());
+                $valH9  = $this->parseNumericValue($sheet->getCell("{$colH9}{$row}")->getValue());
+                $valH10 = $this->parseNumericValue($sheet->getCell("{$colH10}{$row}")->getValue());
+                $valSts = $this->parseNumericValue($sheet->getCell("{$colSts}{$row}")->getValue());
+                $valSas = $this->parseNumericValue($sheet->getCell("{$colSas}{$row}")->getValue());
+
+                // Jika seluruh nilai kosong, lewati baris siswa ini
+                $allEmpty = is_null($valH1) && is_null($valH2) && is_null($valH3) && is_null($valH4) &&
+                            is_null($valH5) && is_null($valH6) && is_null($valH7) && is_null($valH8) &&
+                            is_null($valH9) && is_null($valH10) && is_null($valSts) && is_null($valSas);
+
+                if ($allEmpty) {
+                    continue;
+                }
+
+                $existing = DB::table('values')
+                    ->where('student_id', $student->id)
+                    ->where('mapel_id', $mapelId)
+                    ->where('fst_id', $fstId)
+                    ->first();
+
+                // Kolom kosong di Excel otomatis disimpan sebagai NULL
+                $updateData = [
+                    'class_id'        => $targetClass->id,
+                    'mapel_id'        => $mapelId,
+                    'fst_id'          => $fstId,
+                    'value_daily'     => $valH1,
+                    'value_daily_2'   => $valH2,
+                    'value_daily_3'   => $valH3,
+                    'value_daily_4'   => $valH4,
+                    'value_daily_5'   => $valH5,
+                    'value_daily_6'   => $valH6,
+                    'value_daily_7'   => $valH7,
+                    'value_daily_8'   => $valH8,
+                    'value_daily_9'   => $valH9,
+                    'value_daily_10'  => $valH10,
+                    'value_sts'       => $valSts,
+                    'value_sas'       => $valSas,
+                    'updated_at'      => Carbon::now(),
+                ];
+
+                if ($existing) {
+                    DB::table('values')->where('id', $existing->id)->update($updateData);
+                } else {
+                    $updateData['student_id'] = $student->id;
+                    $updateData['created_at'] = Carbon::now();
+                    DB::table('values')->insert($updateData);
+                }
+
+                NilaiAuditService::log(
+                    $student->id,
+                    $mapelId,
+                    $fstId,
+                    'IMPORT_EXCEL',
+                    $existing ? (array)$existing : null,
+                    $updateData
+                );
+
+                $totalImported++;
+            }
+
             DB::commit();
-            return response()->json(['message' => 'Nilai siswa berhasil diimport!'], 200);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => "Berhasil mengimpor {$totalImported} data nilai siswa untuk kelas {$targetClass->class_name}!",
+            ], 200);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal mengimpor file Excel: ' . $e->getMessage()
+            ], 500);
         }
+    }
+
+    /**
+     * Parse cell value to valid float or null.
+     */
+    private function parseNumericValue($raw): ?float
+    {
+        if (is_null($raw) || $raw === '') {
+            return null;
+        }
+
+        $cleaned = str_replace(',', '.', trim((string)$raw));
+
+        if (!is_numeric($cleaned)) {
+            return null;
+        }
+
+        $val = (float) $cleaned;
+        return max(0, min(100, $val));
     }
 
     /**

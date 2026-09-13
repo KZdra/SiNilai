@@ -31,8 +31,8 @@ class UserController extends Controller
             'u.email'
         )
             ->leftJoin('roles as r', 'u.role_id', '=', 'r.id')
-            ->leftJoin('class as c', 'u.class_id', '=', 'c.id');
-
+            ->leftJoin('class as c', 'u.class_id', '=', 'c.id')
+            ->whereIn('u.role_id',[1,2]);
         if ($request->filled('role_id')) {
             $query->where('u.role_id', $request->role_id);
         }
@@ -68,7 +68,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $kont = $request->validate([
-            'class_id' => 'required|integer',
+            'class_id' => 'nullable|integer',
             'role_id' => 'required|integer',
             'nip' => 'required|numeric',
             'nama' => 'required|string',
@@ -78,7 +78,7 @@ class UserController extends Controller
         ]);
         try {
             DB::table('users')->insert([
-                'class_id' => $kont['class_id'],
+                'class_id' => !empty($kont['class_id']) ? $kont['class_id'] : null,
                 'role_id' => $kont['role_id'],
                 'nip' => $kont['nip'],
                 'name' => $kont['nama'],
@@ -99,7 +99,7 @@ class UserController extends Controller
         try {
 
             $data = [
-                'class_id' => $request->class_id,
+                'class_id' => $request->filled('class_id') ? $request->class_id : null,
                 'role_id' => $request->role_id,
                 'nip' => $request->nip,
                 'name' => $request->nama,

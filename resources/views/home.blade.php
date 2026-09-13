@@ -21,13 +21,17 @@
                     <div class="col-md-8 text-center">
                         <div class="card shadow-sm border-0">
                             <div class="card-body p-5">
-                                <div class="mb-4">
-                                    <i class="fas fa-exclamation-triangle text-warning fa-4x animate__animated animate__pulse animate__infinite"></i>
+                                <div class="mb-4 text-success">
+                                    <i class="fas fa-chalkboard-teacher fa-4x"></i>
                                 </div>
-                                <h3 class="font-weight-bold text-dark mb-3">Akses Terbatas</h3>
-                                <p class="text-muted leading-relaxed" style="font-size: 16px;">
-                                    Anda belum di tugaskan menjadi wali kelas. <br>Silahkan hubungi admin.
+                                <h3 class="font-weight-bold text-dark mb-2">Selamat Datang, {{ Auth::user()->name }}!</h3>
+                                <p class="text-muted leading-relaxed mb-4" style="font-size: 16px;">
+                                    Akun Anda terdaftar sebagai <strong>Guru Mata Pelajaran</strong>.<br>
+                                    Anda dapat langsung mengunduh format Excel siswa dan mengunggah nilai mata pelajaran Anda melalui tombol di bawah:
                                 </p>
+                                <a href="{{ route('nilai_import.index') }}" class="btn btn-success btn-lg font-weight-bold px-4 shadow-sm">
+                                    <i class="fas fa-file-excel mr-2"></i> Buka Menu Upload Nilai (Excel)
+                                </a>
                             </div>
                         </div>
                     </div>

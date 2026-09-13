@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\KenaikanKelasController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\RaportExplorerController;
 
 /**
  * Modul Admin
@@ -50,6 +51,14 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
         Route::post('/auth', [SettingController::class, 'updateAuth'])->name('auth.update');
         Route::get('/modules', [SettingController::class, 'editModules'])->name('modules');
         Route::post('/modules', [SettingController::class, 'updateModules'])->name('modules.update');
+    });
+
+    // ── Penjelajah Arsip Raport (jsTree - Khusus Admin) ────────
+    Route::prefix('raport-explorer')->name('raport_explorer.')->group(function () {
+        Route::get('/', [RaportExplorerController::class, 'index'])->name('index');
+        Route::get('/tree', [RaportExplorerController::class, 'getTreeData'])->name('tree');
+        Route::get('/download', [RaportExplorerController::class, 'download'])->name('download');
+        Route::delete('/delete', [RaportExplorerController::class, 'destroy'])->name('destroy');
     });
 
 });

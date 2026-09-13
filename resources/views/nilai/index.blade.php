@@ -8,7 +8,7 @@
                 <div class="col-sm-6">
                     <h1 class="m-0">{{ __('Input Nilai') }}</h1>
                     <button class="mt-2 btn btn-primary" id="pickClassBtn">Pilih Kelas Dan Mata Pelajaran</button>
-                    <button class="mt-2 btn btn-info" id="upCsvBtn">Import CSV Nilai Siswa</button>
+                    <button class="mt-2 btn btn-info" id="upCsvBtn"><i class="fas fa-file-excel mr-1"></i> Import Excel Nilai Siswa</button>
                     @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
                         <button class="mt-2 btn btn-warning" id="cbtSyncBtn"><i class="fas fa-sync-alt mr-1"></i> Tarik Nilai CBT</button>
                         <button class="mt-2 btn btn-outline-secondary" id="cbtLogsBtn"><i class="fas fa-history mr-1"></i> Log CBT</button>
@@ -211,32 +211,48 @@
                 </div>
             </div>
         </div>
-        {{-- Modal CSV --}}
+        {{-- Modal Import Excel --}}
         <div class="modal fade" id="upCsvModal" tabindex="-1" role="dialog" aria-labelledby="upCsvModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="upCsvModalLabel">Upload CSV Nilai Siswa</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <div class="modal-header bg-success text-white py-2">
+                        <h5 class="modal-title font-weight-bold" id="upCsvModalLabel">
+                            <i class="fas fa-file-excel mr-1"></i> Upload Excel Nilai Siswa
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form id="csvForm" enctype="multipart/form-data">
                         <div class="modal-body">
-                            <h5>Klik Dibawah Ini Untuk Download Template Nya</h5>
-                            <a href="{{ route('value.download') }}" class="btn btn-success mt-2 mb-2" target="blank"><i
-                                    class="fas fa-file-excel"></i>&nbsp;Download Template Untuk CSV</a>
-                            <h5>Upload CSV:</h5>
-                            <div class="form-group">
-                                <input type="hidden" id="mapel_id">
-                                <label for="csv">File CSV</label>
-                                <input type="file" class="form-control" id="csv" name="csv" required>
+                            <div class="alert alert-info py-2 px-3 small mb-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Format berkas menggunakan <strong>Microsoft Excel (.xlsx)</strong> resmi SiNilai dengan urutan kolom Sumatif 1 s.d 10, Nilai STS, dan Nilai SAS. Kolom yang belum dinilai biarkan kosong (otomatis tersimpan sebagai NULL).
+                            </div>
+                            <div class="alert alert-light border py-2 px-3 small mb-3">
+                                <strong><i class="fas fa-chalkboard-teacher text-primary mr-1"></i> Target Kelas Aktif:</strong>
+                                <span class="font-weight-bold text-success" id="modalTargetClassBadge">-</span>
+                                <div class="text-muted mt-1" style="font-size: 8pt;">
+                                    Template yang diunduh hanya <strong>1 sheet</strong> khusus kelas ini. Nilai yang diimpor juga hanya masuk ke kelas ini.
+                                </div>
+                            </div>
+                            <h6 class="font-weight-bold mb-1">Unduh Template Excel:</h6>
+                            <a href="javascript:void(0)" id="btnDownloadExcelTemplate" class="btn btn-success btn-block mb-3 font-weight-bold">
+                                <i class="fas fa-file-excel mr-1"></i> Download Template Excel (1 Sheet Kelas Ini)
+                            </a>
+
+                            <div class="form-group mb-2">
+                                <label for="csv" class="font-weight-bold">Pilih Berkas Excel (.xlsx / .xls):</label>
+                                <input type="file" class="form-control-file border p-2 rounded w-100" id="csv" name="csv" accept=".xlsx, .xls, .csv" required>
+                                <small class="form-text text-muted">Maksimal ukuran file 10 MB.</small>
                             </div>
                         </div>
-                        <div class="modal-footer">
+                        <div class="modal-footer py-2">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                            <button type="submit" class="btn btn-primary">Simpan</button>
+                            <button type="submit" class="btn btn-primary font-weight-bold">
+                                <i class="fas fa-upload mr-1"></i> Simpan Nilai
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -392,10 +408,10 @@
     <script type="module">
         $(document).ready(function() {
             // State
-            let class_id = null;
+            let class_id = {{ Auth::user()->class_id ? Auth::user()->class_id : 'null' }};
             let mapel_id = null;
             let fst_id = null;
-            let class_name = '';
+            let class_name = '{{ $className ?? "" }}';
             let mapel_name = '';
             let fst_name = '';
             // End Of State
@@ -409,8 +425,8 @@
             })
             $('#filterForm').submit(function(e) {
                 e.preventDefault();
-                class_id = $('#class_id').val();
-                class_name = $('#class_id option:selected').text();
+                class_id = $('#class_id').val() || class_id;
+                class_name = $('#class_id option:selected').text() || class_name;
                 if (!class_id) {
                     SwalHelper.showError('Silahkan Pilih Kelas Terlebih Dahulu');
                     return;
@@ -805,31 +821,54 @@
                     }
                 });
             })
-            //
+            // Modal Upload Excel Nilai
             $('#upCsvBtn').click(function() {
                 $('#csv').val(null);
-                $('#mapel_id').val(mapel_id);
-                $('#fst_id').val(fst_id);
+                let currentClassText = class_name || $('#class_id option:selected').text() || '{{ $className ?? "" }}';
+                if (!currentClassText || currentClassText.includes('Pilih')) {
+                    currentClassText = '{{ $className ?? "Belum Memilih Kelas" }}';
+                }
+                $('#modalTargetClassBadge').text(currentClassText);
                 $('#upCsvModal').modal('show');
             });
+
+            $('#btnDownloadExcelTemplate').click(function(e) {
+                e.preventDefault();
+                let currentClass = class_id || $('#class_id').val() || '{{ Auth::user()->class_id ?? "" }}';
+                let currentMapel = mapel_id || $('#mapel_id').val() || '';
+                let currentFst   = fst_id   || $('#fst_id').val() || '';
+
+                let url = `{{ route('value.download') }}?class_id=${currentClass}&mapel_id=${currentMapel}&fst_id=${currentFst}`;
+                window.location.href = url;
+            });
+
             $('#csvForm').on('submit', function(e) {
                 e.preventDefault();
                 let formData = new FormData(this);
-                formData.append('mapel_id', mapel_id);
-                formData.append('fst_id', fst_id);
+                let currentClass = class_id || $('#class_id').val() || '{{ Auth::user()->class_id ?? "" }}';
+                let currentMapel = mapel_id || $('#mapel_id').val() || '';
+                let currentFst   = fst_id   || $('#fst_id').val() || '';
 
+                if (currentClass) formData.append('class_id', currentClass);
+                if (currentMapel) formData.append('mapel_id', currentMapel);
+                if (currentFst) formData.append('fst_id', currentFst);
+
+                let submitBtn = $(this).find('button[type="submit"]');
+                let originalText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Memproses Excel...');
 
                 $.ajax({
                     url: "{{ route('value.import') }}",
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}",
-                        '_method': 'post'
                     },
                     type: "POST",
                     data: formData,
                     processData: false,
                     contentType: false,
                     success: function(response) {
+                        submitBtn.prop('disabled', false).html(originalText);
+                        $('#upCsvModal').modal('hide');
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil!',
@@ -837,16 +876,14 @@
                             showConfirmButton: false,
                             timer: 2000
                         });
-                        setTimeout(function() {
-                            $('#upCsvModal').modal('hide');
-                            $('#valueTable').DataTable().ajax.reload(null, false);
-                        }, 2000);
+                        $('#valueTable').DataTable().ajax.reload(null, false);
                     },
                     error: function(xhr) {
+                        submitBtn.prop('disabled', false).html(originalText);
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal!',
-                            text: xhr.responseJSON?.message || "Terjadi kesalahan!",
+                            text: xhr.responseJSON?.message || "Terjadi kesalahan saat memproses berkas Excel!",
                         });
                     }
                 });

@@ -16,6 +16,11 @@ class CheckAssignedClass
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Izinkan guru mapel (non-walas) untuk mengakses fitur upload nilai Excel
+        if ($request->is('upload-nilai-excel*') || $request->is('*/upload-nilai-excel*')) {
+            return $next($request);
+        }
+
         $user = Auth::user();
 
         if ($user && $user->role_id != 1 && $user->class_id === null) {

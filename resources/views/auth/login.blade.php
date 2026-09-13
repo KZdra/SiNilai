@@ -61,8 +61,8 @@ $authMethod = \Illuminate\Support\Facades\Schema::hasTable('settings') ? \App\Mo
     <form action="{{ route('login') }}" method="post">
         @csrf
 
-        <div class="input-group mb-3">
-            <input type="username" name="username" class="form-control @error('username') is-invalid @enderror" placeholder="{{ __('username') }}" required autofocus>
+        <div class="input-group mb-1">
+            <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" placeholder="{{ __('Username / NISN / NIS') }}" value="{{ old('username') }}" required autofocus>
             <div class="input-group-append">
                 <div class="input-group-text">
                     <span class="fas fa-user"></span>
@@ -74,6 +74,7 @@ $authMethod = \Illuminate\Support\Facades\Schema::hasTable('settings') ? \App\Mo
             </span>
             @enderror
         </div>
+        <small class="form-text text-muted mb-3"><i class="fas fa-info-circle mr-1"></i> Guru/Admin: gunakan Username. Siswa: gunakan NISN atau NIS.</small>
 
         <div class="input-group mb-3">
             <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="{{ __('Password') }}" required>
