@@ -18,6 +18,7 @@ class BackupController extends Controller
     {
         $backupFiles = [];
         $totalSizeBytes = 0;
+        $tz = $this->getAppTimezone();
 
         if (Storage::disk('local')->exists('backups')) {
             $files = Storage::disk('local')->files('backups');
@@ -30,12 +31,14 @@ class BackupController extends Controller
                 $lastModified = Storage::disk('local')->lastModified($file);
                 $totalSizeBytes += $size;
 
+                $carbonDate = Carbon::createFromTimestamp($lastModified)->setTimezone($tz)->locale('id');
+
                 $backupFiles[] = [
                     'filename'   => basename($file),
                     'path'       => $file,
                     'size'       => $this->formatBytes($size),
                     'size_bytes' => $size,
-                    'created_at' => Carbon::createFromTimestamp($lastModified)->translatedFormat('d F Y H:i:s'),
+                    'created_at' => $carbonDate->translatedFormat('d F Y H:i:s') . ' WIB',
                     'timestamp'  => $lastModified,
                 ];
             }
@@ -63,7 +66,9 @@ class BackupController extends Controller
         ini_set('memory_limit', '512M');
 
         try {
-            $filename = 'sinilai_backup_' . date('Y-m-d_H-i-s') . '.sql';
+            $tz = $this->getAppTimezone();
+            $now = Carbon::now($tz)->locale('id');
+            $filename = 'sinilai_backup_' . $now->format('Y-m-d_H-i-s') . '.sql';
             $backupPath = 'backups/' . $filename;
 
             // Pastikan folder backups di storage private tersedia
@@ -87,7 +92,7 @@ class BackupController extends Controller
             // Header SQL
             fwrite($tempStream, "-- ========================================================\n");
             fwrite($tempStream, "-- SiNilai Database Backup File (.sql)\n");
-            fwrite($tempStream, "-- Tanggal & Waktu : " . date('Y-m-d H:i:s') . "\n");
+            fwrite($tempStream, "-- Tanggal & Waktu : " . $now->translatedFormat('d F Y H:i:s') . " ({$tz})\n");
             fwrite($tempStream, "-- Basis Data      : {$dbName}\n");
             fwrite($tempStream, "-- Dicadangkan Oleh: {$user}\n");
             fwrite($tempStream, "-- Lokasi File     : Storage Private (storage/app/private/backups)\n");
@@ -233,5 +238,14 @@ class BackupController extends Controller
         $pow = min($pow, count($units) - 1);
         $bytes /= pow(1024, $pow);
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Dapatkan timezone aplikasi yang valid (default Asia/Jakarta - WIB).
+     */
+    private function getAppTimezone(): string
+    {
+        $tz = config('app.timezone');
+        return (!empty($tz) && strtoupper($tz) !== 'UTC') ? $tz : 'Asia/Jakarta';
     }
 }
