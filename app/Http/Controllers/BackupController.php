@@ -200,7 +200,7 @@ class BackupController extends Controller
             abort(404, 'File backup tidak ditemukan di storage server.');
         }
 
-        return Storage::disk('local')->download($path, $filename, [
+        return response()->download(Storage::disk('local')->path($path), $filename, [
             'Content-Type' => 'application/sql',
         ]);
     }

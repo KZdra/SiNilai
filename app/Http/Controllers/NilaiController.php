@@ -149,7 +149,7 @@ class NilaiController extends Controller
                 'created_at' => Carbon::now()
             ]);
 
-            \App\Services\NilaiAuditService::log(
+            NilaiAuditService::log(
                 $request->student_id,
                 $request->mapel_id,
                 $request->fst_id,
@@ -231,7 +231,7 @@ class NilaiController extends Controller
                     $updateData['updated_at'] = $now;
                     DB::table('values')->where('id', $existing->id)->update($updateData);
 
-                    \App\Services\NilaiAuditService::log(
+                    NilaiAuditService::log(
                         $student_id,
                         $mapel_id,
                         $fst_id,
@@ -251,7 +251,7 @@ class NilaiController extends Controller
                     ]);
                     DB::table('values')->insert($insertData);
 
-                    \App\Services\NilaiAuditService::log(
+                    NilaiAuditService::log(
                         $student_id,
                         $mapel_id,
                         $fst_id,
@@ -317,7 +317,7 @@ class NilaiController extends Controller
                 'updated_at' => Carbon::now()
             ]);
 
-            \App\Services\NilaiAuditService::log(
+            NilaiAuditService::log(
                 $request->student_id,
                 $request->mapel_id,
                 $request->fst_id,
@@ -345,7 +345,7 @@ class NilaiController extends Controller
         try {
             $val = DB::table('values')->where('id', '=', $id)->first();
             if ($val) {
-                \App\Services\NilaiAuditService::log(
+                NilaiAuditService::log(
                     $val->student_id,
                     $val->mapel_id,
                     $val->fst_id,
@@ -930,7 +930,7 @@ class NilaiController extends Controller
                             'updated_at' => Carbon::now(),
                         ]);
 
-                    \App\Services\NilaiAuditService::log(
+                    NilaiAuditService::log(
                         $student->id,
                         $mapelId,
                         $fstId,
@@ -949,7 +949,7 @@ class NilaiController extends Controller
                         'updated_at'   => Carbon::now(),
                     ]);
 
-                    \App\Services\NilaiAuditService::log(
+                    NilaiAuditService::log(
                         $student->id,
                         $mapelId,
                         $fstId,

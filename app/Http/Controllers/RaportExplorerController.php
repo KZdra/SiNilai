@@ -179,7 +179,7 @@ class RaportExplorerController extends Controller
             abort(404, 'File rapor tidak ditemukan di storage.');
         }
 
-        return $disk->download($path, basename($path));
+        return response()->download($disk->path($path), basename($path));
     }
 
     /**

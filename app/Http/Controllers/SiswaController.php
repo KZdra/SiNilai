@@ -106,7 +106,7 @@ class SiswaController extends Controller
     {
         $request->validate([
             'nis' => 'required|numeric',
-            'nis' => 'required|integer',
+            'nisn' => 'nullable|numeric',
             'student_name' => 'required|string|max:255',
             'class_id' => 'required|integer',
             'jenis_kelamin' => 'required|string',

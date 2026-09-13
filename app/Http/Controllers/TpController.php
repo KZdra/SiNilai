@@ -325,7 +325,6 @@ class TpController extends Controller
 
         // Ubah array hasil tinggi dan kurang menjadi string dipisahkan koma
         foreach ($result as &$student) {
-            $student["tp_isFill"]= $student["tp_isFill"];
             $student["Hasil_Tp_tinggi"] = $student["student_name"] . " Menunjukan Pemahaman Dalam " . implode(", ", $student["Hasil_Tp_tinggi"]);
             $student["Hasil_Tp_kurang"] = $student["student_name"] . " Membutuhkan Bimbingan Dalam " . implode(", ", $student["Hasil_Tp_kurang"]);
         }
