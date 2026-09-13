@@ -31,21 +31,31 @@ class TpController extends Controller
     }
     public function getdata(Request $r)
     {
-        $data = DB::table('m_tp as tp')->select(
+        $query = DB::table('m_tp as tp')->select(
             'tp.id',
             'tp.mapel_id',
             'tp.class_id',
             'tp.fst_id',
             'tp.tp_deskripsi'
         )->join('mata_pelajarans as mp', 'tp.mapel_id', '=', 'mp.id')
-            ->where('tp.mapel_id', $r->mapel_id)->where('tp.class_id', $r->class_id)->where('tp.fst_id', $r->fst_id)->orderBy('tp.id', 'asc')->get();
+            ->where('tp.mapel_id', $r->mapel_id)
+            ->where('tp.fst_id', $r->fst_id);
+
+        if ($r->filled('class_id')) {
+            $classId = $r->class_id;
+            $query->where(function($q) use ($classId) {
+                $q->whereNull('tp.class_id')->orWhere('tp.class_id', $classId);
+            });
+        }
+
+        $data = $query->orderBy('tp.id', 'asc')->get();
         return response()->json(['data' => $data], 200);
     }
     public function store(Request $r)
     {
         $sangu = $r->validate([
             'mapel_id' => 'required|integer',
-            'class_id' => 'required|integer',
+            'class_id' => 'nullable|integer',
             'fst_id' => 'required|integer',
             'tp_deskripsi' => 'required|array',
             'tp_deskripsi.*' => 'required|string'
@@ -55,7 +65,7 @@ class TpController extends Controller
             foreach ($sangu['tp_deskripsi'] as $deskripsi) {
                 $insertData[] = [
                     'mapel_id' => $sangu['mapel_id'],
-                    'class_id' => $sangu['class_id'],
+                    'class_id' => null, // TP berlaku umum untuk seluruh kelas (1 Mapel & 1 FST)
                     'fst_id' => $sangu['fst_id'],
                     'tp_deskripsi' => $deskripsi,
                     'created_at' => Carbon::now()
@@ -73,7 +83,7 @@ class TpController extends Controller
     {
         $sangu = $r->validate([
             'mapel_id' => 'required|integer',
-            'class_id' => 'required|integer',
+            'class_id' => 'nullable|integer',
             'tp_deskripsi' => 'required|array',
             'tp_deskripsi.*' => 'required|string'
         ]);
@@ -84,7 +94,6 @@ class TpController extends Controller
                 $id
             )->update([
                 'mapel_id' => $sangu['mapel_id'],
-                'class_id' => $sangu['class_id'],
                 'tp_deskripsi' => $sangu['tp_deskripsi'][0], // Edit hanya untuk 1 baris
                 'updated_at' => Carbon::now()
             ]);
@@ -125,16 +134,21 @@ class TpController extends Controller
         $fst   = $fstId   ? DB::table('m_fst_pembelajaran')->where('id', $fstId)->first() : null;
 
         $existingTps = [];
-        if ($classId && $mapelId && $fstId) {
-            $existingTps = DB::table('m_tp')
-                ->where('class_id', $classId)
+        if ($mapelId && $fstId) {
+            $tpQuery = DB::table('m_tp')
                 ->where('mapel_id', $mapelId)
-                ->where('fst_id', $fstId)
-                ->orderBy('id', 'asc')
-                ->get();
+                ->where('fst_id', $fstId);
+
+            if ($classId) {
+                $tpQuery->where(function($q) use ($classId) {
+                    $q->whereNull('class_id')->orWhere('class_id', $classId);
+                });
+            }
+
+            $existingTps = $tpQuery->orderBy('id', 'asc')->get()->unique('tp_deskripsi')->values();
         }
 
-        $cleanClass = $class ? str_replace(['/', '\\', ' '], '_', $class->class_name) : 'Kelas';
+        $cleanClass = $class ? str_replace(['/', '\\', ' '], '_', $class->class_name) : 'Semua_Kelas';
         $cleanMapel = $mapel ? '_' . str_replace(['/', '\\', ' '], '_', $mapel->nama_mapel) : '';
         $filename   = "Template_TP_{$cleanClass}{$cleanMapel}.xlsx";
 
@@ -148,7 +162,7 @@ class TpController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'file'        => 'required|file|max:10240',
-            'class_id'    => 'required|integer',
+            'class_id'    => 'nullable|integer',
             'mapel_id'    => 'required|integer',
             'fst_id'      => 'required|integer',
             'import_mode' => 'nullable|in:replace,append',
@@ -159,7 +173,7 @@ class TpController extends Controller
         }
 
         $file       = $request->file('file');
-        $classId    = (int) $request->input('class_id');
+        $classId    = $request->filled('class_id') ? (int) $request->input('class_id') : null;
         $mapelId    = (int) $request->input('mapel_id');
         $fstId      = (int) $request->input('fst_id');
         $importMode = $request->input('import_mode', 'replace');
@@ -198,7 +212,7 @@ class TpController extends Controller
                 }
 
                 $tpsToInsert[] = [
-                    'class_id'     => $classId,
+                    'class_id'     => null, // TP disimpan umum (1 Mapel & 1 FST) agar berlaku ke seluruh kelas
                     'mapel_id'     => $mapelId,
                     'fst_id'       => $fstId,
                     'tp_deskripsi' => $desc,
@@ -213,13 +227,20 @@ class TpController extends Controller
 
             DB::beginTransaction();
 
-            // Jika mode replace, hapus TP lama untuk kelas, mapel, dan periode ini
+            // Jika mode replace, hapus TP lama untuk mapel dan periode ini
             if ($importMode === 'replace') {
-                DB::table('m_tp')
-                    ->where('class_id', $classId)
+                $delQuery = DB::table('m_tp')
                     ->where('mapel_id', $mapelId)
-                    ->where('fst_id', $fstId)
-                    ->delete();
+                    ->where('fst_id', $fstId);
+
+                if ($classId) {
+                    $delQuery->where(function($q) use ($classId) {
+                        $q->whereNull('class_id')->orWhere('class_id', $classId);
+                    });
+                } else {
+                    $delQuery->whereNull('class_id');
+                }
+                $delQuery->delete();
             }
 
             DB::table('m_tp')->insert($tpsToInsert);
@@ -333,23 +354,28 @@ class TpController extends Controller
         $fst_id = $request->fst_id;
         $student_id = $request->student_id;
         //
-        $data = DB::table('m_tp AS tp')
+        $tpQuery = DB::table('m_tp AS tp')
             ->select(
                 'tp.id',
                 'tps.id as tps_id',
                 'tp.tp_deskripsi',
                 DB::raw('COALESCE(tps.kktp,0) as kktp'),
                 DB::raw('COALESCE(tps.tampilkan,0) as tampilkan'),
-
             )
             ->leftJoin('tpsiswas AS tps', function ($join) use ($student_id) {
                 $join->on('tp.id', '=', 'tps.tp_id')
-                    ->where('tps.siswa_id', '=', $student_id); // Only filter tps for siswa_id = 1
+                    ->where('tps.siswa_id', '=', $student_id); // Only filter tps for siswa_id
             })
             ->where('tp.mapel_id', $mapel_id)
-            ->where('tp.class_id', $class_id)
-            ->where('tp.fst_id', $fst_id)
-            ->get();
+            ->where('tp.fst_id', $fst_id);
+
+        if ($class_id) {
+            $tpQuery->where(function($q) use ($class_id) {
+                $q->whereNull('tp.class_id')->orWhere('tp.class_id', $class_id);
+            });
+        }
+
+        $data = $tpQuery->orderBy('tp.id', 'asc')->get();
 
         return response()->json(['data' => $data], 200);
     }
@@ -424,11 +450,17 @@ class TpController extends Controller
         $class_id = $request->class_id;
         $fst_id = $request->fst_id;
 
-        $tps = DB::table('m_tp')
+        $tpQuery = DB::table('m_tp')
             ->where('mapel_id', $mapel_id)
-            ->where('class_id', $class_id)
-            ->where('fst_id', $fst_id)
-            ->select('id', 'tp_deskripsi')
+            ->where('fst_id', $fst_id);
+
+        if ($class_id) {
+            $tpQuery->where(function($q) use ($class_id) {
+                $q->whereNull('class_id')->orWhere('class_id', $class_id);
+            });
+        }
+
+        $tps = $tpQuery->select('id', 'tp_deskripsi')
             ->orderBy('id', 'asc')
             ->get();
 
