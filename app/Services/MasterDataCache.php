@@ -100,6 +100,29 @@ class MasterDataCache
         if ($id) {
             Cache::forget("master_class_name_{$id}");
         }
+        self::clearDashboardCache();
+    }
+
+    /**
+     * Dapatkan versi cache dashboard untuk cache invalidation tanpa wildcard
+     */
+    public static function getDashboardVersion(): int
+    {
+        return (int) Cache::rememberForever('dashboard_cache_ver', function () {
+            return 1;
+        });
+    }
+
+    /**
+     * Hapus / invalidasi cache dashboard secara instan
+     */
+    public static function clearDashboardCache(): void
+    {
+        if (Cache::has('dashboard_cache_ver')) {
+            Cache::increment('dashboard_cache_ver');
+        } else {
+            Cache::forever('dashboard_cache_ver', 2);
+        }
     }
 
     /**
@@ -110,5 +133,6 @@ class MasterDataCache
         self::clearSchoolData();
         self::clearFst();
         self::clearClasses();
+        self::clearDashboardCache();
     }
 }

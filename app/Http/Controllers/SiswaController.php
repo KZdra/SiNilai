@@ -159,6 +159,7 @@ class SiswaController extends Controller
                 'alpa' => $request->alpa ?? 0,
                 'created_at' => Carbon::now()
             ]);
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json(['message' => 'Siswa berhasil ditambahkan!'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -232,6 +233,7 @@ class SiswaController extends Controller
                 'alpa' => $request->alpa,
                 'updated_at' => Carbon::now()
             ]);
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json(['message' => 'Siswa berhasil diUpdate!'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -251,6 +253,7 @@ class SiswaController extends Controller
 
         try {
             DB::table('students')->where('id', '=', $id)->delete();
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json(['message' => 'Siswa berhasil diHapus!'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

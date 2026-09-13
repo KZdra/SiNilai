@@ -164,6 +164,7 @@ class NilaiController extends Controller
             );
 
             DB::commit();
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json(['message' => 'Nilai berhasil ditambahkan!'], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -264,6 +265,7 @@ class NilaiController extends Controller
             }
 
             DB::commit();
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json([
                 'success' => true,
                 'message' => "Berhasil menyimpan {$savedCount} data nilai siswa!",
@@ -332,6 +334,7 @@ class NilaiController extends Controller
             );
 
             DB::commit();
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json(['message' => 'Nilai berhasil diEdit!'], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -356,6 +359,7 @@ class NilaiController extends Controller
             }
             DB::table('values')->where('id', '=', $id)->delete();
             DB::commit();
+            \App\Services\MasterDataCache::clearDashboardCache();
             return response()->json(['message' => 'Nilai berhasil diHapus!'], 201);
         } catch (\Exception $e) {
             DB::rollBack();
