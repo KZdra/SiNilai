@@ -230,4 +230,95 @@ class RaportExplorerController extends Controller
         $bytes /= pow(1024, $pow);
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
+
+    /**
+     * Tampilkan halaman Export Massal Rapor ke Server khusus Administrator.
+     */
+    public function bulkExportView()
+    {
+        $this->checkAdmin();
+
+        $classes = DB::table('class')->orderBy('class_name', 'asc')->get();
+        $fstList = \App\Services\MasterDataCache::getAllFst();
+
+        return view('raport_explorer.bulk_export', compact('classes', 'fstList'));
+    }
+
+    /**
+     * Endpoint API pemrosesan export rapor bertahap (chunking) per kelas & per siswa.
+     */
+    public function bulkExportChunk(Request $request)
+    {
+        $this->checkAdmin();
+
+        $classId   = (int) $request->input('class_id');
+        $fstId     = (int) $request->input('fst_id');
+        $type      = $request->input('type', 'all');
+        $tglPrint  = $request->input('tgl_print', now()->toDateString());
+        $keputusan = $request->input('keputusan', null);
+        $offset    = (int) $request->input('offset', 0);
+        $limit     = (int) $request->input('limit', 4);
+
+        $class = DB::table('class')->where('id', $classId)->first();
+        if (!$class) {
+            return response()->json(['status' => 'error', 'message' => "Kelas ID {$classId} tidak ditemukan."], 404);
+        }
+
+        $students = DB::table('students')->where('class_id', $classId)->orderBy('nama', 'asc')->get();
+        if ($students->isEmpty() && \Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
+            $students = DB::table('student_class_history as h')
+                ->join('students as s', 'h.student_id', '=', 's.id')
+                ->where('h.class_id', $classId)
+                ->where('h.fst_id', $fstId)
+                ->select('s.*')
+                ->orderBy('s.nama', 'asc')
+                ->get();
+        }
+
+        $totalStudents = $students->count();
+        if ($totalStudents === 0) {
+            return response()->json([
+                'status'       => 'empty',
+                'class_id'     => $classId,
+                'class_name'   => $class->class_name,
+                'total'        => 0,
+                'processed'    => 0,
+                'is_complete'  => true,
+                'message'      => "Kelas {$class->class_name} tidak memiliki siswa aktif.",
+            ]);
+        }
+
+        $slice = $students->slice($offset, $limit);
+        $rendered = [];
+        $nilaiAkhirController = app(\App\Http\Controllers\NilaiAkhirController::class);
+
+        foreach ($slice as $std) {
+            try {
+                $res = $nilaiAkhirController->generateSingleRaportPdf($std->id, $classId, $fstId, $type, $tglPrint, $keputusan);
+                $rendered[] = [
+                    'id'   => $std->id,
+                    'nama' => $std->nama,
+                    'path' => $res['pdf_path'],
+                ];
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Bulk export error for student ID {$std->id}: " . $e->getMessage());
+            }
+        }
+
+        $nextOffset = $offset + $slice->count();
+        $isComplete = ($nextOffset >= $totalStudents);
+
+        return response()->json([
+            'status'      => 'success',
+            'class_id'    => $classId,
+            'class_name'  => $class->class_name,
+            'processed'   => count($rendered),
+            'offset'      => $offset,
+            'next_offset' => $nextOffset,
+            'total'       => $totalStudents,
+            'is_complete' => $isComplete,
+            'percent'     => (int) round(($nextOffset / $totalStudents) * 100),
+            'items'       => $rendered,
+        ]);
+    }
 }

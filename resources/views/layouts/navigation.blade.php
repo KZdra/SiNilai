@@ -178,9 +178,16 @@
                 </li>
 
                 <li class="nav-item">
-                    <a href="{{ route('raport_explorer.index') }}" class="nav-link {{ request()->is('raport-explorer*') ? 'active' : '' }}">
+                    <a href="{{ route('raport_explorer.index') }}" class="nav-link {{ request()->is('raport-explorer') || request()->is('raport-explorer/tree*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-folder-open text-warning"></i>
                         <p class="font-weight-bold">{{ __('Arsip Raport (Storage)') }}</p>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ route('raport_explorer.bulk_export') }}" class="nav-link {{ request()->is('raport-explorer/bulk-export*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-cloud-upload-alt text-warning"></i>
+                        <p class="font-weight-bold">{{ __('Export Massal Server') }}</p>
                     </a>
                 </li>
 

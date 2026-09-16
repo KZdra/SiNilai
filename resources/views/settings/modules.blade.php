@@ -79,12 +79,66 @@
                                     @endforeach
                                 </ul>
                             </div>
+                        </div>
+
+                        <!-- Card Engine Pembuatan Berkas ZIP Rapor -->
+                        <div class="card card-outline card-danger shadow-sm mt-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="card-title font-weight-bold mb-0 text-dark">
+                                    <i class="fas fa-file-archive text-danger mr-1"></i> Engine Pembuatan Berkas ZIP Rapor
+                                </h5>
+                                <div class="card-tools">
+                                    <span class="badge badge-danger">Konfigurasi Global Server</span>
+                                </div>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="alert alert-light border mb-3 small text-muted">
+                                    <i class="fas fa-info-circle text-info mr-1"></i>
+                                    Pengaturan ini menentukan bagaimana sistem memproses pembentukan berkas ZIP rapor saat wali kelas mengunduh rapor 1 kelas. Wali kelas tidak perlu lagi memilih opsi teknis rumit.
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <div class="border rounded p-3 h-100 {{ ($zipEngine ?? 'chunk') === 'chunk' ? 'bg-light border-primary' : 'bg-white' }}" style="cursor: pointer;" onclick="document.getElementById('engine_chunk').checked = true;">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" id="engine_chunk" name="raport_zip_engine" value="chunk" class="custom-control-input" {{ ($zipEngine ?? 'chunk') === 'chunk' ? 'checked' : '' }}>
+                                                <label class="custom-control-label font-weight-bold text-dark" for="engine_chunk">
+                                                    <i class="fas fa-desktop text-success mr-1"></i> Mode Langsung di Layar (Chunking)
+                                                </label>
+                                            </div>
+                                            <div class="mt-2 ml-4 small text-muted">
+                                                <span class="badge badge-success px-2 py-1 mb-1">Rekomendasi Shared Hosting / cPanel</span>
+                                                <p class="mb-0">
+                                                    Merender PDF secara bertahap (4 siswa per batch) langsung di browser. <strong>Tidak memerlukan daemon supervisor / queue worker server</strong>, bebas risiko script timeout, dan file ZIP otomatis terunduh.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="border rounded p-3 h-100 {{ ($zipEngine ?? 'chunk') === 'queue' ? 'bg-light border-primary' : 'bg-white' }}" style="cursor: pointer;" onclick="document.getElementById('engine_queue').checked = true;">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" id="engine_queue" name="raport_zip_engine" value="queue" class="custom-control-input" {{ ($zipEngine ?? 'chunk') === 'queue' ? 'checked' : '' }}>
+                                                <label class="custom-control-label font-weight-bold text-dark" for="engine_queue">
+                                                    <i class="fas fa-cogs text-info mr-1"></i> Mode Antrean Latar Belakang (Queue Worker)
+                                                </label>
+                                            </div>
+                                            <div class="mt-2 ml-4 small text-muted">
+                                                <span class="badge badge-info px-2 py-1 mb-1">VPS / Server Dedicated</span>
+                                                <p class="mb-0">
+                                                    Tugas dimasukkan ke antrean database/redis dan dieksekusi oleh worker di background (<code>php artisan queue:work</code>). Cocok jika server memiliki worker daemon tersendiri.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center">
                                 <span class="text-muted small">
-                                    <i class="fas fa-shield-alt text-secondary mr-1"></i> Perubahan akan langsung berdampak pada seluruh pengguna.
+                                    <i class="fas fa-shield-alt text-secondary mr-1"></i> Perubahan akan langsung berdampak pada fitur unduh ZIP seluruh wali kelas.
                                 </span>
                                 <button type="submit" class="btn btn-success px-4 font-weight-bold shadow-sm">
-                                    <i class="fas fa-save mr-1"></i> Simpan Status Modul
+                                    <i class="fas fa-save mr-1"></i> Simpan Semua Pengaturan
                                 </button>
                             </div>
                         </div>

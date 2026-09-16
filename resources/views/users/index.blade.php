@@ -63,10 +63,15 @@
                                     </span>
                                 </div>
 
-                                <!-- Right Button -->
-                                <button class="btn btn-primary btn-sm font-weight-bold shadow-sm" id="inputUserBtn">
-                                    <i class="fas fa-plus mr-1"></i> Tambah Guru / Admin
-                                </button>
+                                <!-- Right Action Buttons -->
+                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <button class="btn btn-success btn-sm font-weight-bold shadow-sm" id="btnOpenImportModal">
+                                        <i class="fas fa-file-excel mr-1"></i> Import Excel Guru & Walas
+                                    </button>
+                                    <button class="btn btn-primary btn-sm font-weight-bold shadow-sm" id="inputUserBtn">
+                                        <i class="fas fa-plus mr-1"></i> Tambah Guru / Admin
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="table-responsive">
@@ -261,6 +266,56 @@
                     <div class="modal-footer bg-light py-2">
                         <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-warning btn-sm font-weight-bold px-3">Reset Sekarang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: IMPORT EXCEL GURU & WALI KELAS ── -->
+    <div class="modal fade" id="modalImportGuru" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+                <div class="modal-header bg-success text-white py-3">
+                    <h5 class="modal-title font-weight-bold">
+                        <i class="fas fa-file-excel mr-2"></i>Import Akun Guru & Penugasan Wali Kelas
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="formImportGuru" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="alert alert-light border shadow-none mb-3 p-3 small">
+                            <div class="font-weight-bold text-dark mb-1">
+                                <i class="fas fa-info-circle text-primary mr-1"></i> Panduan & Fitur Dropdown Excel:
+                            </div>
+                            <ol class="pl-3 mb-2 text-muted leading-relaxed" style="font-size: 0.88rem;">
+                                <li>Unduh berkas template Excel resmi di bawah.</li>
+                                <li>Pada kolom <strong>Wali Kelas</strong>, gunakan <strong>menu dropdown di Excel</strong> untuk memilih kelas binaan secara langsung tanpa perlu mengetik manual.</li>
+                                <li>Pilih role pada dropdown (<code>Guru</code> atau <code>Admin</code>). Password default: <code>guru123</code>.</li>
+                                <li>Simpan berkas Excel lalu unggah melalui form di bawah.</li>
+                            </ol>
+                            <a href="{{ route('muser.download_template') }}" class="btn btn-success btn-sm font-weight-bold shadow-sm mt-1">
+                                <i class="fas fa-download mr-1"></i> Unduh Format Template Excel (.xlsx)
+                            </a>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold text-dark small text-uppercase">Pilih Berkas Excel (.xlsx / .xls):</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="excelFileGuru" name="file" accept=".xlsx, .xls" required>
+                                <label class="custom-file-label text-truncate" for="excelFileGuru">Pilih berkas Excel...</label>
+                            </div>
+                            <small class="form-text text-muted mt-1">Sistem otomatis mendeteksi akun baru atau memperbarui penugasan wali kelas yang sudah ada.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success btn-sm font-weight-bold px-3 shadow-sm" id="btnSubmitImportGuru">
+                            <i class="fas fa-upload mr-1"></i> Unggah & Import
+                        </button>
                     </div>
                 </form>
             </div>
@@ -501,6 +556,72 @@
                 .catch(err => {
                     btn.prop('disabled', false).html(originHtml);
                     SwalHelper.showError(err.responseJSON?.message || 'Gagal mengaktifkan akun siswa.');
+                });
+            });
+
+            // ── Modal Import Guru & Walas (Excel) ───────────────────
+            $('#btnOpenImportModal').click(function() {
+                $('#formImportGuru')[0].reset();
+                $('#excelFileGuru').next('.custom-file-label').removeClass('selected').html('Pilih berkas Excel...');
+                $('#modalImportGuru').modal('show');
+            });
+
+            $('#excelFileGuru').on('change', function() {
+                let fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass('selected').html(fileName || 'Pilih berkas Excel...');
+            });
+
+            $('#formImportGuru').submit(function(e) {
+                e.preventDefault();
+
+                let fileInput = $('#excelFileGuru')[0];
+                if (!fileInput.files.length) {
+                    SwalHelper.showError('Silakan pilih berkas Excel terlebih dahulu.');
+                    return;
+                }
+
+                let formData = new FormData(this);
+                let btn = $('#btnSubmitImportGuru');
+                let originalHtml = btn.html();
+
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Memproses...');
+
+                $.ajax({
+                    url: "{{ route('muser.import_excel') }}",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        $('#modalImportGuru').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Import Selesai!',
+                            text: res.message,
+                            timer: 3500,
+                            showConfirmButton: true
+                        });
+                        guruTable.ajax.reload(null, false);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1800);
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        let msg = xhr.responseJSON?.message || 'Gagal mengunggah berkas Excel.';
+                        if (xhr.responseJSON?.errors && Array.isArray(xhr.responseJSON.errors)) {
+                            msg += '<br><small class="text-danger">' + xhr.responseJSON.errors.join('<br>') + '</small>';
+                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Import',
+                            html: msg
+                        });
+                    }
                 });
             });
 

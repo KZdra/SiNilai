@@ -128,26 +128,63 @@ class KenaikanKelasController extends Controller
                     ->toArray();
             }
 
+            $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first()
+                      ?? DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+
             // Eksekusi secara Top-Down (XII -> XI -> X) untuk menghindari benturan rombel
             foreach ($mapping as $map) {
                 if ($map['action_type'] === 'unmatched') {
                     continue;
                 }
 
+                // 1. Simpan Riwayat Rombel Siswa ke student_class_history sebelum class_id diubah
+                $studentsInClass = DB::table('students')->where('class_id', $map['source_class_id'])->get();
+                foreach ($studentsInClass as $std) {
+                    $isRetained = in_array($std->id, $retainedStudentIds);
+                    $histStatus = 'naik_kelas';
+                    if ($map['action_type'] === 'graduate') {
+                        $histStatus = 'lulus';
+                    } elseif ($isRetained) {
+                        $histStatus = 'tinggal_kelas';
+                    }
+
+                    if ($activeFst) {
+                        DB::table('student_class_history')->updateOrInsert(
+                            ['student_id' => $std->id, 'fst_id' => $activeFst->id],
+                            [
+                                'class_id'     => $map['source_class_id'],
+                                'status'       => $histStatus,
+                                'tahun_ajaran' => $activeFst->tahun_ajaran ?? null,
+                                'semester'     => $activeFst->semester ?? null,
+                                'keterangan'   => "Tutup TA: {$map['source_class_name']} ➔ " . ($map['target_class_name'] ?? 'Lulus'),
+                                'created_at'   => now(),
+                                'updated_at'   => now(),
+                            ]
+                        );
+                    }
+                }
+
+                // 2. Eksekusi perpindahan kelas
                 $query = DB::table('students')->where('class_id', $map['source_class_id']);
 
                 if ($skipTinggalKelas && count($retainedStudentIds) > 0) {
                     $query->whereNotIn('id', $retainedStudentIds);
                 }
 
-                $count = $query->update([
-                    'class_id' => $map['target_class_id'],
-                    'updated_at' => now(),
-                ]);
-
                 if ($map['action_type'] === 'graduate') {
+                    $count = $query->update([
+                        'class_id'    => null,
+                        'status'      => 'lulus',
+                        'tahun_lulus' => date('Y'),
+                        'updated_at'  => now(),
+                    ]);
                     $totalGraduated += $count;
                 } else {
+                    $count = $query->update([
+                        'class_id'   => $map['target_class_id'],
+                        'status'     => 'aktif',
+                        'updated_at' => now(),
+                    ]);
                     $totalPromoted += $count;
                 }
 
@@ -289,17 +326,45 @@ class KenaikanKelasController extends Controller
 
         DB::beginTransaction();
         try {
+            $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first()
+                      ?? DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+
             $targetClassId = $request->action_type === 'promote' ? $request->target_class_id : null;
             $sourceClass = DB::table('class')->where('id', $request->source_class_id)->first();
             $targetClass = $targetClassId ? DB::table('class')->where('id', $targetClassId)->first() : null;
 
+            // Catat riwayat rombel ke student_class_history
+            if ($activeFst) {
+                $histStatus = $request->action_type === 'graduate' ? 'lulus' : 'naik_kelas';
+                foreach ($request->student_ids as $stdId) {
+                    DB::table('student_class_history')->updateOrInsert(
+                        ['student_id' => $stdId, 'fst_id' => $activeFst->id],
+                        [
+                            'class_id'     => $request->source_class_id,
+                            'status'       => $histStatus,
+                            'tahun_ajaran' => $activeFst->tahun_ajaran ?? null,
+                            'semester'     => $activeFst->semester ?? null,
+                            'keterangan'   => "Mutasi/Kenaikan Manual: " . ($sourceClass->class_name ?? '-') . " ➔ " . ($targetClass->class_name ?? 'Alumni'),
+                            'created_at'   => now(),
+                            'updated_at'   => now(),
+                        ]
+                    );
+                }
+            }
+
+            $updateData = [
+                'class_id'   => $targetClassId,
+                'status'     => $request->action_type === 'graduate' ? 'lulus' : 'aktif',
+                'updated_at' => now(),
+            ];
+            if ($request->action_type === 'graduate') {
+                $updateData['tahun_lulus'] = date('Y');
+            }
+
             $count = DB::table('students')
                 ->whereIn('id', $request->student_ids)
                 ->where('class_id', $request->source_class_id)
-                ->update([
-                    'class_id' => $targetClassId,
-                    'updated_at' => now(),
-                ]);
+                ->update($updateData);
 
             $targetName = $targetClass ? $targetClass->class_name : 'Alumni / Lulus';
             $sourceName = $sourceClass ? $sourceClass->class_name : "ID {$request->source_class_id}";
@@ -329,5 +394,75 @@ class KenaikanKelasController extends Controller
             DB::rollBack();
             return response()->json(['message' => 'Gagal memproses kenaikan kelas: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Helper Backfill: Inisialisasi riwayat rombel (student_class_history) dari data yang ada di sistem
+     */
+    public static function backfillClassHistory(): int
+    {
+        $inserted = 0;
+        $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first()
+                  ?? DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+
+        // 1. Dari siswa yang saat ini memiliki class_id aktif
+        if ($activeFst) {
+            $activeStudents = DB::table('students')->whereNotNull('class_id')->get();
+            foreach ($activeStudents as $std) {
+                $exists = DB::table('student_class_history')
+                    ->where('student_id', $std->id)
+                    ->where('fst_id', $activeFst->id)
+                    ->exists();
+
+                if (!$exists) {
+                    DB::table('student_class_history')->insert([
+                        'student_id'   => $std->id,
+                        'class_id'     => $std->class_id,
+                        'fst_id'       => $activeFst->id,
+                        'status'       => 'aktif',
+                        'tahun_ajaran' => $activeFst->tahun_ajaran ?? null,
+                        'semester'     => $activeFst->semester ?? null,
+                        'keterangan'   => 'Inisialisasi otomatis rombel aktif',
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                    $inserted++;
+                }
+            }
+        }
+
+        // 2. Dari data historis values terdahulu
+        $historicalValues = DB::table('values')
+            ->select('student_id', 'class_id', 'fst_id')
+            ->whereNotNull('student_id')
+            ->whereNotNull('class_id')
+            ->whereNotNull('fst_id')
+            ->distinct()
+            ->get();
+
+        foreach ($historicalValues as $hv) {
+            $exists = DB::table('student_class_history')
+                ->where('student_id', $hv->student_id)
+                ->where('fst_id', $hv->fst_id)
+                ->exists();
+
+            if (!$exists) {
+                $fst = DB::table('m_fst_pembelajaran')->where('id', $hv->fst_id)->first();
+                DB::table('student_class_history')->insert([
+                    'student_id'   => $hv->student_id,
+                    'class_id'     => $hv->class_id,
+                    'fst_id'       => $hv->fst_id,
+                    'status'       => 'aktif',
+                    'tahun_ajaran' => $fst ? $fst->tahun_ajaran : null,
+                    'semester'     => $fst ? $fst->semester : null,
+                    'keterangan'   => 'Inisialisasi dari arsip nilai',
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
+                $inserted++;
+            }
+        }
+
+        return $inserted;
     }
 }

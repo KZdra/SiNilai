@@ -1,5 +1,16 @@
 @extends('layouts.app')
 
+@section('styles')
+<style>
+    .copied-highlight {
+        background-color: #e8f5e9 !important;
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+        transition: background-color 0.8s ease, border-color 0.8s ease;
+    }
+</style>
+@endsection
+
 @section('content')
     <div class="content-header">
         <div class="container-fluid">
@@ -92,8 +103,22 @@
                                 <th style="width: 85px;" class="text-center">Sakit (S)</th>
                                 <th style="width: 85px;" class="text-center">Izin (I)</th>
                                 <th style="width: 85px;" class="text-center">Alpa (A)</th>
-                                <th style="min-width: 280px;">Catatan Perkembangan Wali Kelas</th>
-                                <th style="min-width: 180px;">Keputusan Akhir Tahun</th>
+                                <th style="min-width: 320px;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Catatan Perkembangan Wali Kelas</span>
+                                        <button type="button" class="btn btn-xs btn-outline-primary shadow-sm" id="btnCopyDownCatatan" title="Salin Catatan baris pertama ke semua siswa di bawahnya">
+                                            <i class="fas fa-copy mr-1"></i>Salin ke Bawah
+                                        </button>
+                                    </div>
+                                </th>
+                                <th style="min-width: 220px;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Keputusan Akhir Tahun</span>
+                                        <button type="button" class="btn btn-xs btn-outline-primary shadow-sm" id="btnCopyDownStatus" title="Salin Keputusan baris pertama ke semua siswa di bawahnya">
+                                            <i class="fas fa-copy mr-1"></i>Salin ke Bawah
+                                        </button>
+                                    </div>
+                                </th>
                                 <th style="width: 90px;" class="text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -204,16 +229,26 @@ $(document).ready(function() {
                                 <input type="number" min="0" max="365" class="form-control form-control-sm text-center input-alpa" value="${s.alpa || 0}" ${disabledAttr}>
                             </td>
                             <td>
-                                <textarea class="form-control form-control-sm input-catatan" rows="2" placeholder="Tuliskan motivasi / capaian siswa..." ${disabledAttr}>${catatanVal}</textarea>
+                                <div class="d-flex" style="gap: 4px;">
+                                    <textarea class="form-control form-control-sm input-catatan flex-grow-1" rows="2" placeholder="Tuliskan motivasi / capaian siswa..." ${disabledAttr}>${catatanVal}</textarea>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary btnCopyCatatanThisRow shadow-none" title="Salin catatan baris ini ke semua siswa di bawahnya" ${disabledAttr} style="align-self: flex-start; padding: 5px 6px; font-size: 11px;">
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                </div>
                             </td>
                             <td>
-                                <select class="form-control form-control-sm input-status" ${disabledAttr}>
-                                    <option value="" ${statusVal === '' ? 'selected' : ''}>-- Belum Diputuskan --</option>
-                                    <option value="Naik ke Kelas XI" ${statusVal === 'Naik ke Kelas XI' ? 'selected' : ''}>Naik ke Kelas XI</option>
-                                    <option value="Naik ke Kelas XII" ${statusVal === 'Naik ke Kelas XII' ? 'selected' : ''}>Naik ke Kelas XII</option>
-                                    <option value="Lulus" ${statusVal === 'Lulus' ? 'selected' : ''}>Lulus</option>
-                                    <option value="Tinggal di Kelas" ${statusVal === 'Tinggal di Kelas' ? 'selected' : ''}>Tinggal di Kelas</option>
-                                </select>
+                                <div class="d-flex" style="gap: 4px;">
+                                    <select class="form-control form-control-sm input-status flex-grow-1" ${disabledAttr}>
+                                        <option value="" ${statusVal === '' ? 'selected' : ''}>-- Belum Diputuskan --</option>
+                                        <option value="Naik ke Kelas XI" ${statusVal === 'Naik ke Kelas XI' ? 'selected' : ''}>Naik ke Kelas XI</option>
+                                        <option value="Naik ke Kelas XII" ${statusVal === 'Naik ke Kelas XII' ? 'selected' : ''}>Naik ke Kelas XII</option>
+                                        <option value="Lulus" ${statusVal === 'Lulus' ? 'selected' : ''}>Lulus</option>
+                                        <option value="Tinggal di Kelas" ${statusVal === 'Tinggal di Kelas' ? 'selected' : ''}>Tinggal di Kelas</option>
+                                    </select>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary btnCopyStatusThisRow shadow-none" title="Salin keputusan baris ini ke semua siswa di bawahnya" ${disabledAttr} style="align-self: flex-start; padding: 5px 6px; font-size: 11px;">
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                </div>
                             </td>
                             <td class="text-center">
                                 ${isLocked ? '<span class="badge badge-secondary"><i class="fas fa-lock"></i></span>' :
@@ -353,6 +388,139 @@ $(document).ready(function() {
                 });
             }
         });
+    });
+
+    // ── FITUR: SALIN KE BAWAH (COPY DOWN) CATATAN & KEPUTUSAN ──
+    function copyCatatanDownwards(sourceTr) {
+        if (isLocked) return;
+        let sourceVal = sourceTr.find('.input-catatan').val();
+        if (!sourceVal || sourceVal.trim() === '') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Catatan Kosong',
+                text: 'Silakan ketik catatan terlebih dahulu pada baris siswa sebelum menyalin ke bawah.'
+            });
+            return;
+        }
+
+        let nextRows = sourceTr.nextAll('#walasTableBody tr');
+        if (nextRows.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Baris Terakhir',
+                text: 'Ini adalah baris siswa terakhir, tidak ada baris di bawahnya.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Salin Catatan ke Bawah?',
+            text: `Catatan ini akan disalin ke ${nextRows.length} siswa di bawah baris ini.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-copy mr-1"></i> Ya, Salin ke Bawah',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                nextRows.each(function() {
+                    let txt = $(this).find('.input-catatan');
+                    txt.val(sourceVal);
+                    txt.addClass('copied-highlight');
+                    setTimeout(() => txt.removeClass('copied-highlight'), 1200);
+                });
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Catatan disalin ke ${nextRows.length} siswa. Klik "Simpan Semua" untuk menyimpan.`,
+                    showConfirmButton: false,
+                    timer: 3500
+                });
+            }
+        });
+    }
+
+    function copyStatusDownwards(sourceTr) {
+        if (isLocked) return;
+        let sourceVal = sourceTr.find('.input-status').val();
+        if (!sourceVal || sourceVal.trim() === '') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Keputusan Belum Dipilih',
+                text: 'Silakan pilih keputusan akhir tahun pada baris siswa terlebih dahulu.'
+            });
+            return;
+        }
+
+        let nextRows = sourceTr.nextAll('#walasTableBody tr');
+        if (nextRows.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Baris Terakhir',
+                text: 'Ini adalah baris siswa terakhir, tidak ada baris di bawahnya.'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Salin Keputusan ke Bawah?',
+            text: `Keputusan "${sourceVal}" akan disalin ke ${nextRows.length} siswa di bawah baris ini.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-copy mr-1"></i> Ya, Salin ke Bawah',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                nextRows.each(function() {
+                    let sel = $(this).find('.input-status');
+                    sel.val(sourceVal);
+                    sel.addClass('copied-highlight');
+                    setTimeout(() => sel.removeClass('copied-highlight'), 1200);
+                });
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Keputusan disalin ke ${nextRows.length} siswa. Klik "Simpan Semua" untuk menyimpan.`,
+                    showConfirmButton: false,
+                    timer: 3500
+                });
+            }
+        });
+    }
+
+    // Trigger dari tombol header (menyalin baris 1 ke semua siswa di bawahnya)
+    $('#btnCopyDownCatatan').click(function() {
+        let firstTr = $('#walasTableBody tr:first-child');
+        if (firstTr.length && firstTr.data('student-id')) {
+            copyCatatanDownwards(firstTr);
+        } else {
+            Swal.fire('Info', 'Data siswa belum dimuat. Silakan pilih kelas & semester terlebih dahulu.', 'info');
+        }
+    });
+
+    $('#btnCopyDownStatus').click(function() {
+        let firstTr = $('#walasTableBody tr:first-child');
+        if (firstTr.length && firstTr.data('student-id')) {
+            copyStatusDownwards(firstTr);
+        } else {
+            Swal.fire('Info', 'Data siswa belum dimuat. Silakan pilih kelas & semester terlebih dahulu.', 'info');
+        }
+    });
+
+    // Trigger dari tombol baris spesifik (menyalin dari baris tersebut ke semua baris di bawahnya)
+    $('#walasTable').on('click', '.btnCopyCatatanThisRow', function() {
+        let tr = $(this).closest('tr');
+        copyCatatanDownwards(tr);
+    });
+
+    $('#walasTable').on('click', '.btnCopyStatusThisRow', function() {
+        let tr = $(this).closest('tr');
+        copyStatusDownwards(tr);
     });
 });
 </script>

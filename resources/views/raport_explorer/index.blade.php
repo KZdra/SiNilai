@@ -55,10 +55,13 @@
                 <p class="text-muted small mb-0">Eksplorasi hierarkis berkas cetak rapor siswa di penyimpanan storage menggunakan pohon navigasi jsTree.</p>
             </div>
             <div class="col-sm-6 text-right">
-                <ol class="breadcrumb float-sm-right bg-transparent p-0 mb-0">
+                <a href="{{ route('raport_explorer.bulk_export') }}" class="btn btn-warning font-weight-bold shadow-sm mr-2">
+                    <i class="fas fa-cloud-upload-alt mr-1"></i> Export Massal ke Server
+                </a>
+                <ol class="breadcrumb float-sm-right bg-transparent p-0 mb-0 d-inline-flex align-items-center">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Beranda</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('nilaiakhir.index') }}">Nilai Akhir & Rapor</a></li>
-                    <li class="breadcrumb-item active">Arsip Raport (jsTree)</li>
+                    <li class="breadcrumb-item active">Arsip Raport</li>
                 </ol>
             </div>
         </div>

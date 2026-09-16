@@ -757,7 +757,10 @@ class NilaiController extends Controller
     /**
      * Pull scores from CBT and save into values table.
      */
-    public function syncFromCbt(Request $request)
+    /**
+     * Pratinjau perbandingan (Diff Preview) nilai antara CBT dan SiNilai sebelum commit.
+     */
+    public function previewCbtSync(Request $request)
     {
         if (!Setting::isModuleEnabled('cbt_sync', true)) {
             return response()->json([
@@ -772,7 +775,173 @@ class NilaiController extends Controller
             'fst_id'       => 'required|integer',
             'target_field' => 'nullable|string',
             'category'     => 'nullable|string',
-            'overwrite'    => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Parameter tidak valid',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $classId   = (int) $request->input('class_id');
+        $mapelId   = (int) $request->input('mapel_id');
+        $fstId     = (int) $request->input('fst_id');
+
+        $targetField = $request->input('target_field', 'value_sts');
+        $categoryInput = strtoupper($request->input('category', 'STS'));
+        $cbtCategory = ($targetField === 'value_sas') ? 'SAS' : (($targetField === 'value_sts') ? 'STS' : 'UH');
+
+        $cbtUrl = config('services.cbt.url', env('CBT_API_URL', 'http://localhost:8001/api/v1'));
+        $cbtKey = config('services.cbt.key', env('CBT_API_KEY'));
+        $cleanUrl = rtrim($cbtUrl, '/');
+
+        try {
+            $endpoint = $cleanUrl . '/scores/export';
+            $response = Http::withToken($cbtKey)->timeout(15)->get($endpoint, [
+                'class_id'   => $classId,
+                'subject_id' => $mapelId,
+                'category'   => $cbtCategory,
+                'fst_id'     => $fstId,
+            ]);
+
+            if ($response->failed()) {
+                $response = Http::withToken($cbtKey)->timeout(15)->get($cleanUrl . '/scores', [
+                    'class_id'   => $classId,
+                    'subject_id' => $mapelId,
+                    'category'   => $cbtCategory,
+                    'fst_id'     => $fstId,
+                ]);
+
+                if ($response->failed()) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Gagal mengambil data dari CBT (' . $response->status() . '): ' . $response->body(),
+                    ], 400);
+                }
+            }
+
+            $responseData = $response->json();
+            $cbtScores = $responseData['data'] ?? ($responseData['scores'] ?? []);
+
+            if (empty($cbtScores)) {
+                return response()->json([
+                    'status'  => 'warning',
+                    'message' => 'Tidak ada data nilai ujian yang ditemukan di CBT untuk filter kelas dan mata pelajaran ini.',
+                ], 404);
+            }
+
+            $students = DB::table('students')
+                ->where('class_id', $classId)
+                ->select('id', 'nis', 'nisn', 'nama')
+                ->get();
+
+            if ($students->isEmpty() && Schema::hasTable('student_class_history')) {
+                $students = DB::table('student_class_history as h')
+                    ->join('students as s', 'h.student_id', '=', 's.id')
+                    ->where('h.class_id', $classId)
+                    ->where('h.fst_id', $fstId)
+                    ->select('s.id', 's.nis', 's.nisn', 's.nama')
+                    ->get();
+            }
+
+            $currentValues = DB::table('values')
+                ->where('class_id', $classId)
+                ->where('mapel_id', $mapelId)
+                ->where('fst_id', $fstId)
+                ->get()
+                ->keyBy('student_id');
+
+            $diffItems = [];
+            $stats = ['total' => 0, 'new' => 0, 'changed' => 0, 'same' => 0, 'unmatched' => 0];
+
+            foreach ($cbtScores as $item) {
+                $itemNisn = !empty($item['nisn']) ? trim((string) $item['nisn']) : null;
+                $itemNis  = !empty($item['nis']) ? trim((string) $item['nis']) : null;
+                $itemId   = !empty($item['student_id']) ? (int) $item['student_id'] : null;
+                $cbtScore = isset($item['score']) && $item['score'] !== '' ? (float) $item['score'] : (isset($item['final_score']) ? (float)$item['final_score'] : null);
+
+                $student = $students->first(function ($s) use ($itemNisn, $itemNis, $itemId) {
+                    if ($itemId && (int) $s->id === $itemId) return true;
+                    if ($itemNisn && !empty($s->nisn) && (string) $s->nisn === $itemNisn) return true;
+                    if ($itemNis && !empty($s->nis) && (string) $s->nis === $itemNis) return true;
+                    return false;
+                });
+
+                if (!$student) {
+                    $stats['unmatched']++;
+                    continue;
+                }
+
+                $existingVal = $currentValues->get($student->id);
+                $currScore = $existingVal && !is_null($existingVal->{$targetField}) ? (float) $existingVal->{$targetField} : null;
+
+                $diffStatus = 'same';
+                if (is_null($currScore) && !is_null($cbtScore)) {
+                    $diffStatus = 'new';
+                    $stats['new']++;
+                } elseif (!is_null($currScore) && !is_null($cbtScore) && abs($currScore - $cbtScore) > 0.001) {
+                    $diffStatus = 'changed';
+                    $stats['changed']++;
+                } else {
+                    $diffStatus = 'same';
+                    $stats['same']++;
+                }
+
+                $diffVal = (!is_null($currScore) && !is_null($cbtScore)) ? round($cbtScore - $currScore, 2) : null;
+                $stats['total']++;
+
+                $diffItems[] = [
+                    'student_id'    => $student->id,
+                    'nama'          => $student->nama,
+                    'nis'           => $student->nis,
+                    'nisn'          => $student->nisn,
+                    'current_score' => $currScore,
+                    'cbt_score'     => $cbtScore,
+                    'diff'          => $diffVal,
+                    'status'        => $diffStatus,
+                    'selected'      => ($diffStatus === 'new' || $diffStatus === 'changed'),
+                ];
+            }
+
+            return response()->json([
+                'status'  => 'success',
+                'meta'    => [
+                    'target_field' => $targetField,
+                    'category'     => $cbtCategory,
+                    'stats'        => $stats,
+                ],
+                'data'    => $diffItems,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan saat mempratinjau nilai CBT: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Pull scores from CBT and save into values table.
+     */
+    public function syncFromCbt(Request $request)
+    {
+        if (!Setting::isModuleEnabled('cbt_sync', true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Integrasi CBT dinonaktifkan oleh administrator.',
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'class_id'          => 'required|integer',
+            'mapel_id'          => 'required|integer',
+            'fst_id'            => 'required|integer',
+            'target_field'      => 'nullable|string',
+            'category'          => 'nullable|string',
+            'overwrite'         => 'nullable|boolean',
+            'selected_students' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -793,6 +962,27 @@ class NilaiController extends Controller
                 'status'  => 'error',
                 'message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat diubah.',
             ], 403);
+        }
+
+        // Cek kuncian status rapor jika tabel raport_statuses ada
+        if (Schema::hasTable('raport_statuses')) {
+            $raportStatus = DB::table('raport_statuses')
+                ->where('class_id', $classId)
+                ->where('fst_id', $fstId)
+                ->value('status');
+
+            if ($raportStatus === 'approved_locked' || (Auth::check() && Auth::user()->role_id != 1 && $raportStatus === 'verified')) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Nilai kelas untuk semester ini telah disahkan dan dikunci. Perubahan nilai ditolak.',
+                ], 403);
+            }
+        }
+
+        // Filter siswa terpilih jika ada
+        $selectedStudentIds = null;
+        if ($request->has('selected_students') && is_array($request->input('selected_students'))) {
+            $selectedStudentIds = array_map('intval', $request->input('selected_students'));
         }
 
         // Determine target field
@@ -841,7 +1031,6 @@ class NilaiController extends Controller
             ]);
 
             if ($response->failed()) {
-                // If specific export route fails, try scores list endpoint as fallback
                 $fallbackEndpoint = $cleanUrl . '/scores';
                 $response = Http::withToken($cbtKey)->timeout(15)->get($fallbackEndpoint, [
                     'class_id'   => $classId,
@@ -873,10 +1062,19 @@ class NilaiController extends Controller
                 ->select('id', 'nis', 'nisn', 'nama')
                 ->get();
 
+            if ($students->isEmpty() && Schema::hasTable('student_class_history')) {
+                $students = DB::table('student_class_history as h')
+                    ->join('students as s', 'h.student_id', '=', 's.id')
+                    ->where('h.class_id', $classId)
+                    ->where('h.fst_id', $fstId)
+                    ->select('s.id', 's.nis', 's.nisn', 's.nama')
+                    ->get();
+            }
+
             if ($students->isEmpty()) {
                 return response()->json([
                     'status'  => 'error',
-                    'message' => "Tidak ada data siswa yang terdaftar di kelas ini pada SiNilai.",
+                    'message' => "Tidak ada data siswa yang terdaftar di kelas ini pada SiNilai (baik di rombel aktif maupun riwayat).",
                 ], 404);
             }
 
@@ -912,6 +1110,12 @@ class NilaiController extends Controller
                         'nis'  => $itemNis,
                         'nisn' => $itemNisn,
                     ];
+                    continue;
+                }
+
+                // Abaikan jika siswa ini tidak dicentang saat Diff Preview
+                if ($selectedStudentIds !== null && !in_array((int) $student->id, $selectedStudentIds, true)) {
+                    $skippedCount++;
                     continue;
                 }
 

@@ -27,6 +27,63 @@
     <div class="content">
         <div class="container-fluid">
 
+            <!-- ── PANDUAN ALUR WALI KELAS (INFORMATIF) ──────────────────────────── -->
+            <div class="card card-outline card-primary shadow-sm mb-3" id="tipsWalasCard" style="border-radius: 8px;">
+                <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="card-title font-weight-bold text-dark mb-0">
+                        <i class="fas fa-info-circle text-primary mr-2"></i>Panduan Alur Wali Kelas: Langkah Penerbitan Rapor
+                    </h6>
+                    <div class="card-tools ml-auto">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Ciutkan / Buka Panduan">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove" title="Tutup Sementara">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body py-2 px-3 bg-light">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                            <div class="d-flex align-items-start">
+                                <span class="badge badge-primary rounded-circle mr-2 px-2 py-1 font-weight-bold">1</span>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">Periksa Kelengkapan</strong>
+                                    <span class="text-muted">Muat data kelas, periksa nilai akhir tiap siswa, dan unduh <em>Leger Lengkap</em> untuk kroscek nilai semua mapel.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                            <div class="d-flex align-items-start">
+                                <span class="badge badge-success rounded-circle mr-2 px-2 py-1 font-weight-bold">2</span>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">Pengaturan Rapor</strong>
+                                    <span class="text-muted">Klik <strong>Pengaturan Rapor</strong> untuk menentukan Tanggal Cetak (Titimangsa) & Catatan Kenaikan/Keputusan.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                            <div class="d-flex align-items-start">
+                                <span class="badge badge-warning rounded-circle mr-2 px-2 py-1 font-weight-bold text-dark">3</span>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">Alur Status Rapor</strong>
+                                    <span class="text-muted">Klik <strong>Alur Rapor</strong> untuk memverifikasi rapor kelas. Nilai akan dikunci agar tidak berubah saat pembagian.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="d-flex align-items-start">
+                                <span class="badge badge-danger rounded-circle mr-2 px-2 py-1 font-weight-bold">4</span>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">Download ZIP Rapor</strong>
+                                    <span class="text-muted">Klik <strong>Download ZIP Rapor</strong> untuk mengemas seluruh lembar rapor PDF satu kelas dalam 1 file ZIP instan.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── 1. UNIFIED FILTER CARD ──────────────────────────────── -->
             <div class="card shadow-sm border-0 mb-3" style="border-radius: 10px;">
                 <div class="card-body p-3">
@@ -140,9 +197,15 @@
             <!-- ── 3. DATA TABLE CARD & ACTION TOOLBAR ──────────────────── -->
             <div class="card shadow-sm border-0 mb-4" id="resultTableCard" style="display: none; border-radius: 10px;">
                 <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center" style="gap: 10px;">
-                    <div>
-                        <span class="badge badge-primary px-3 py-2 mr-1 font-weight-bold shadow-sm" id="ClassSelBadge">-</span>
+                    <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                        <span class="badge badge-primary px-3 py-2 font-weight-bold shadow-sm" id="ClassSelBadge">-</span>
                         <span class="badge badge-light border text-dark px-3 py-2 font-weight-bold shadow-sm" id="FstSelBadge">-</span>
+                        <span class="badge badge-secondary px-3 py-2 font-weight-bold shadow-sm" id="RaportStatusBadge">
+                            <i class="fas fa-file-alt mr-1"></i>Draft
+                        </span>
+                        <button type="button" class="btn btn-xs btn-outline-primary font-weight-bold shadow-sm py-1 px-2" id="btnOpenStatusWorkflow" title="Kelola Alur Status Rapor">
+                            <i class="fas fa-tasks mr-1"></i>Alur Rapor
+                        </button>
                     </div>
 
                     <!-- Action Toolbar -->
@@ -151,8 +214,8 @@
                             <i class="fas fa-cog mr-1"></i> Pengaturan Rapor
                         </button>
 
-                        <button class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" id="btnExportServer">
-                            <i class="fas fa-server mr-1"></i> Export Rapor ke Server
+                        <button class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" id="btnDownloadZipModal" title="Download seluruh rapor siswa dalam 1 file ZIP">
+                            <i class="fas fa-file-archive mr-1"></i> Download ZIP Rapor
                         </button>
 
                         <button class="btn btn-info btn-sm font-weight-bold shadow-sm" id="expBtn4">
@@ -278,59 +341,170 @@
                 </div>
             </div>
 
-            <!-- ── MODAL: EXPORT RAPOR KE SERVER (ARSIP RAPORT) ────────── -->
-            <div class="modal fade" id="ExportServerModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <!-- ── MODAL: DOWNLOAD ZIP RAPOR KELAS ─────────────────────── -->
+            <div class="modal fade" id="ModalDownloadZip" tabindex="-1" role="dialog" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-                        <div class="modal-header bg-warning text-dark py-3">
+                        <div class="modal-header bg-danger text-white py-3">
                             <h5 class="modal-title font-weight-bold">
-                                <i class="fas fa-server mr-2"></i>Export Rapor ke Server Arsip
+                                <i class="fas fa-file-archive mr-2"></i>Download ZIP Rapor Kelas
                             </h5>
-                            <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body py-4">
-                            <div class="alert alert-info border-0 shadow-sm small mb-3">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Fitur ini akan meng-generate seluruh PDF rapor siswa pada kelas terpilih dan menyimpannya langsung ke server storage (<code>storage/app/public/raport/...</code>). Administrator dapat melihat dan mengunduhnya kapan saja melalui menu <strong>Arsip Raport</strong>.
+                        <div class="modal-body py-3">
+                            <!-- Info Kelas & Periode -->
+                            <div class="p-3 bg-light rounded border mb-3 small">
+                                <div class="row">
+                                    <div class="col-4 text-muted">Kelas:</div>
+                                    <div class="col-8 font-weight-bold text-dark" id="modalZipClass">-</div>
+                                </div>
+                                <div class="row mt-1">
+                                    <div class="col-4 text-muted">Periode:</div>
+                                    <div class="col-8 font-weight-bold text-dark" id="modalZipFst">-</div>
+                                </div>
+                                <div class="row mt-1">
+                                    <div class="col-4 text-muted">Jumlah Siswa:</div>
+                                    <div class="col-8 font-weight-bold text-primary" id="modalZipTotal">-</div>
+                                </div>
                             </div>
 
+                            <!-- Pilihan Dokumen -->
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold text-dark mb-2 d-block small text-uppercase">Pilihan Dokumen Yang Disimpan:</label>
+                                <label class="font-weight-bold text-dark mb-1 small text-uppercase">Pilihan Lembar Rapor:</label>
                                 <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
                                     <label class="btn btn-outline-primary btn-sm active" style="flex: 1;">
-                                        <input type="radio" name="server_doc_type" value="all" checked> Lengkap (Semua)
+                                        <input type="radio" name="zip_doc_type" value="all" checked> Lengkap
                                     </label>
                                     <label class="btn btn-outline-primary btn-sm" style="flex: 1;">
-                                        <input type="radio" name="server_doc_type" value="nilai"> Nilai Saja
+                                        <input type="radio" name="zip_doc_type" value="nilai"> Nilai Saja
                                     </label>
                                     <label class="btn btn-outline-primary btn-sm" style="flex: 1;">
-                                        <input type="radio" name="server_doc_type" value="cover"> Cover Saja
+                                        <input type="radio" name="zip_doc_type" value="cover"> Cover Saja
                                     </label>
                                 </div>
                             </div>
 
-                            <div class="p-3 bg-light rounded border small">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="text-muted">Kelas:</span>
-                                    <strong id="modalServerClass" class="text-dark">-</strong>
+                            <!-- Indikator Mesin Pembuat ZIP (Tersinkron dengan Setting Admin) -->
+                            <input type="hidden" id="activeZipEngine" value="{{ $zipEngine ?? 'chunk' }}">
+                            @if (($zipEngine ?? 'chunk') === 'queue')
+                                <div class="alert alert-info py-2 px-3 small mb-2">
+                                    <i class="fas fa-cogs mr-1"></i> Mode Pemrosesan: <strong>Antrean Latar Belakang (Server Queue)</strong>
+                                    <div class="text-muted mt-1" style="font-size: 0.8rem;">Dikerjakan secara asinkron di server. Tidak membebani browser Anda.</div>
                                 </div>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="text-muted">Periode:</span>
-                                    <strong id="modalServerFst" class="text-dark">-</strong>
+                            @else
+                                <div class="alert alert-light border py-2 px-3 small mb-2 text-muted">
+                                    <i class="fas fa-bolt text-warning mr-1"></i> Mode Pemrosesan: <strong>Proses Cepat Otomatis (Batch)</strong>
+                                    <div class="text-muted mt-1" style="font-size: 0.8rem;">PDF dirender bertahap secara otomatis dan berkas ZIP langsung terunduh ke komputer Anda.</div>
                                 </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Total Siswa:</span>
-                                    <strong id="modalServerTotal" class="text-primary">-</strong>
+                            @endif
+
+                            <!-- Progress Bar Container -->
+                            <div id="zipProgressContainer" class="d-none mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1 small font-weight-bold">
+                                    <span id="zipStatusText" class="text-primary"><i class="fas fa-spinner fa-spin mr-1"></i>Mempersiapkan...</span>
+                                    <span id="zipPercentText" class="text-dark">0%</span>
                                 </div>
+                                <div class="progress" style="height: 18px; border-radius: 9px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="zipProgressBar" role="progressbar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Hasil Download -->
+                            <div id="zipDownloadReady" class="alert alert-success d-none mt-3 py-2 px-3 small d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <strong>File ZIP Siap!</strong>
+                                    <span id="zipFilenameReady" class="d-block text-muted">Raport_Kelas.zip</span>
+                                </div>
+                                <a href="#" id="btnDownloadZipResult" class="btn btn-success btn-sm font-weight-bold px-3 shadow-sm">
+                                    <i class="fas fa-download mr-1"></i> Unduh ZIP
+                                </a>
                             </div>
                         </div>
                         <div class="modal-footer bg-light py-2">
-                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-warning btn-sm font-weight-bold shadow-sm text-dark" id="btnConfirmExportServer">
-                                <i class="fas fa-cloud-upload-alt mr-1"></i> Mulai Export ke Server
+                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" id="btnCancelZipModal">Tutup</button>
+                            <button type="button" class="btn btn-danger btn-sm font-weight-bold shadow-sm" id="btnStartGenerateZip">
+                                <i class="fas fa-play mr-1"></i> Mulai Buat File ZIP
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── MODAL: ALUR STATUS & PERSETUJUAN RAPOR ──────────────── -->
+            <div class="modal fade" id="ModalRaportWorkflow" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+                        <div class="modal-header bg-primary text-white py-3">
+                            <h5 class="modal-title font-weight-bold">
+                                <i class="fas fa-tasks mr-2"></i>Alur Status & Persetujuan Nilai Rapor
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body py-3">
+                            <!-- Banner Status Terkini -->
+                            <div class="p-3 rounded mb-3 text-center" id="wfStatusBanner" style="background-color: #f1f3f5;">
+                                <span class="small text-muted d-block text-uppercase font-weight-bold">Status Rapor Kelas Saat Ini:</span>
+                                <h4 class="font-weight-bold my-1" id="wfStatusTitle">Draft (Masih Input)</h4>
+                                <span class="badge badge-secondary px-3 py-1" id="wfStatusBadge">DRAFT</span>
+                            </div>
+
+                            <!-- Timeline Petugas -->
+                            <div class="card card-outline card-secondary mb-3 small">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span class="text-muted"><i class="fas fa-user-edit mr-1 text-primary"></i>Diajukan Oleh:</span>
+                                        <strong id="wfSubmitter">-</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom">
+                                        <span class="text-muted"><i class="fas fa-user-check mr-1 text-warning"></i>Diverifikasi Walas:</span>
+                                        <strong id="wfVerifier">-</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1">
+                                        <span class="text-muted"><i class="fas fa-user-shield mr-1 text-success"></i>Disahkan Kepsek:</span>
+                                        <strong id="wfApprover">-</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Catatan -->
+                            <div class="form-group mb-2">
+                                <label for="wfNotes" class="font-weight-bold text-dark small mb-1">
+                                    <i class="fas fa-sticky-note text-info mr-1"></i>Catatan Alur (Opsional):
+                                </label>
+                                <textarea class="form-control form-control-sm" id="wfNotes" rows="2" placeholder="Tuliskan catatan verifikasi atau revisi nilai jika ada..."></textarea>
+                            </div>
+
+                            <!-- Keterangan Proteksi -->
+                            <div class="alert alert-warning small mb-0 py-2 px-3" id="wfLockNotice">
+                                <i class="fas fa-lock mr-1"></i>
+                                <span>Saat status <strong>Diverifikasi</strong> atau <strong>Disahkan</strong>, seluruh nilai rapor kelas ini terkunci dan tidak dapat diubah kembali oleh guru.</span>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-2 d-flex justify-content-between">
+                            <div>
+                                @if (Auth::user() && Auth::user()->role_id == 1)
+                                    <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold" id="btnWfUnlock">
+                                        <i class="fas fa-unlock mr-1"></i> Buka Kunci (Admin)
+                                    </button>
+                                @endif
+                            </div>
+                            <div id="wfActionButtons">
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+                                <button type="button" class="btn btn-info btn-sm font-weight-bold ml-1" id="btnWfSubmit">
+                                    <i class="fas fa-paper-plane mr-1"></i> Ajukan Nilai
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm font-weight-bold text-dark ml-1" id="btnWfVerify">
+                                    <i class="fas fa-check-double mr-1"></i> Verifikasi Nilai
+                                </button>
+                                <button type="button" class="btn btn-success btn-sm font-weight-bold ml-1" id="btnWfApproveLock">
+                                    <i class="fas fa-stamp mr-1"></i> Sahkan & Kunci Rapor
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -427,6 +601,7 @@
                         dataSrc: function(json) {
                             let students = json.data || [];
                             updateSummaryMetrics(students);
+                            fetchRaportStatus();
                             return students;
                         },
                         error: function() {
@@ -814,8 +989,130 @@
                 });
             });
 
-            // ── EXPORT RAPOR KE SERVER (ARSIP RAPORT) ─────────────────
-            $('#btnExportServer').click(function() {
+
+
+            // ── ALUR STATUS & PERSETUJUAN RAPOR (WORKFLOW) ────────────
+            let currentRaportStatusData = null;
+
+            function fetchRaportStatus() {
+                if (!class_id || !fst_id) return;
+
+                $.ajax({
+                    url: "{{ route('raport_status.get') }}",
+                    method: "GET",
+                    data: { class_id: class_id, fst_id: fst_id },
+                    success: function(res) {
+                        let d = res.data || {};
+                        currentRaportStatusData = d;
+
+                        $('#RaportStatusBadge')
+                            .removeClass('badge-secondary badge-info badge-warning badge-success')
+                            .addClass(d.badge_class || 'badge-secondary')
+                            .html(`<i class="fas fa-file-alt mr-1"></i>${d.status_label || 'Draft'}`);
+                    }
+                });
+            }
+
+            $('#btnOpenStatusWorkflow').click(function() {
+                if (!class_id || !fst_id) {
+                    SwalHelper.showError('Pilih Kelas dan Periode terlebih dahulu.');
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('raport_status.get') }}",
+                    method: "GET",
+                    data: { class_id: class_id, fst_id: fst_id },
+                    success: function(res) {
+                        let d = res.data || {};
+                        currentRaportStatusData = d;
+
+                        $('#wfStatusTitle').text(d.status_label || 'Draft (Masih Input)');
+                        $('#wfStatusBadge')
+                            .removeClass('badge-secondary badge-info badge-warning badge-success text-dark')
+                            .addClass(d.badge_class || 'badge-secondary')
+                            .text((d.status || 'draft').toUpperCase());
+
+                        $('#wfSubmitter').text(d.submitter_name ? `${d.submitter_name} (${d.submitted_at || '-'})` : 'Belum diajukan');
+                        $('#wfVerifier').text(d.verifier_name ? `${d.verifier_name} (${d.verified_at || '-'})` : 'Belum diverifikasi');
+                        $('#wfApprover').text(d.approver_name ? `${d.approver_name} (${d.approved_at || '-'})` : 'Belum disahkan');
+                        $('#wfNotes').val(d.notes || '');
+
+                        // Tombol action dinamis sesuai status
+                        let status = d.status || 'draft';
+                        $('#btnWfSubmit').prop('disabled', status !== 'draft');
+                        $('#btnWfVerify').prop('disabled', status !== 'submitted');
+                        $('#btnWfApproveLock').prop('disabled', status !== 'verified');
+
+                        if (status === 'verified' || status === 'approved_locked') {
+                            $('#wfLockNotice').removeClass('d-none');
+                        } else {
+                            $('#wfLockNotice').addClass('d-none');
+                        }
+
+                        $('#ModalRaportWorkflow').modal('show');
+                    }
+                });
+            });
+
+            // Action: Ajukan Nilai (Guru / Walas)
+            $('#btnWfSubmit').click(function() {
+                sendWorkflowAction("{{ route('raport_status.submit') }}", 'Ajukan nilai rapor kelas ini ke Wali Kelas?');
+            });
+
+            // Action: Verifikasi Nilai (Walas)
+            $('#btnWfVerify').click(function() {
+                sendWorkflowAction("{{ route('raport_status.verify') }}", 'Verifikasi nilai rapor kelas ini? Setelah diverifikasi, nilai tidak dapat diubah oleh guru mapel.');
+            });
+
+            // Action: Sahkan & Kunci (Kepsek / Admin)
+            $('#btnWfApproveLock').click(function() {
+                sendWorkflowAction("{{ route('raport_status.approveLock') }}", 'Sahkan & Kunci rapor kelas ini? Rapor akan berstatus final resmi.');
+            });
+
+            // Action: Buka Kunci (Admin Only)
+            $('#btnWfUnlock').click(function() {
+                sendWorkflowAction("{{ route('raport_status.unlock') }}", 'Buka kembali kuncian rapor ini ke status Draft?');
+            });
+
+            function sendWorkflowAction(url, confirmText) {
+                let notes = $('#wfNotes').val();
+                Swal.fire({
+                    title: 'Konfirmasi Alur Rapor',
+                    text: confirmText,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Lanjutkan',
+                    cancelButtonText: 'Batal'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            method: "POST",
+                            data: {
+                                class_id: class_id,
+                                fst_id: fst_id,
+                                notes: notes,
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(response) {
+                                $('#ModalRaportWorkflow').modal('hide');
+                                SwalHelper.showSuccess(response.message);
+                                fetchRaportStatus();
+                            },
+                            error: function(xhr) {
+                                let msg = xhr.responseJSON?.message || 'Gagal memperbarui status rapor.';
+                                SwalHelper.showError(msg);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // ── DOWNLOAD ZIP RAPOR KELAS (DUAL ENGINE) ─────────────────
+            $('#btnDownloadZipModal').click(function() {
                 if (!class_id || !fst_id) {
                     SwalHelper.showError('Pilih Kelas dan Periode terlebih dahulu.');
                     return;
@@ -824,65 +1121,169 @@
                 let dt = $('#valueTable').DataTable();
                 let total = dt.rows().data().length;
                 if (total === 0) {
-                    SwalHelper.showError('Tidak ada data siswa untuk diekspor.');
+                    SwalHelper.showError('Tidak ada data siswa untuk dibuatkan file ZIP.');
                     return;
                 }
 
-                $('#modalServerClass').text(class_name);
-                $('#modalServerFst').text(fst_name);
-                $('#modalServerTotal').text(`${total} Siswa`);
-                $('#ExportServerModal').modal('show');
+                $('#modalZipClass').text(class_name);
+                $('#modalZipFst').text(fst_name);
+                $('#modalZipTotal').text(`${total} Siswa`);
+
+                // Reset UI
+                $('#zipProgressContainer').addClass('d-none');
+                $('#zipDownloadReady').addClass('d-none');
+                $('#btnStartGenerateZip').prop('disabled', false).html('<i class="fas fa-play mr-1"></i> Mulai Buat File ZIP');
+                $('#btnCancelZipModal').prop('disabled', false);
+
+                $('#ModalDownloadZip').modal('show');
             });
 
-            $('#btnConfirmExportServer').click(function() {
-                let docType = $('input[name="server_doc_type"]:checked').val() || 'all';
+            let isGeneratingZip = false;
+
+            $('#btnStartGenerateZip').click(function() {
+                if (isGeneratingZip) return;
+
+                let engine = $('#activeZipEngine').val() || 'chunk';
+                let docType = $('input[name="zip_doc_type"]:checked').val() || 'all';
                 let tgl = sessionStorage.getItem('tgl_print') ?? '';
                 let kpt = sessionStorage.getItem('keputusan') ?? '';
 
-                $('#ExportServerModal').modal('hide');
+                $('#zipProgressContainer').removeClass('d-none');
+                $('#zipDownloadReady').addClass('d-none');
+                $('#btnStartGenerateZip').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Memproses...');
+                $('#btnCancelZipModal').prop('disabled', true);
+                isGeneratingZip = true;
 
-                Swal.fire({
-                    title: 'Meng-export Rapor ke Server...',
-                    html: 'Sedang membuat PDF rapor seluruh siswa dan menyimpannya ke arsip server.<br>Mohon tunggu sebentar...',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+                if (engine === 'queue') {
+                    // ── Mode Queue Worker ──
+                    $('#zipStatusText').html('<i class="fas fa-cogs fa-spin mr-1"></i> Mengirim job ke antrean server (Queue)...');
+                    $('#zipProgressBar').css('width', '10%');
+                    $('#zipPercentText').text('10%');
 
-                $.ajax({
-                    url: "{{ route('nilaiakhir.exportserver') }}",
-                    method: "POST",
-                    data: {
-                        class_id: class_id,
-                        fst_id: fst_id,
-                        type: docType,
-                        tgl_print: tgl,
-                        keputusan: kpt,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(res) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            html: `${res.message}<br><small class="text-muted">Berkas tersimpan di folder: <code>${res.folder}</code></small>`,
-                            showCancelButton: true,
-                            confirmButtonText: '<i class="fas fa-archive mr-1"></i> Buka Arsip Raport',
-                            cancelButtonText: 'Tutup',
-                            confirmButtonColor: '#28a745'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.open("{{ route('raport_explorer.index') }}", '_blank');
+                    $.ajax({
+                        url: "{{ route('nilaiakhir.zipQueue') }}",
+                        method: "POST",
+                        data: {
+                            class_id: class_id,
+                            fst_id: fst_id,
+                            type: docType,
+                            tgl_print: tgl,
+                            keputusan: kpt,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(res) {
+                            let pollInterval = setInterval(function() {
+                                $.ajax({
+                                    url: "{{ route('nilaiakhir.zipQueueStatus') }}",
+                                    method: "GET",
+                                    data: { class_id: class_id, fst_id: fst_id },
+                                    success: function(statusRes) {
+                                        let prog = statusRes.progress || 10;
+                                        $('#zipProgressBar').css('width', prog + '%');
+                                        $('#zipPercentText').text(prog + '%');
+                                        $('#zipStatusText').text(statusRes.message || 'Memproses di queue...');
+
+                                        if (statusRes.status === 'completed') {
+                                            clearInterval(pollInterval);
+                                            finishZipGeneration(statusRes.file_url, statusRes.filename);
+                                        } else if (statusRes.status === 'failed') {
+                                            clearInterval(pollInterval);
+                                            handleZipError(statusRes.message);
+                                        }
+                                    },
+                                    error: function() {
+                                        clearInterval(pollInterval);
+                                        handleZipError('Gagal memeriksa status antrean.');
+                                    }
+                                });
+                            }, 2500);
+                        },
+                        error: function(xhr) {
+                            handleZipError(xhr.responseJSON?.message || 'Gagal mengirim job ke queue.');
+                        }
+                    });
+                } else {
+                    // ── Mode Langsung / Client Batch Chunking (Aman Shared Hosting) ──
+                    let offset = 0;
+                    let limit = 4; // 4 siswa per request
+
+                    function executeNextChunk() {
+                        $.ajax({
+                            url: "{{ route('nilaiakhir.zipChunk') }}",
+                            method: "POST",
+                            data: {
+                                class_id: class_id,
+                                fst_id: fst_id,
+                                type: docType,
+                                tgl_print: tgl,
+                                keputusan: kpt,
+                                offset: offset,
+                                limit: limit,
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(res) {
+                                let pct = res.percent || 0;
+                                $('#zipProgressBar').css('width', pct + '%');
+                                $('#zipPercentText').text(pct + '%');
+                                $('#zipStatusText').html(`<i class="fas fa-spinner fa-spin mr-1"></i> Merender PDF: ${res.next_offset} dari ${res.total} siswa...`);
+
+                                if (!res.is_complete) {
+                                    offset = res.next_offset;
+                                    executeNextChunk();
+                                } else {
+                                    // Semua PDF siswa selesai, sekarang kemas ke ZIP!
+                                    $('#zipStatusText').html('<i class="fas fa-file-archive fa-spin mr-1"></i> Mengemas seluruh PDF ke dalam file ZIP...');
+                                    $.ajax({
+                                        url: "{{ route('nilaiakhir.zipFinalize') }}",
+                                        method: "POST",
+                                        data: {
+                                            class_id: class_id,
+                                            fst_id: fst_id,
+                                            _token: "{{ csrf_token() }}"
+                                        },
+                                        success: function(finalRes) {
+                                            finishZipGeneration(finalRes.download_url, finalRes.filename);
+                                        },
+                                        error: function(xhr) {
+                                            handleZipError(xhr.responseJSON?.message || 'Gagal mengemas berkas ZIP.');
+                                        }
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                handleZipError(xhr.responseJSON?.message || 'Gagal merender batch rapor siswa.');
                             }
                         });
-                    },
-                    error: function(xhr) {
-                        let msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengekspor ke server.';
-                        SwalHelper.showError(msg);
                     }
-                });
+
+                    executeNextChunk();
+                }
             });
+
+            function finishZipGeneration(downloadUrl, filename) {
+                isGeneratingZip = false;
+                $('#zipProgressBar').removeClass('progress-bar-animated').css('width', '100%');
+                $('#zipPercentText').text('100%');
+                $('#zipStatusText').html('<i class="fas fa-check text-success mr-1"></i> Pembuatan file ZIP selesai!');
+
+                $('#btnDownloadZipResult').attr('href', downloadUrl).attr('download', filename);
+                $('#zipFilenameReady').text(filename);
+                $('#zipDownloadReady').removeClass('d-none');
+
+                $('#btnStartGenerateZip').addClass('d-none');
+                $('#btnCancelZipModal').prop('disabled', false).text('Selesai');
+
+                // Otomatis trigger unduh ke browser
+                window.location.href = downloadUrl;
+            }
+
+            function handleZipError(msg) {
+                isGeneratingZip = false;
+                $('#zipStatusText').html(`<i class="fas fa-times text-danger mr-1"></i> ${msg}`);
+                $('#btnStartGenerateZip').prop('disabled', false).html('<i class="fas fa-redo mr-1"></i> Coba Lagi');
+                $('#btnCancelZipModal').prop('disabled', false);
+                SwalHelper.showError(msg);
+            }
 
         });
     </script>

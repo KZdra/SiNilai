@@ -81,6 +81,15 @@
             padding-left: 1.75rem !important;
             font-size: 0.9rem;
         }
+        /* Fix AdminLTE clearfix pseudo-element interfering with flexbox card-header */
+        .card-header.d-flex::after,
+        .card-header.d-flex::before {
+            display: none !important;
+        }
+        .card-header.d-flex > .card-tools {
+            margin-right: 0 !important;
+            margin-left: auto !important;
+        }
     </style>
 </head>
 

@@ -360,4 +360,308 @@ class UserController extends Controller
             'message' => "Akun login untuk {$student->nama} berhasil diaktifkan! Username: {$username}, Password: siswa123"
         ], 201);
     }
+
+    // ── Download Template Excel Guru & Walas (Dengan Dropdown Kelas) ──
+    public function downloadTemplate()
+    {
+        $classes = DB::table('class')->orderBy('class_name', 'asc')->pluck('class_name');
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+        // ── Sheet 1: Data Guru & Walas ──
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data_Guru_Walas');
+
+        // Headers
+        $headers = [
+            'A1' => 'No',
+            'B1' => 'Username',
+            'C1' => 'Nama Lengkap',
+            'D1' => 'NIP',
+            'E1' => 'Email',
+            'F1' => 'Wali Kelas (Pilih Dropdown)',
+            'G1' => 'Role (Pilih Dropdown)',
+            'H1' => 'Password (Default: guru123)',
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        // Style Header
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0F766E'], // Teal modern
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '0D5C56'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
+        // ── Sheet 2: Referensi Daftar Kelas untuk Dropdown ──
+        $classSheet = $spreadsheet->createSheet();
+        $classSheet->setTitle('Daftar_Kelas');
+        $classSheet->setCellValue('A1', 'Daftar Kelas Tersedia');
+        $classSheet->setCellValue('A2', '- (Bukan Walas)');
+
+        $r = 3;
+        foreach ($classes as $cName) {
+            $classSheet->setCellValue("A{$r}", $cName);
+            $r++;
+        }
+        $lastClassRow = max(2, $r - 1);
+
+        $classSheet->getStyle('A1')->getFont()->setBold(true);
+        $classSheet->getColumnDimension('A')->setAutoSize(true);
+
+        // Contoh Data (Baris 2 & 3)
+        $sampleRows = [
+            [
+                'no' => 1,
+                'username' => 'walikelas1',
+                'nama' => 'Wali Kelas Satu, S.Pd',
+                'nip' => '198501012010011001',
+                'email' => 'walikelas1@icb.sch.id',
+                'walas' => $classes->first() ?? '- (Bukan Walas)',
+                'role' => 'Guru',
+                'password' => 'guru123',
+            ],
+            [
+                'no' => 2,
+                'username' => 'guru_matematika',
+                'nama' => 'Guru Matematika, M.Pd',
+                'nip' => '199002152015022002',
+                'email' => 'gurumtk@icb.sch.id',
+                'walas' => '- (Bukan Walas)',
+                'role' => 'Guru',
+                'password' => 'guru123',
+            ]
+        ];
+
+        $rowIdx = 2;
+        foreach ($sampleRows as $row) {
+            $sheet->setCellValue("A{$rowIdx}", $row['no']);
+            $sheet->setCellValue("B{$rowIdx}", $row['username']);
+            $sheet->setCellValue("C{$rowIdx}", $row['nama']);
+            $sheet->setCellValue("D{$rowIdx}", $row['nip']);
+            $sheet->setCellValue("E{$rowIdx}", $row['email']);
+            $sheet->setCellValue("F{$rowIdx}", $row['walas']);
+            $sheet->setCellValue("G{$rowIdx}", $row['role']);
+            $sheet->setCellValue("H{$rowIdx}", $row['password']);
+            $rowIdx++;
+        }
+
+        // Terapkan Data Validation (Dropdown) dari baris 2 hingga 200
+        for ($i = 2; $i <= 200; $i++) {
+            // Dropdown Kolom F (Wali Kelas)
+            $validation = $sheet->getCell("F{$i}")->getDataValidation();
+            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+            $validation->setAllowBlank(true);
+            $validation->setShowInputMessage(true);
+            $validation->setShowErrorMessage(true);
+            $validation->setShowDropDown(true);
+            $validation->setErrorTitle('Pilihan Tidak Valid');
+            $validation->setError('Silakan pilih salah satu kelas dari daftar yang tersedia.');
+            $validation->setPromptTitle('Pilih Wali Kelas');
+            $validation->setPrompt('Pilih kelas binaan guru ini, atau pilih "- (Bukan Walas)".');
+            $validation->setFormula1("Daftar_Kelas!\$A\$2:\$A\${$lastClassRow}");
+
+            // Dropdown Kolom G (Role)
+            $roleVal = $sheet->getCell("G{$i}")->getDataValidation();
+            $roleVal->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $roleVal->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+            $roleVal->setAllowBlank(false);
+            $roleVal->setShowDropDown(true);
+            $roleVal->setErrorTitle('Role Tidak Valid');
+            $roleVal->setError('Pilih Guru atau Admin.');
+            $roleVal->setFormula1('"Guru,Admin"');
+        }
+
+        // Set column widths
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(30);
+        $sheet->getColumnDimension('D')->setWidth(24);
+        $sheet->getColumnDimension('E')->setWidth(28);
+        $sheet->getColumnDimension('F')->setWidth(26);
+        $sheet->getColumnDimension('G')->setWidth(16);
+        $sheet->getColumnDimension('H')->setWidth(25);
+
+        // Aktifkan kembali Sheet 1 sebagai sheet aktif saat file dibuka
+        $spreadsheet->setActiveSheetIndex(0);
+
+        $filename = 'Template_Import_Guru_Walas.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    // ── Import Akun Guru & Penugasan Wali Kelas dari Excel ─────────
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:5120',
+        ], [
+            'file.required' => 'Berkas Excel wajib diunggah.',
+            'file.mimes' => 'Berkas harus berupa file Excel (.xlsx atau .xls).',
+            'file.max' => 'Ukuran berkas maksimal 5MB.',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
+            $sheet = $spreadsheet->getSheet(0); // Ambil sheet pertama (Data_Guru_Walas)
+            $rows = $sheet->toArray(null, true, true, false);
+
+            if (count($rows) <= 1) {
+                return response()->json([
+                    'message' => 'Berkas Excel kosong atau tidak memiliki baris data.'
+                ], 422);
+            }
+
+            // Peta nama kelas ke ID
+            $classesMap = DB::table('class')->pluck('id', 'class_name')->toArray();
+
+            $inserted = 0;
+            $updated = 0;
+            $skipped = 0;
+            $errors = [];
+
+            // Mulai dari baris ke-2 (index 1 karena index 0 adalah header)
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                $rowNum = $i + 1;
+
+                $username = isset($row[1]) ? trim((string)$row[1]) : '';
+                $nama     = isset($row[2]) ? trim((string)$row[2]) : '';
+                $nip      = isset($row[3]) ? trim((string)$row[3]) : '';
+                $email    = isset($row[4]) ? trim((string)$row[4]) : '';
+                $walasStr = isset($row[5]) ? trim((string)$row[5]) : '';
+                $roleStr  = isset($row[6]) ? trim((string)$row[6]) : '';
+                $password = isset($row[7]) ? trim((string)$row[7]) : '';
+
+                // Lewati baris kosong
+                if (empty($username) && empty($nama) && empty($email)) {
+                    continue;
+                }
+
+                if (empty($username) || empty($nama)) {
+                    $errors[] = "Baris {$rowNum}: Username dan Nama Lengkap wajib diisi.";
+                    $skipped++;
+                    continue;
+                }
+
+                // Jika email kosong, buatkan format default dari username
+                if (empty($email)) {
+                    $cleanU = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $username));
+                    $email = $cleanU . '@sekolah.id';
+                }
+
+                // Resolusi Kelas Binaan Wali Kelas
+                $classId = null;
+                if (!empty($walasStr) && $walasStr !== '-' && !str_contains(strtolower($walasStr), 'bukan')) {
+                    foreach ($classesMap as $cName => $cId) {
+                        if (strcasecmp(trim($cName), $walasStr) === 0) {
+                            $classId = $cId;
+                            break;
+                        }
+                    }
+                }
+
+                // Resolusi Role
+                // Jika dijadikan wali kelas, otomatis minimal role Guru (2)
+                $roleId = 2;
+                if (strcasecmp($roleStr, 'admin') === 0 && $classId === null) {
+                    $roleId = 1;
+                }
+
+                // Resolusi Password
+                $rawPass = !empty($password) ? $password : 'guru123';
+
+                // Cek apakah user sudah ada berdasarkan username atau email
+                $existing = DB::table('users')
+                    ->where('username', $username)
+                    ->orWhere('email', $email)
+                    ->first();
+
+                if ($existing) {
+                    $updatePayload = [
+                        'name' => $nama,
+                        'nip' => !empty($nip) ? $nip : null,
+                        'email' => $email,
+                        'role_id' => $roleId,
+                        'class_id' => $classId,
+                        'updated_at' => now(),
+                    ];
+
+                    if (!empty($password)) {
+                        $updatePayload['password'] = Hash::make($rawPass);
+                    }
+
+                    // Jika kelas ditetapkan, lepaskan kelas dari guru lain agar tidak tumpang tindih
+                    if ($classId !== null) {
+                        DB::table('users')->where('class_id', $classId)->where('id', '!=', $existing->id)->update(['class_id' => null]);
+                    }
+
+                    DB::table('users')->where('id', $existing->id)->update($updatePayload);
+                    $updated++;
+                } else {
+                    $newId = DB::table('users')->insertGetId([
+                        'username' => $username,
+                        'name' => $nama,
+                        'nip' => !empty($nip) ? $nip : null,
+                        'email' => $email,
+                        'password' => Hash::make($rawPass),
+                        'role_id' => $roleId,
+                        'class_id' => $classId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    if ($classId !== null) {
+                        DB::table('users')->where('class_id', $classId)->where('id', '!=', $newId)->update(['class_id' => null]);
+                    }
+
+                    $inserted++;
+                }
+            }
+
+            \App\Services\MasterDataCache::clearDashboardCache();
+
+            $msg = "Import berhasil! {$inserted} guru/walas baru ditambahkan, {$updated} data diperbarui.";
+            if ($skipped > 0) {
+                $msg .= " ({$skipped} baris dilewati karena data tidak lengkap).";
+            }
+
+            return response()->json([
+                'message' => $msg,
+                'inserted' => $inserted,
+                'updated' => $updated,
+                'skipped' => $skipped,
+                'errors' => $errors,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat memproses berkas Excel: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

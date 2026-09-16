@@ -67,16 +67,32 @@ class CbtSyncController extends Controller
         $genderField = Schema::hasColumn('students', 'gender') ? 's.gender' : 's.jenis_kelamin as gender';
 
         $query = DB::table('students as s')
-            ->join('class as c', 's.class_id', '=', 'c.id')
+            ->leftJoin('class as c', 's.class_id', '=', 'c.id')
             ->select(
+                's.id as student_id',
                 's.nis',
                 's.nisn',
                 's.nama',
+                's.status',
+                's.tahun_lulus',
                 $genderField,
                 's.class_id',
-                'c.class_name',
+                DB::raw("COALESCE(c.class_name, 'Alumni / Lulus') as class_name"),
                 DB::raw('COALESCE(s.updated_at, s.created_at) as updated_at')
             );
+
+        // Filter status siswa: default 'aktif', dapat diisi 'all', 'lulus', atau 'mutasi'
+        $statusFilter = $request->query('status', 'aktif');
+        if ($statusFilter !== 'all') {
+            if ($statusFilter === 'lulus' || $statusFilter === 'alumni') {
+                $query->where(function ($q) {
+                    $q->where('s.status', 'lulus')
+                      ->orWhereNull('s.class_id');
+                });
+            } else {
+                $query->where('s.status', $statusFilter);
+            }
+        }
 
         if ($request->filled('class_id')) {
             $query->where('s.class_id', $request->query('class_id'));
@@ -103,14 +119,15 @@ class CbtSyncController extends Controller
             ->get();
 
         Log::channel('cbt_sync')->info('CBT Sync: Students retrieved', [
-            'count' => $students->count(),
+            'count'    => $students->count(),
             'class_id' => $request->query('class_id'),
-            'since' => $request->query('since'),
+            'status'   => $statusFilter,
+            'since'    => $request->query('since'),
         ]);
 
         return response()->json([
             'status' => 'success',
-            'data' => $students,
+            'data'   => $students,
         ]);
     }
 
@@ -280,15 +297,40 @@ class CbtSyncController extends Controller
             ], 422);
         }
 
+        // Cek status kuncian rapor jika tabel raport_statuses ada
+        if (Schema::hasTable('raport_statuses')) {
+            $raportStatus = DB::table('raport_statuses')
+                ->where('class_id', $classId)
+                ->where('fst_id', $fstId)
+                ->value('status');
+
+            if ($raportStatus === 'approved_locked') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Nilai kelas untuk semester ini telah disahkan dan dikunci oleh Kepala Sekolah. Nilai tidak dapat diubah.',
+                ], 403);
+            }
+        }
+
         $students = DB::table('students')
             ->where('class_id', $classId)
             ->select('id', 'nis', 'nisn', 'nama')
             ->get();
 
+        // Jika kelas kosong (misal siswa sudah lulus atau dipromosikan ke kelas baru), cari dari riwayat rombel!
+        if ($students->isEmpty() && Schema::hasTable('student_class_history')) {
+            $students = DB::table('student_class_history as h')
+                ->join('students as s', 'h.student_id', '=', 's.id')
+                ->where('h.class_id', $classId)
+                ->where('h.fst_id', $fstId)
+                ->select('s.id', 's.nis', 's.nisn', 's.nama')
+                ->get();
+        }
+
         if ($students->isEmpty()) {
             return response()->json([
                 'status'  => 'error',
-                'message' => "Tidak ada data siswa yang ditemukan untuk kelas dengan ID {$classId}.",
+                'message' => "Tidak ada data siswa yang ditemukan untuk kelas dengan ID {$classId} (baik di rombel aktif maupun riwayat rombel).",
             ], 404);
         }
 

@@ -266,13 +266,61 @@
     <div class="content">
         <div class="container-fluid">
 
+            <!-- ── PANDUAN & TIPS PENGINPUTAN NILAI (INFORMATIF) ────────────────────── -->
+            <div class="card card-outline card-info shadow-sm mb-3" id="tipsGuruCard" style="border-radius: 8px;">
+                <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="card-title font-weight-bold text-dark mb-0">
+                        <i class="fas fa-lightbulb text-warning mr-2"></i>Tips & Petunjuk Penting Penginputan Nilai
+                    </h6>
+                    <div class="card-tools ml-auto">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Ciutkan / Buka Tips">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="remove" title="Tutup Sementara">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body py-2 px-3 bg-light">
+                    <div class="row">
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <div class="d-flex">
+                                <div class="mr-2 text-primary"><i class="fas fa-edit fa-lg"></i></div>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">1. Sumatif Harian vs STS/SAS</strong>
+                                    <span class="text-muted">Isi kolom LM1 s/d LM10 sesuai capaian materi harian. Nilai akhir rapor dihitung otomatis bersama STS/SAS secara proporsional.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <div class="d-flex">
+                                <div class="mr-2 text-success"><i class="fas fa-sync-alt fa-lg"></i></div>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">2. Tarik Nilai CBT & Diff Preview</strong>
+                                    <span class="text-muted">Gunakan tombol <strong>Tarik Nilai CBT</strong>. Periksa modal pembanding (Diff) lalu centang hanya siswa yang ingin diperbarui agar nilai remedial manual tidak tertimpa.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <div class="mr-2 text-danger"><i class="fas fa-lock fa-lg"></i></div>
+                                <div class="small">
+                                    <strong class="text-dark d-block mb-1">3. Kunci Nilai Otomatis</strong>
+                                    <span class="text-muted">Jika wali kelas/admin telah memverifikasi atau mengesahkan rapor kelas, nilai akan otomatis terkunci demi integritas lembar cetak rapor.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Panel Filter Terpadu (Unified 1-Row Filter) -->
             <div class="card card-outline card-primary shadow-sm mb-3" id="filterCard">
                 <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                     <h5 class="card-title font-weight-bold text-dark mb-0">
                         <i class="fas fa-filter text-primary mr-1"></i> Filter Kelas, Periode & Mata Pelajaran
                     </h5>
-                    <div class="card-tools">
+                    <div class="card-tools ml-auto">
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
                         </button>
@@ -553,82 +601,146 @@
                     </button>
                 </div>
                 <form id="cbtSyncForm">
-                    <div class="modal-body">
-                        <!-- Status Server CBT Box -->
-                        <div class="card card-outline card-secondary mb-3">
-                            <div class="card-body p-3 bg-light rounded">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap">
-                                    <div>
-                                        <span class="text-muted d-block small">Endpoint CBT Server:</span>
-                                        <code class="font-weight-bold text-dark" id="cbtEndpointDisplay">{{ config('services.cbt.url', env('CBT_API_URL', 'http://localhost:8001/api/v1')) }}</code>
+                    <div class="modal-body p-3">
+                        <!-- Step 1: Opsi & Konfigurasi Tarik Nilai -->
+                        <div id="cbtSyncStep1">
+                            <!-- Status Server CBT Box -->
+                            <div class="card card-outline card-secondary mb-3">
+                                <div class="card-body p-3 bg-light rounded">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                        <div>
+                                            <span class="text-muted d-block small">Endpoint CBT Server:</span>
+                                            <code class="font-weight-bold text-dark" id="cbtEndpointDisplay">{{ config('services.cbt.url', env('CBT_API_URL', 'http://localhost:8001/api/v1')) }}</code>
+                                        </div>
+                                        <div class="mt-2 mt-sm-0 d-flex align-items-center">
+                                            <span id="cbtStatusBadge" class="badge badge-secondary px-2 py-1 mr-2">
+                                                <i class="fas fa-question-circle mr-1"></i>Belum dicek
+                                            </span>
+                                            <button type="button" class="btn btn-xs btn-outline-primary" id="btnTestCbtConnection">
+                                                <i class="fas fa-plug mr-1"></i>Tes Koneksi
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="mt-2 mt-sm-0 d-flex align-items-center">
-                                        <span id="cbtStatusBadge" class="badge badge-secondary px-2 py-1 mr-2">
-                                            <i class="fas fa-question-circle mr-1"></i>Belum dicek
-                                        </span>
-                                        <button type="button" class="btn btn-xs btn-outline-primary" id="btnTestCbtConnection">
-                                            <i class="fas fa-plug mr-1"></i>Tes Koneksi
-                                        </button>
+                                    <div id="cbtConnectionMsg" class="small mt-1 text-muted d-none"></div>
+                                </div>
+                            </div>
+
+                            <!-- Target Data Summary -->
+                            <div class="alert alert-info py-2 px-3 mb-3">
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <strong>Kelas:</strong> <span id="cbtModalClass">-</span>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <strong>Mapel:</strong> <span id="cbtModalMapel">-</span>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <strong>Fase/Semester:</strong> <span id="cbtModalFst">-</span>
                                     </div>
                                 </div>
-                                <div id="cbtConnectionMsg" class="small mt-1 text-muted d-none"></div>
+                            </div>
+
+                            <!-- Form Options -->
+                            <div class="form-group">
+                                <label for="cbt_target_field" class="font-weight-bold">
+                                    <i class="fas fa-bullseye mr-1 text-primary"></i>Simpan ke Kolom Nilai Rapor:
+                                </label>
+                                <select name="target_field" id="cbt_target_field" class="form-control font-weight-bold">
+                                    <optgroup label="Asesmen Sumatif Kurikulum Merdeka">
+                                        <option value="value_sts" selected>Sumatif Tengah Semester (STS)</option>
+                                        <option value="value_sas">Sumatif Akhir Semester (SAS)</option>
+                                    </optgroup>
+                                    <optgroup label="Asesmen Formatif / Nilai Harian (UH)">
+                                        <option value="value_daily">Nilai Harian 1 (Sumatif 1)</option>
+                                        <option value="value_daily_2">Nilai Harian 2 (Sumatif 2)</option>
+                                        <option value="value_daily_3">Nilai Harian 3 (Sumatif 3)</option>
+                                        <option value="value_daily_4">Nilai Harian 4 (Sumatif 4)</option>
+                                        <option value="value_daily_5">Nilai Harian 5 (Sumatif 5)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="font-weight-bold d-block">
+                                    <i class="fas fa-cog mr-1 text-primary"></i>Opsi Pengisian:
+                                </label>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="overwrite_true" name="overwrite" value="1" class="custom-control-input" checked>
+                                    <label class="custom-control-label" for="overwrite_true">Timpa nilai yang sudah ada (Overwrite)</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="overwrite_false" name="overwrite" value="0" class="custom-control-input">
+                                    <label class="custom-control-label" for="overwrite_false">Hanya isi nilai yang masih kosong</label>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Target Data Summary -->
-                        <div class="alert alert-info py-2 px-3 mb-3">
-                            <div class="row">
-                                <div class="col-sm-4">
-                                    <strong>Kelas:</strong> <span id="cbtModalClass">-</span>
+                        <!-- Step 2: Modal Diff Preview (Tabel Pembanding Nilai) -->
+                        <div id="cbtSyncStep2" class="d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+                                <div>
+                                    <span class="font-weight-bold text-dark"><i class="fas fa-balance-scale mr-1 text-primary"></i>Pratinjau Perubahan Nilai:</span>
+                                    <span id="diffTargetFieldBadge" class="badge badge-primary ml-1">STS</span>
                                 </div>
-                                <div class="col-sm-4">
-                                    <strong>Mapel:</strong> <span id="cbtModalMapel">-</span>
-                                </div>
-                                <div class="col-sm-4">
-                                    <strong>Fase/Semester:</strong> <span id="cbtModalFst">-</span>
+                                <div class="mt-1 mt-sm-0">
+                                    <span class="badge badge-success px-2 py-1 mr-1" id="badgeDiffNew">0 Nilai Baru</span>
+                                    <span class="badge badge-warning text-dark px-2 py-1 mr-1" id="badgeDiffChanged">0 Berubah</span>
+                                    <span class="badge badge-secondary px-2 py-1" id="badgeDiffSame">0 Sama</span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Form Options -->
-                        <div class="form-group">
-                            <label for="cbt_target_field" class="font-weight-bold">
-                                <i class="fas fa-bullseye mr-1 text-primary"></i>Simpan ke Kolom Nilai Rapor:
-                            </label>
-                            <select name="target_field" id="cbt_target_field" class="form-control font-weight-bold">
-                                <optgroup label="Asesmen Sumatif Kurikulum Merdeka">
-                                    <option value="value_sts" selected>Sumatif Tengah Semester (STS)</option>
-                                    <option value="value_sas">Sumatif Akhir Semester (SAS)</option>
-                                </optgroup>
-                                <optgroup label="Asesmen Formatif / Nilai Harian (UH)">
-                                    <option value="value_daily">Nilai Harian 1 (Sumatif 1)</option>
-                                    <option value="value_daily_2">Nilai Harian 2 (Sumatif 2)</option>
-                                    <option value="value_daily_3">Nilai Harian 3 (Sumatif 3)</option>
-                                    <option value="value_daily_4">Nilai Harian 4 (Sumatif 4)</option>
-                                    <option value="value_daily_5">Nilai Harian 5 (Sumatif 5)</option>
-                                </optgroup>
-                            </select>
-                        </div>
-
-                        <div class="form-group mb-0">
-                            <label class="font-weight-bold d-block">
-                                <i class="fas fa-cog mr-1 text-primary"></i>Opsi Pengisian:
-                            </label>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" id="overwrite_true" name="overwrite" value="1" class="custom-control-input" checked>
-                                <label class="custom-control-label" for="overwrite_true">Timpa nilai yang sudah ada (Overwrite)</label>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" id="btnSelectAllDiff">Pilih Semua</button>
+                                    <button type="button" class="btn btn-outline-warning text-dark" id="btnSelectChangedDiff">Pilih Berubah Saja</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btnUnselectAllDiff">Batal Pilih</button>
+                                </div>
+                                <span class="small text-muted" id="diffSelectedCount">0 siswa dipilih</span>
                             </div>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" id="overwrite_false" name="overwrite" value="0" class="custom-control-input">
-                                <label class="custom-control-label" for="overwrite_false">Hanya isi nilai yang masih kosong</label>
+
+                            <div class="table-responsive border rounded" style="max-height: 330px; overflow-y: auto;">
+                                <table class="table table-sm table-striped table-hover mb-0 text-center" id="diffPreviewTable">
+                                    <thead class="bg-dark text-white sticky-top">
+                                        <tr>
+                                            <th style="width: 40px;"><input type="checkbox" id="checkAllDiffMaster" checked></th>
+                                            <th style="width: 40px;">No</th>
+                                            <th class="text-left">Nama Siswa</th>
+                                            <th>NISN</th>
+                                            <th>Nilai Rapor</th>
+                                            <th>Nilai CBT</th>
+                                            <th>Selisih</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="diffPreviewTableBody">
+                                        <!-- Dynamic JS Rows -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-warning font-weight-bold" id="btnSubmitCbtSync">
-                            <i class="fas fa-cloud-download-alt mr-1"></i>Mulai Tarik Nilai
-                        </button>
+                        
+                        <!-- Footer buttons for Step 1 -->
+                        <div id="footerStep1" class="d-inline">
+                            <button type="button" class="btn btn-info font-weight-bold" id="btnPreviewCbtSync">
+                                <i class="fas fa-eye mr-1"></i>Pratinjau Perubahan (Diff Preview)
+                            </button>
+                            <button type="submit" class="btn btn-warning font-weight-bold" id="btnSubmitCbtSync">
+                                <i class="fas fa-cloud-download-alt mr-1"></i>Langsung Tarik Semua
+                            </button>
+                        </div>
+
+                        <!-- Footer buttons for Step 2 -->
+                        <div id="footerStep2" class="d-none">
+                            <button type="button" class="btn btn-outline-secondary mr-1" id="btnBackToStep1">
+                                <i class="fas fa-arrow-left mr-1"></i>Kembali
+                            </button>
+                            <button type="button" class="btn btn-success font-weight-bold" id="btnApplySelectedCbt">
+                                <i class="fas fa-check-circle mr-1"></i>Terapkan Nilai Terpilih
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1293,7 +1405,25 @@
         });
 
         @if (\App\Models\Setting::isModuleEnabled('cbt_sync', true))
-        // ── CBT Sync Modal ─────────────────────────────────────────────
+        // ── CBT Sync Modal & Diff Preview ──────────────────────────────
+        let currentDiffData = [];
+
+        function resetCbtModalSteps() {
+            $('#cbtSyncStep1').removeClass('d-none');
+            $('#cbtSyncStep2').addClass('d-none');
+            $('#footerStep1').removeClass('d-none').addClass('d-inline');
+            $('#footerStep2').addClass('d-none');
+            $('#diffPreviewTableBody').empty();
+            currentDiffData = [];
+        }
+
+        function updateDiffSelectedCounter() {
+            let totalChecked = $('.diff-item-check:checked').length;
+            $('#diffSelectedCount').text(`${totalChecked} siswa dipilih`);
+            $('#btnApplySelectedCbt').html(`<i class="fas fa-check-circle mr-1"></i>Terapkan Nilai Terpilih (${totalChecked} Siswa)`);
+            $('#btnApplySelectedCbt').prop('disabled', totalChecked === 0);
+        }
+
         function openCbtModal() {
             if (!class_id || !mapel_id || !fst_id) {
                 Swal.fire({
@@ -1307,11 +1437,19 @@
             $('#cbtModalClass').text(class_name);
             $('#cbtModalMapel').text(mapel_name);
             $('#cbtModalFst').text(fst_name);
+            resetCbtModalSteps();
             $('#cbtSyncModal').modal('show');
         }
 
         $('#cbtSyncBtn').click(function() {
             openCbtModal();
+        });
+
+        $('#btnBackToStep1').click(function() {
+            $('#cbtSyncStep1').removeClass('d-none');
+            $('#cbtSyncStep2').addClass('d-none');
+            $('#footerStep1').removeClass('d-none').addClass('d-inline');
+            $('#footerStep2').addClass('d-none');
         });
 
         $('#btnTestCbtConnection').click(function() {
@@ -1347,6 +1485,223 @@
             });
         });
 
+        // ── Pratinjau Nilai CBT (Diff Preview) Handler ─────────────────
+        $('#btnPreviewCbtSync').click(function() {
+            let targetField = $('#cbt_target_field').val();
+            let targetText = $('#cbt_target_field option:selected').text();
+
+            Swal.fire({
+                title: 'Mengambil Data CBT...',
+                html: 'Menghubungi server CBT dan membandingkan dengan nilai rapor saat ini...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: "{{ route('value.cbtPreview') }}",
+                type: "POST",
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                },
+                data: {
+                    class_id: class_id,
+                    mapel_id: mapel_id,
+                    fst_id: fst_id,
+                    target_field: targetField
+                },
+                success: function(res) {
+                    Swal.close();
+                    let items = res.data || [];
+                    currentDiffData = items;
+
+                    if (items.length === 0) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Tidak Ada Data',
+                            text: 'Tidak ada data nilai ujian yang ditemukan di CBT untuk kelas dan mapel ini.'
+                        });
+                        return;
+                    }
+
+                    // Update summary badges
+                    let stats = res.meta?.stats || {};
+                    $('#diffTargetFieldBadge').text(targetText);
+                    $('#badgeDiffNew').text(`${stats.new || 0} Nilai Baru`);
+                    $('#badgeDiffChanged').text(`${stats.changed || 0} Berubah`);
+                    $('#badgeDiffSame').text(`${stats.same || 0} Sama`);
+
+                    // Populate table
+                    let tbody = $('#diffPreviewTableBody');
+                    tbody.empty();
+
+                    items.forEach((it, idx) => {
+                        let statusBadge = '';
+                        let rowClass = '';
+                        if (it.status === 'new') {
+                            statusBadge = '<span class="badge badge-success"><i class="fas fa-plus mr-1"></i>Baru</span>';
+                            rowClass = 'table-success';
+                        } else if (it.status === 'changed') {
+                            statusBadge = '<span class="badge badge-warning text-dark"><i class="fas fa-exchange-alt mr-1"></i>Berubah</span>';
+                            rowClass = 'table-warning';
+                        } else {
+                            statusBadge = '<span class="badge badge-secondary"><i class="fas fa-equals mr-1"></i>Sama</span>';
+                        }
+
+                        let diffText = '-';
+                        if (it.diff !== null) {
+                            diffText = it.diff > 0 ? `+${it.diff}` : `${it.diff}`;
+                        }
+
+                        let checkedAttr = it.selected ? 'checked' : '';
+
+                        let tr = `
+                            <tr class="${rowClass}">
+                                <td>
+                                    <input type="checkbox" class="diff-item-check" data-student-id="${it.student_id}" data-status="${it.status}" ${checkedAttr}>
+                                </td>
+                                <td>${idx + 1}</td>
+                                <td class="text-left font-weight-bold">${it.nama}</td>
+                                <td>${it.nisn || it.nis || '-'}</td>
+                                <td>${it.current_score !== null ? it.current_score : '<span class="text-muted font-italic">Kosong</span>'}</td>
+                                <td class="font-weight-bold text-primary">${it.cbt_score !== null ? it.cbt_score : '-'}</td>
+                                <td><span class="font-weight-bold">${diffText}</span></td>
+                                <td>${statusBadge}</td>
+                            </tr>
+                        `;
+                        tbody.append(tr);
+                    });
+
+                    // Switch view to Step 2
+                    $('#cbtSyncStep1').addClass('d-none');
+                    $('#cbtSyncStep2').removeClass('d-none');
+                    $('#footerStep1').removeClass('d-inline').addClass('d-none');
+                    $('#footerStep2').removeClass('d-none');
+
+                    updateDiffSelectedCounter();
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Memuat Pratinjau',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan saat menghubungi server CBT.',
+                        confirmButtonText: 'Tutup'
+                    });
+                }
+            });
+        });
+
+        // Checkbox Master & Filter Helpers
+        $('#checkAllDiffMaster').change(function() {
+            let isChecked = $(this).is(':checked');
+            $('.diff-item-check').prop('checked', isChecked);
+            updateDiffSelectedCounter();
+        });
+
+        $('#btnSelectAllDiff').click(function() {
+            $('.diff-item-check').prop('checked', true);
+            $('#checkAllDiffMaster').prop('checked', true);
+            updateDiffSelectedCounter();
+        });
+
+        $('#btnSelectChangedDiff').click(function() {
+            $('.diff-item-check').each(function() {
+                let st = $(this).data('status');
+                $(this).prop('checked', st === 'new' || st === 'changed');
+            });
+            updateDiffSelectedCounter();
+        });
+
+        $('#btnUnselectAllDiff').click(function() {
+            $('.diff-item-check').prop('checked', false);
+            $('#checkAllDiffMaster').prop('checked', false);
+            updateDiffSelectedCounter();
+        });
+
+        $(document).on('change', '.diff-item-check', function() {
+            updateDiffSelectedCounter();
+        });
+
+        // ── Eksekusi Tarik Nilai Terpilih (Selective Commit) ────────────
+        $('#btnApplySelectedCbt').click(function() {
+            let selectedStudentIds = [];
+            $('.diff-item-check:checked').each(function() {
+                selectedStudentIds.push(parseInt($(this).data('student-id')));
+            });
+
+            if (selectedStudentIds.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pilih Siswa',
+                    text: 'Silahkan centang minimal 1 siswa yang nilainya ingin diperbarui.'
+                });
+                return;
+            }
+
+            let targetField = $('#cbt_target_field').val();
+            let targetText = $('#cbt_target_field option:selected').text();
+            let overwriteVal = $('input[name="overwrite"]:checked').val();
+
+            Swal.fire({
+                title: 'Terapkan Nilai CBT?',
+                html: `Sistem akan menyimpan nilai ujian CBT untuk <strong>${selectedStudentIds.length} siswa terpilih</strong> ke kolom <span class="badge badge-primary">${targetText}</span>.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check"></i> Ya, Terapkan',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Menyimpan Nilai...',
+                        html: 'Mohon tunggu...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    $.ajax({
+                        url: "{{ route('value.cbtSync') }}",
+                        type: "POST",
+                        headers: {
+                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                        },
+                        data: {
+                            class_id: class_id,
+                            mapel_id: mapel_id,
+                            fst_id: fst_id,
+                            target_field: targetField,
+                            overwrite: overwriteVal,
+                            selected_students: selectedStudentIds
+                        },
+                        success: function(response) {
+                            $('#cbtSyncModal').modal('hide');
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Diterapkan!',
+                                text: response.message,
+                                confirmButtonText: 'OK'
+                            });
+
+                            loadSumatifData();
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Menyimpan',
+                                text: xhr.responseJSON?.message || 'Terjadi kesalahan sistem saat menyimpan nilai.',
+                                confirmButtonText: 'Tutup'
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Submit Form Langsung (Tarik Semua)
         $('#cbtSyncForm').submit(function(e) {
             e.preventDefault();
 
@@ -1355,22 +1710,20 @@
             let overwriteVal = $('input[name="overwrite"]:checked').val();
 
             Swal.fire({
-                title: 'Tarik Nilai dari CBT?',
-                html: `Sistem akan mengambil nilai ujian dari server CBT untuk:<br>
-                       <strong>Kelas:</strong> ${class_name}<br>
-                       <strong>Mata Pelajaran:</strong> ${mapel_name}<br>
+                title: 'Tarik Semua Nilai dari CBT?',
+                html: `Sistem akan mengambil dan memperbarui nilai ujian seluruh siswa di kelas ini.<br>
                        <strong>Target Kolom:</strong> <span class="badge badge-primary">${targetText}</span>`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#ffc107',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-cloud-download-alt"></i> Ya, Tarik Nilai',
+                confirmButtonText: '<i class="fas fa-cloud-download-alt"></i> Ya, Tarik Semua',
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({
                         title: 'Sedang Menarik Nilai...',
-                        html: 'Menghubungkan ke CBT dan memproses pencocokan NISN siswa.<br>Mohon tunggu sebentar...',
+                        html: 'Menghubungkan ke CBT dan memproses sinkronisasi nilai...<br>Mohon tunggu sebentar...',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
                         didOpen: () => {

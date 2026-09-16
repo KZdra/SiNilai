@@ -34,6 +34,8 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
         Route::post('/reset-password/{id}', [UserController::class, 'resetPassword'])->name('reset_password');
         Route::post('/generate-siswa', [UserController::class, 'generateSiswaAccounts'])->name('generate_siswa');
         Route::post('/activate-single-siswa', [UserController::class, 'activateSingleSiswa'])->name('activate_single_siswa');
+        Route::get('/download-template', [UserController::class, 'downloadTemplate'])->name('download_template');
+        Route::post('/import-excel', [UserController::class, 'importExcel'])->name('import_excel');
     });
 
     // ── Data Users (legacy endpoint) ──
@@ -64,6 +66,8 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
         Route::get('/tree', [RaportExplorerController::class, 'getTreeData'])->name('tree');
         Route::get('/download', [RaportExplorerController::class, 'download'])->name('download');
         Route::delete('/delete', [RaportExplorerController::class, 'destroy'])->name('destroy');
+        Route::get('/bulk-export', [RaportExplorerController::class, 'bulkExportView'])->name('bulk_export');
+        Route::post('/bulk-export-chunk', [RaportExplorerController::class, 'bulkExportChunk'])->name('bulk_export_chunk');
     });
 
 });

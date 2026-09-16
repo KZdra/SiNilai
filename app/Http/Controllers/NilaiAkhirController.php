@@ -27,6 +27,17 @@ class NilaiAkhirController extends Controller
             return null;
         }
 
+        // 0. Cek dari student_class_history (Paling Akurat & Resmi)
+        if ($fstId && \Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
+            $classId = DB::table('student_class_history')
+                ->where('student_id', $studentId)
+                ->where('fst_id', $fstId)
+                ->whereNotNull('class_id')
+                ->value('class_id');
+
+            if ($classId) return $classId;
+        }
+
         // 1. Cek dari values semester ini
         if ($fstId) {
             $classId = DB::table('values')
@@ -480,7 +491,10 @@ class NilaiAkhirController extends Controller
         if (Auth::user()->class_id !== null) {
             $className = DB::table('class')->where('id', Auth::user()->class_id)->value('class_name');
         }
-        return view('nilaiakhir.index', compact('classList', 'className', 'fstList'));
+
+        $zipEngine = \App\Models\Setting::get('raport_zip_engine', 'chunk');
+
+        return view('nilaiakhir.index', compact('classList', 'className', 'fstList', 'zipEngine'));
     }
     public function detailNilaiAkhir(Request $request)
     {
@@ -794,6 +808,176 @@ class NilaiAkhirController extends Controller
             'total_students' => $students->count(),
             'folder'         => $lastFolder,
         ]);
+    }
+
+    /**
+     * Mode Bertahap (Non-Queue / Client Chunking): Render 3-5 siswa per call
+     * Aman untuk semua shared hosting tanpa perlu worker daemon!
+     */
+    public function generateZipChunk(Request $request)
+    {
+        $classId   = (int) $request->input('class_id');
+        $fstId     = (int) $request->input('fst_id');
+        $type      = $request->input('type', 'all');
+        $tglPrint  = $request->input('tgl_print', now()->toDateString());
+        $keputusan = $request->input('keputusan', null);
+        $offset    = (int) $request->input('offset', 0);
+        $limit     = (int) $request->input('limit', 4);
+
+        $students = DB::table('students')->where('class_id', $classId)->orderBy('nama', 'asc')->get();
+        if ($students->isEmpty() && \Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
+            $students = DB::table('student_class_history as h')
+                ->join('students as s', 'h.student_id', '=', 's.id')
+                ->where('h.class_id', $classId)
+                ->where('h.fst_id', $fstId)
+                ->select('s.*')
+                ->orderBy('s.nama', 'asc')
+                ->get();
+        }
+
+        $totalStudents = $students->count();
+        if ($totalStudents === 0) {
+            return response()->json(['status' => 'error', 'message' => 'Tidak ada siswa pada kelas ini.'], 404);
+        }
+
+        $slice = $students->slice($offset, $limit);
+        $rendered = [];
+
+        foreach ($slice as $std) {
+            try {
+                $res = $this->generateSingleRaportPdf($std->id, $classId, $fstId, $type, $tglPrint, $keputusan);
+                $rendered[] = [
+                    'id'   => $std->id,
+                    'nama' => $std->nama,
+                    'path' => $res['pdf_path'],
+                ];
+            } catch (\Exception $e) {
+                Log::error("Chunk render error for student ID {$std->id}: " . $e->getMessage());
+            }
+        }
+
+        $nextOffset = $offset + $slice->count();
+        $isComplete = ($nextOffset >= $totalStudents);
+
+        return response()->json([
+            'status'      => 'success',
+            'processed'   => count($rendered),
+            'offset'      => $offset,
+            'next_offset' => $nextOffset,
+            'total'       => $totalStudents,
+            'is_complete' => $isComplete,
+            'percent'     => (int) round(($nextOffset / $totalStudents) * 100),
+        ]);
+    }
+
+    /**
+     * Finalisasi Pembuatan File ZIP Rapor Kelas dari PDF yang telah dirender
+     */
+    public function finalizeZipChunk(Request $request)
+    {
+        $classId = (int) $request->input('class_id');
+        $fstId   = (int) $request->input('fst_id');
+
+        $class = DB::table('class')->where('id', $classId)->first();
+        $fst   = DB::table('m_fst_pembelajaran')->where('id', $fstId)->first();
+
+        if (!$class || !$fst) {
+            return response()->json(['status' => 'error', 'message' => 'Kelas atau FST tidak ditemukan.'], 404);
+        }
+
+        $cleanTA   = !empty($fst->tahun_ajaran) ? str_replace(['/', ' '], ['-', '_'], $fst->tahun_ajaran) : 'TA';
+        $cleanFase = !empty($fst->fase) ? 'Fase_' . ucwords($fst->fase) : 'Fase';
+        $cleanSem  = !empty($fst->semester) ? 'Sem_' . preg_replace('/[^a-zA-Z0-9]/', '', $fst->semester) : 'Sem';
+        $concated  = "{$cleanTA}_{$cleanFase}_{$cleanSem}";
+
+        $safeClassName = str_replace(['/', '\\', ' '], '_', $class->class_name);
+        $folderPath    = "raport/{$safeClassName}/{$concated}";
+
+        if (!Storage::disk('public')->exists($folderPath)) {
+            return response()->json(['status' => 'error', 'message' => "Folder arsip {$folderPath} belum tersedia."], 404);
+        }
+
+        $allPdfFiles = Storage::disk('public')->files($folderPath);
+        if (empty($allPdfFiles)) {
+            return response()->json(['status' => 'error', 'message' => 'Tidak ada berkas PDF ditemukan di folder arsip.'], 404);
+        }
+
+        if (!Storage::disk('public')->exists('raport_zip')) {
+            Storage::disk('public')->makeDirectory('raport_zip');
+        }
+
+        $zipFilename     = "Raport_{$safeClassName}_{$cleanTA}_{$cleanSem}.zip";
+        $zipRelativePath = "raport_zip/{$zipFilename}";
+        $zipFullPath     = Storage::disk('public')->path($zipRelativePath);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFullPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+            foreach ($allPdfFiles as $pdfRel) {
+                if (str_ends_with(strtolower($pdfRel), '.pdf')) {
+                    $zip->addFile(Storage::disk('public')->path($pdfRel), basename($pdfRel));
+                }
+            }
+            $zip->close();
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'Gagal membuat file ZIP di server.'], 500);
+        }
+
+        return response()->json([
+            'status'       => 'success',
+            'message'      => "File ZIP berhasil dikemas ({$zipFilename})!",
+            'download_url' => url('storage/' . $zipRelativePath),
+            'filename'     => $zipFilename,
+            'total_files'  => count($allPdfFiles),
+        ]);
+    }
+
+    /**
+     * Mode Antrean (Queue): Dispatch job pembuatan ZIP ke background worker
+     */
+    public function dispatchZipQueue(Request $request)
+    {
+        $classId   = (int) $request->input('class_id');
+        $fstId     = (int) $request->input('fst_id');
+        $type      = $request->input('type', 'all');
+        $tglPrint  = $request->input('tgl_print', now()->toDateString());
+        $keputusan = $request->input('keputusan', null);
+
+        \App\Jobs\GenerateClassRaportZipJob::dispatch(
+            $classId,
+            $fstId,
+            $type,
+            $tglPrint,
+            $keputusan,
+            Auth::id()
+        );
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Tugas pembuatan file ZIP telah dimasukkan ke antrean sistem (Queue).',
+            'job_key' => "raport_zip_job_{$classId}_{$fstId}",
+        ]);
+    }
+
+    /**
+     * Memeriksa status antrean background job pembuatan ZIP
+     */
+    public function checkZipQueueStatus(Request $request)
+    {
+        $classId = (int) $request->input('class_id');
+        $fstId   = (int) $request->input('fst_id');
+        $jobKey  = "raport_zip_job_{$classId}_{$fstId}";
+
+        $info = \Illuminate\Support\Facades\Cache::get($jobKey);
+
+        if (!$info) {
+            return response()->json([
+                'status'   => 'not_found',
+                'progress' => 0,
+                'message'  => 'Job belum dimulai atau telah kadaluwarsa.',
+            ]);
+        }
+
+        return response()->json($info);
     }
 
     public function ExportNilaiAkhirExcel(Request $request)

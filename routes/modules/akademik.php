@@ -9,6 +9,7 @@ use App\Http\Controllers\CatatanWalasController;
 use App\Http\Controllers\NilaiAuditController;
 use App\Http\Controllers\P5Controller;
 use App\Http\Controllers\NilaiImportController;
+use App\Http\Controllers\RaportStatusController;
 
 /**
  * Modul Akademik
@@ -32,6 +33,7 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
         Route::put('/{id}', [NilaiController::class, 'update'])->name('update');
         Route::delete('/{id}', [NilaiController::class, 'destroy'])->name('destroy');
         Route::post('/cbt-sync', [NilaiController::class, 'syncFromCbt'])->name('cbtSync');
+        Route::post('/cbt-preview', [NilaiController::class, 'previewCbtSync'])->name('cbtPreview');
         Route::get('/cbt-test', [NilaiController::class, 'testCbtConnection'])->name('cbtTest');
         Route::get('/cbt-logs', [NilaiController::class, 'getCbtSyncLogs'])->name('cbtLogs');
     });
@@ -53,6 +55,20 @@ Route::middleware(['auth', 'checkClass'])->group(function () {
         Route::get('/ranking', [NilaiAkhirController::class, 'exportRankingExcel'])->name('exportranking');
         Route::get('/leger', [NilaiAkhirController::class, 'exportLegerExcel'])->name('exportleger');
         Route::post('/export-server', [NilaiAkhirController::class, 'exportServer'])->name('exportserver');
+        // Rapor ZIP Engine (Dual Engine: Chunking vs Queue)
+        Route::post('/zip-chunk', [NilaiAkhirController::class, 'generateZipChunk'])->name('zipChunk');
+        Route::post('/zip-finalize', [NilaiAkhirController::class, 'finalizeZipChunk'])->name('zipFinalize');
+        Route::post('/zip-queue', [NilaiAkhirController::class, 'dispatchZipQueue'])->name('zipQueue');
+        Route::get('/zip-queue-status', [NilaiAkhirController::class, 'checkZipQueueStatus'])->name('zipQueueStatus');
+    });
+
+    // ── Alur Status & Kuncian Rapor (Workflow) ─────────────────
+    Route::prefix('raport-status')->name('raport_status.')->group(function () {
+        Route::get('/', [RaportStatusController::class, 'getStatus'])->name('get');
+        Route::post('/submit', [RaportStatusController::class, 'submitRaport'])->name('submit');
+        Route::post('/verify', [RaportStatusController::class, 'verifyRaport'])->name('verify');
+        Route::post('/approve-lock', [RaportStatusController::class, 'approveAndLock'])->name('approveLock');
+        Route::post('/unlock', [RaportStatusController::class, 'unlockRaport'])->name('unlock');
     });
 
     // ── Audit Trail Nilai ──────────────────────────────────────

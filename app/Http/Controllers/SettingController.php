@@ -75,14 +75,20 @@ class SettingController extends Controller
             ],
         ];
 
-        return view('settings.modules', compact('modules'));
+        $zipEngine = Setting::get('raport_zip_engine', 'chunk');
+
+        return view('settings.modules', compact('modules', 'zipEngine'));
     }
 
     /**
-     * Simpan status aktif/tidaknya modul sistem.
+     * Simpan status aktif/tidaknya modul sistem dan konfigurasi engine cetak.
      */
     public function updateModules(Request $request)
     {
+        $request->validate([
+            'raport_zip_engine' => 'nullable|in:chunk,queue',
+        ]);
+
         $moduleKeys = ['p5', 'formatif', 'eskul', 'cbt_sync', 'portal_siswa'];
 
         foreach ($moduleKeys as $key) {
@@ -93,6 +99,13 @@ class SettingController extends Controller
             );
         }
 
-        return redirect()->back()->with('success', 'Pengaturan status modul sistem berhasil disimpan.');
+        if ($request->has('raport_zip_engine')) {
+            Setting::updateOrCreate(
+                ['key' => 'raport_zip_engine'],
+                ['value' => $request->input('raport_zip_engine', 'chunk')]
+            );
+        }
+
+        return redirect()->back()->with('success', 'Pengaturan status modul sistem dan engine rapor berhasil disimpan.');
     }
 }
