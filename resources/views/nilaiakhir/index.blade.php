@@ -44,39 +44,30 @@
                 </div>
                 <div class="card-body py-2 px-3 bg-light">
                     <div class="row">
-                        <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <div class="col-md-4 col-sm-12 mb-2 mb-md-0">
                             <div class="d-flex align-items-start">
                                 <span class="badge badge-primary rounded-circle mr-2 px-2 py-1 font-weight-bold">1</span>
                                 <div class="small">
-                                    <strong class="text-dark d-block mb-1">Periksa Kelengkapan</strong>
-                                    <span class="text-muted">Muat data kelas, periksa nilai akhir tiap siswa, dan unduh <em>Leger Lengkap</em> untuk kroscek nilai semua mapel.</span>
+                                    <strong class="text-dark d-block mb-1">Pilih Kelas & Periode</strong>
+                                    <span class="text-muted">Pilih kelas dan periode untuk memuat seluruh data siswa dan nilai akhir secara otomatis.</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <div class="col-md-4 col-sm-12 mb-2 mb-md-0">
                             <div class="d-flex align-items-start">
                                 <span class="badge badge-success rounded-circle mr-2 px-2 py-1 font-weight-bold">2</span>
                                 <div class="small">
-                                    <strong class="text-dark d-block mb-1">Pengaturan Rapor</strong>
-                                    <span class="text-muted">Klik <strong>Pengaturan Rapor</strong> untuk menentukan Tanggal Cetak (Titimangsa) & Catatan Kenaikan/Keputusan.</span>
+                                    <strong class="text-dark d-block mb-1">Pengaturan Rapor (Opsional)</strong>
+                                    <span class="text-muted">Klik <strong>Pengaturan Rapor</strong> untuk mengatur Tanggal Cetak (Titimangsa) & Catatan Kenaikan/Keputusan jika perlu.</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                        <div class="col-md-4 col-sm-12">
                             <div class="d-flex align-items-start">
-                                <span class="badge badge-warning rounded-circle mr-2 px-2 py-1 font-weight-bold text-dark">3</span>
+                                <span class="badge badge-danger rounded-circle mr-2 px-2 py-1 font-weight-bold">3</span>
                                 <div class="small">
-                                    <strong class="text-dark d-block mb-1">Alur Status Rapor</strong>
-                                    <span class="text-muted">Klik <strong>Alur Rapor</strong> untuk memverifikasi rapor kelas. Nilai akan dikunci agar tidak berubah saat pembagian.</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="d-flex align-items-start">
-                                <span class="badge badge-danger rounded-circle mr-2 px-2 py-1 font-weight-bold">4</span>
-                                <div class="small">
-                                    <strong class="text-dark d-block mb-1">Download ZIP Rapor</strong>
-                                    <span class="text-muted">Klik <strong>Download ZIP Rapor</strong> untuk mengemas seluruh lembar rapor PDF satu kelas dalam 1 file ZIP instan.</span>
+                                    <strong class="text-dark d-block mb-1">Print Berurutan / Download ZIP</strong>
+                                    <span class="text-muted">Gunakan <strong>Print Rapor Berurutan</strong> untuk langsung mencetak rapor per siswa, atau <strong>Download ZIP Rapor</strong> untuk arsip lengkap.</span>
                                 </div>
                             </div>
                         </div>
@@ -200,12 +191,6 @@
                     <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
                         <span class="badge badge-primary px-3 py-2 font-weight-bold shadow-sm" id="ClassSelBadge">-</span>
                         <span class="badge badge-light border text-dark px-3 py-2 font-weight-bold shadow-sm" id="FstSelBadge">-</span>
-                        <span class="badge badge-secondary px-3 py-2 font-weight-bold shadow-sm" id="RaportStatusBadge">
-                            <i class="fas fa-file-alt mr-1"></i>Draft
-                        </span>
-                        <button type="button" class="btn btn-xs btn-outline-primary font-weight-bold shadow-sm py-1 px-2" id="btnOpenStatusWorkflow" title="Kelola Alur Status Rapor">
-                            <i class="fas fa-tasks mr-1"></i>Alur Rapor
-                        </button>
                     </div>
 
                     <!-- Action Toolbar -->
@@ -433,82 +418,6 @@
                 </div>
             </div>
 
-            <!-- ── MODAL: ALUR STATUS & PERSETUJUAN RAPOR ──────────────── -->
-            <div class="modal fade" id="ModalRaportWorkflow" tabindex="-1" role="dialog" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" role="document">
-                    <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-                        <div class="modal-header bg-primary text-white py-3">
-                            <h5 class="modal-title font-weight-bold">
-                                <i class="fas fa-tasks mr-2"></i>Alur Status & Persetujuan Nilai Rapor
-                            </h5>
-                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body py-3">
-                            <!-- Banner Status Terkini -->
-                            <div class="p-3 rounded mb-3 text-center" id="wfStatusBanner" style="background-color: #f1f3f5;">
-                                <span class="small text-muted d-block text-uppercase font-weight-bold">Status Rapor Kelas Saat Ini:</span>
-                                <h4 class="font-weight-bold my-1" id="wfStatusTitle">Draft (Masih Input)</h4>
-                                <span class="badge badge-secondary px-3 py-1" id="wfStatusBadge">DRAFT</span>
-                            </div>
-
-                            <!-- Timeline Petugas -->
-                            <div class="card card-outline card-secondary mb-3 small">
-                                <div class="card-body p-2">
-                                    <div class="d-flex justify-content-between py-1 border-bottom">
-                                        <span class="text-muted"><i class="fas fa-user-edit mr-1 text-primary"></i>Diajukan Oleh:</span>
-                                        <strong id="wfSubmitter">-</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between py-1 border-bottom">
-                                        <span class="text-muted"><i class="fas fa-user-check mr-1 text-warning"></i>Diverifikasi Walas:</span>
-                                        <strong id="wfVerifier">-</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between py-1">
-                                        <span class="text-muted"><i class="fas fa-user-shield mr-1 text-success"></i>Disahkan Kepsek:</span>
-                                        <strong id="wfApprover">-</strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Form Catatan -->
-                            <div class="form-group mb-2">
-                                <label for="wfNotes" class="font-weight-bold text-dark small mb-1">
-                                    <i class="fas fa-sticky-note text-info mr-1"></i>Catatan Alur (Opsional):
-                                </label>
-                                <textarea class="form-control form-control-sm" id="wfNotes" rows="2" placeholder="Tuliskan catatan verifikasi atau revisi nilai jika ada..."></textarea>
-                            </div>
-
-                            <!-- Keterangan Proteksi -->
-                            <div class="alert alert-warning small mb-0 py-2 px-3" id="wfLockNotice">
-                                <i class="fas fa-lock mr-1"></i>
-                                <span>Saat status <strong>Diverifikasi</strong> atau <strong>Disahkan</strong>, seluruh nilai rapor kelas ini terkunci dan tidak dapat diubah kembali oleh guru.</span>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light py-2 d-flex justify-content-between">
-                            <div>
-                                @if (Auth::user() && Auth::user()->role_id == 1)
-                                    <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold" id="btnWfUnlock">
-                                        <i class="fas fa-unlock mr-1"></i> Buka Kunci (Admin)
-                                    </button>
-                                @endif
-                            </div>
-                            <div id="wfActionButtons">
-                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
-                                <button type="button" class="btn btn-info btn-sm font-weight-bold ml-1" id="btnWfSubmit">
-                                    <i class="fas fa-paper-plane mr-1"></i> Ajukan Nilai
-                                </button>
-                                <button type="button" class="btn btn-warning btn-sm font-weight-bold text-dark ml-1" id="btnWfVerify">
-                                    <i class="fas fa-check-double mr-1"></i> Verifikasi Nilai
-                                </button>
-                                <button type="button" class="btn btn-success btn-sm font-weight-bold ml-1" id="btnWfApproveLock">
-                                    <i class="fas fa-stamp mr-1"></i> Sahkan & Kunci Rapor
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
         </div><!-- /.container-fluid -->
     </div>
@@ -601,7 +510,6 @@
                         dataSrc: function(json) {
                             let students = json.data || [];
                             updateSummaryMetrics(students);
-                            fetchRaportStatus();
                             return students;
                         },
                         error: function() {
@@ -990,126 +898,6 @@
             });
 
 
-
-            // ── ALUR STATUS & PERSETUJUAN RAPOR (WORKFLOW) ────────────
-            let currentRaportStatusData = null;
-
-            function fetchRaportStatus() {
-                if (!class_id || !fst_id) return;
-
-                $.ajax({
-                    url: "{{ route('raport_status.get') }}",
-                    method: "GET",
-                    data: { class_id: class_id, fst_id: fst_id },
-                    success: function(res) {
-                        let d = res.data || {};
-                        currentRaportStatusData = d;
-
-                        $('#RaportStatusBadge')
-                            .removeClass('badge-secondary badge-info badge-warning badge-success')
-                            .addClass(d.badge_class || 'badge-secondary')
-                            .html(`<i class="fas fa-file-alt mr-1"></i>${d.status_label || 'Draft'}`);
-                    }
-                });
-            }
-
-            $('#btnOpenStatusWorkflow').click(function() {
-                if (!class_id || !fst_id) {
-                    SwalHelper.showError('Pilih Kelas dan Periode terlebih dahulu.');
-                    return;
-                }
-
-                $.ajax({
-                    url: "{{ route('raport_status.get') }}",
-                    method: "GET",
-                    data: { class_id: class_id, fst_id: fst_id },
-                    success: function(res) {
-                        let d = res.data || {};
-                        currentRaportStatusData = d;
-
-                        $('#wfStatusTitle').text(d.status_label || 'Draft (Masih Input)');
-                        $('#wfStatusBadge')
-                            .removeClass('badge-secondary badge-info badge-warning badge-success text-dark')
-                            .addClass(d.badge_class || 'badge-secondary')
-                            .text((d.status || 'draft').toUpperCase());
-
-                        $('#wfSubmitter').text(d.submitter_name ? `${d.submitter_name} (${d.submitted_at || '-'})` : 'Belum diajukan');
-                        $('#wfVerifier').text(d.verifier_name ? `${d.verifier_name} (${d.verified_at || '-'})` : 'Belum diverifikasi');
-                        $('#wfApprover').text(d.approver_name ? `${d.approver_name} (${d.approved_at || '-'})` : 'Belum disahkan');
-                        $('#wfNotes').val(d.notes || '');
-
-                        // Tombol action dinamis sesuai status
-                        let status = d.status || 'draft';
-                        $('#btnWfSubmit').prop('disabled', status !== 'draft');
-                        $('#btnWfVerify').prop('disabled', status !== 'submitted');
-                        $('#btnWfApproveLock').prop('disabled', status !== 'verified');
-
-                        if (status === 'verified' || status === 'approved_locked') {
-                            $('#wfLockNotice').removeClass('d-none');
-                        } else {
-                            $('#wfLockNotice').addClass('d-none');
-                        }
-
-                        $('#ModalRaportWorkflow').modal('show');
-                    }
-                });
-            });
-
-            // Action: Ajukan Nilai (Guru / Walas)
-            $('#btnWfSubmit').click(function() {
-                sendWorkflowAction("{{ route('raport_status.submit') }}", 'Ajukan nilai rapor kelas ini ke Wali Kelas?');
-            });
-
-            // Action: Verifikasi Nilai (Walas)
-            $('#btnWfVerify').click(function() {
-                sendWorkflowAction("{{ route('raport_status.verify') }}", 'Verifikasi nilai rapor kelas ini? Setelah diverifikasi, nilai tidak dapat diubah oleh guru mapel.');
-            });
-
-            // Action: Sahkan & Kunci (Kepsek / Admin)
-            $('#btnWfApproveLock').click(function() {
-                sendWorkflowAction("{{ route('raport_status.approveLock') }}", 'Sahkan & Kunci rapor kelas ini? Rapor akan berstatus final resmi.');
-            });
-
-            // Action: Buka Kunci (Admin Only)
-            $('#btnWfUnlock').click(function() {
-                sendWorkflowAction("{{ route('raport_status.unlock') }}", 'Buka kembali kuncian rapor ini ke status Draft?');
-            });
-
-            function sendWorkflowAction(url, confirmText) {
-                let notes = $('#wfNotes').val();
-                Swal.fire({
-                    title: 'Konfirmasi Alur Rapor',
-                    text: confirmText,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Ya, Lanjutkan',
-                    cancelButtonText: 'Batal'
-                }).then((res) => {
-                    if (res.isConfirmed) {
-                        $.ajax({
-                            url: url,
-                            method: "POST",
-                            data: {
-                                class_id: class_id,
-                                fst_id: fst_id,
-                                notes: notes,
-                                _token: "{{ csrf_token() }}"
-                            },
-                            success: function(response) {
-                                $('#ModalRaportWorkflow').modal('hide');
-                                SwalHelper.showSuccess(response.message);
-                                fetchRaportStatus();
-                            },
-                            error: function(xhr) {
-                                let msg = xhr.responseJSON?.message || 'Gagal memperbarui status rapor.';
-                                SwalHelper.showError(msg);
-                            }
-                        });
-                    }
-                });
-            }
 
             // ── DOWNLOAD ZIP RAPOR KELAS (DUAL ENGINE) ─────────────────
             $('#btnDownloadZipModal').click(function() {
