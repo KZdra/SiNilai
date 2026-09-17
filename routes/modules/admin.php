@@ -36,6 +36,7 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
         Route::post('/activate-single-siswa', [UserController::class, 'activateSingleSiswa'])->name('activate_single_siswa');
         Route::get('/download-template', [UserController::class, 'downloadTemplate'])->name('download_template');
         Route::post('/import-excel', [UserController::class, 'importExcel'])->name('import_excel');
+        Route::get('/export-kredensial-walas', [UserController::class, 'exportKredensialWalas'])->name('export_kredensial_walas');
     });
 
     // ── Data Users (legacy endpoint) ──

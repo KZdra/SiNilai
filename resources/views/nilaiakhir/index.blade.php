@@ -48,8 +48,8 @@
                             <div class="d-flex align-items-start">
                                 <span class="badge badge-primary rounded-circle mr-2 px-2 py-1 font-weight-bold">1</span>
                                 <div class="small">
-                                    <strong class="text-dark d-block mb-1">Pilih Kelas & Periode</strong>
-                                    <span class="text-muted">Pilih kelas dan periode untuk memuat seluruh data siswa dan nilai akhir secara otomatis.</span>
+                                    <strong class="text-dark d-block mb-1">Pilih Periode & Kelas</strong>
+                                    <span class="text-muted">Tentukan periode semester yang ingin dicetak (termasuk semester lampau/alumni), lalu pilih kelasnya.</span>
                                 </div>
                             </div>
                         </div>
@@ -79,10 +79,21 @@
             <div class="card shadow-sm border-0 mb-3" style="border-radius: 10px;">
                 <div class="card-body p-3">
                     <div class="row align-items-end">
-                        <!-- Filter Kelas -->
+                        <!-- Filter Periode (Langkah 1) -->
+                        <div class="col-md-5 mb-2 mb-md-0">
+                            <label for="fst_id" class="font-weight-bold text-dark small mb-1">
+                                <i class="fas fa-calendar-alt text-success mr-1"></i> 1. Periode / Semester / Tahun Ajaran
+                            </label>
+                            <select name="fst_id" id="fst_id" class="form-control font-weight-bold">
+                                <option value="" selected disabled>-- Pilih Periode Semester --</option>
+                                @include('partials.select_fst_options')
+                            </select>
+                        </div>
+
+                        <!-- Filter Kelas (Langkah 2) -->
                         <div class="col-md-5 mb-2 mb-md-0">
                             <label for="class_id" class="font-weight-bold text-dark small mb-1">
-                                <i class="fas fa-chalkboard text-primary mr-1"></i> Pilih Kelas
+                                <i class="fas fa-chalkboard text-primary mr-1"></i> 2. Pilih Kelas
                             </label>
                             @if ($className)
                                 <input type="hidden" id="class_id" value="{{ Auth::user()->class_id }}">
@@ -93,17 +104,6 @@
                                     @include('partials.select_class_options')
                                 </select>
                             @endif
-                        </div>
-
-                        <!-- Filter Periode -->
-                        <div class="col-md-5 mb-2 mb-md-0">
-                            <label for="fst_id" class="font-weight-bold text-dark small mb-1">
-                                <i class="fas fa-calendar-alt text-success mr-1"></i> Fase / Semester / Tahun Ajaran
-                            </label>
-                            <select name="fst_id" id="fst_id" class="form-control font-weight-bold">
-                                <option value="" selected disabled>-- Pilih Periode Semester --</option>
-                                @include('partials.select_fst_options')
-                            </select>
                         </div>
 
                         <!-- Tombol Aksi Filter -->

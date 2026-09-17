@@ -113,7 +113,6 @@ class HomeController extends Controller
         $mapelCount = DB::table('mata_pelajarans')->count();
         $mappingCount = DB::table('mapel_class_fst')->where('is_active', 1)->count();
         $walasCount = DB::table('users')->where('role_id', 2)->whereNotNull('class_id')->count();
-        $tpCount = DB::table('m_tp')->count();
 
         $masterChecklist = [
             [
@@ -171,14 +170,6 @@ class HomeController extends Controller
                 'count_label' => $walasCount > 0 ? "{$walasCount} Walas" : 'Belum Diisi',
                 'route' => route('users.index'),
                 'icon' => 'fas fa-user-tie text-teal',
-            ],
-            [
-                'title' => 'Tujuan Pembelajaran (TP)',
-                'desc' => $tpCount > 0 ? "{$tpCount} TP Kurikulum Merdeka terdaftar" : 'Belum ada rumusan TP untuk asesmen nilai',
-                'is_filled' => $tpCount > 0,
-                'count_label' => $tpCount > 0 ? "{$tpCount} TP" : 'Belum Diisi',
-                'route' => route('mastertp.index'),
-                'icon' => 'fas fa-bullseye text-danger',
             ],
         ];
 

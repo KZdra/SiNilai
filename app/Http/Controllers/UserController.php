@@ -44,8 +44,7 @@ class UserController extends Controller
             'r.role_name',
             'u.username',
             'u.name',
-            DB::raw('COALESCE(u.nip, "-") AS nip'),
-            'u.email'
+            DB::raw('COALESCE(u.nip, "-") AS nip')
         )
             ->leftJoin('roles as r', 'u.role_id', '=', 'r.id')
             ->leftJoin('class as c', 'u.class_id', '=', 'c.id')
@@ -62,7 +61,6 @@ class UserController extends Controller
             'u.username',
             'u.name',
             'u.nip',
-            'u.email',
             'c.class_name',
             'r.role_name',
         ];
@@ -72,8 +70,7 @@ class UserController extends Controller
             1 => 'u.name',
             2 => 'u.nip',
             3 => 'c.class_name',
-            4 => 'u.email',
-            5 => 'r.role_name',
+            4 => 'r.role_name',
         ];
 
         if (!$request->has('order')) {
@@ -101,7 +98,6 @@ class UserController extends Controller
                 'c.class_name',
                 'u.id as user_id',
                 DB::raw('COALESCE(u.username, s.nisn, s.nis, "-") as username'),
-                DB::raw('COALESCE(u.email, "-") as email'),
                 DB::raw('CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END as is_active'),
                 'u.created_at'
             );
@@ -123,7 +119,6 @@ class UserController extends Controller
             's.nisn',
             's.nis',
             'u.username',
-            'u.email',
             'c.class_name'
         ];
 
@@ -131,8 +126,7 @@ class UserController extends Controller
             1 => 's.nisn',
             2 => 's.nama',
             3 => 'c.class_name',
-            4 => 'u.email',
-            5 => 'is_active',
+            4 => 'is_active',
         ];
 
         if (!$request->has('order')) {
@@ -170,7 +164,7 @@ class UserController extends Controller
             'nama' => 'required|string|max:150',
             'username' => 'required|string|max:100|unique:users,username',
             'password' => 'required|min:4',
-            'email' => 'required|email|max:150|unique:users,email',
+            'email' => 'nullable|email|max:150|unique:users,email',
         ]);
 
         try {
@@ -181,7 +175,7 @@ class UserController extends Controller
                 'name' => $kont['nama'],
                 'username' => $kont['username'],
                 'password' => Hash::make($kont['password']),
-                'email' => $kont['email'],
+                'email' => !empty($kont['email']) ? $kont['email'] : null,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
@@ -199,7 +193,7 @@ class UserController extends Controller
             'nip' => 'nullable|string|max:50',
             'nama' => 'required|string|max:150',
             'username' => 'required|string|max:100|unique:users,username,' . $id,
-            'email' => 'required|email|max:150|unique:users,email,' . $id,
+            'email' => 'nullable|email|max:150|unique:users,email,' . $id,
             'password' => 'nullable|min:4',
         ]);
 
@@ -210,7 +204,7 @@ class UserController extends Controller
                 'nip' => !empty($validated['nip']) ? $validated['nip'] : null,
                 'name' => $validated['nama'],
                 'username' => $validated['username'],
-                'email' => $validated['email'],
+                'email' => !empty($validated['email']) ? $validated['email'] : null,
                 'updated_at' => Carbon::now(),
             ];
 
@@ -238,29 +232,23 @@ class UserController extends Controller
     // ── Reset Password ───────────────────────────────────────────
     public function resetPassword(Request $request, $id)
     {
+        $request->validate([
+            'password' => 'required|min:4',
+        ]);
+
         try {
-            $user = DB::table('users')->where('id', $id)->first();
-            if (!$user) {
-                return response()->json(['message' => 'Pengguna tidak ditemukan.'], 404);
-            }
-
-            $defaultPass = ($user->role_id == 3) ? 'siswa123' : 'guru123';
-            $newPassword = $request->input('password', $defaultPass);
-
             DB::table('users')->where('id', $id)->update([
-                'password' => Hash::make($newPassword),
+                'password' => Hash::make($request->password),
                 'updated_at' => Carbon::now(),
             ]);
 
-            return response()->json([
-                'message' => "Password berhasil direset ke: {$newPassword}"
-            ], 200);
+            return response()->json(['message' => 'Password berhasil direset!'], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
-    // ── Generate Massal Akun Siswa ────────────────────────────────
+    // ── Generate Akun Login Portal Siswa Massal ───────────────────
     public function generateSiswaAccounts(Request $request)
     {
         $classId = $request->input('class_id');
@@ -271,7 +259,9 @@ class UserController extends Controller
         $students = $query->get();
 
         if ($students->isEmpty()) {
-            return response()->json(['message' => 'Tidak ada siswa yang ditemukan untuk digenerate.'], 404);
+            return response()->json([
+                'message' => 'Tidak ada siswa yang ditemukan untuk dibuatkan akun.'
+            ], 404);
         }
 
         $created = 0;
@@ -290,7 +280,7 @@ class UserController extends Controller
                 DB::table('users')->insert([
                     'name' => $std->nama,
                     'username' => $username,
-                    'email' => strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $username)) . '@siswa.sekolah.id',
+                    'email' => null,
                     'password' => Hash::make('siswa123'),
                     'role_id' => 3, // Role Siswa
                     'class_id' => $std->class_id,
@@ -341,13 +331,10 @@ class UserController extends Controller
             return response()->json(['message' => "Akun login untuk {$student->nama} sudah aktif dan telah disinkronkan."], 200);
         }
 
-        $cleanUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $username));
-        $email = $cleanUsername . '@siswa.sekolah.id';
-
         DB::table('users')->insert([
             'name' => $student->nama,
             'username' => $username,
-            'email' => $email,
+            'email' => null,
             'password' => Hash::make('siswa123'),
             'role_id' => 3,
             'class_id' => $student->class_id,
@@ -362,26 +349,23 @@ class UserController extends Controller
     }
 
     // ── Download Template Excel Guru & Walas (Dengan Dropdown Kelas) ──
+    // ── Download Template Excel Guru & Walas (Dengan Dropdown Kelas) ──
     public function downloadTemplate()
     {
         $classes = DB::table('class')->orderBy('class_name', 'asc')->pluck('class_name');
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 
-        // ── Sheet 1: Data Guru & Walas ──
+        // ── Sheet 1: Data Wali Kelas & Guru ──
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Data_Guru_Walas');
+        $sheet->setTitle('Data_Wali_Kelas');
 
         // Headers
         $headers = [
             'A1' => 'No',
-            'B1' => 'Username',
-            'C1' => 'Nama Lengkap',
-            'D1' => 'NIP',
-            'E1' => 'Email',
-            'F1' => 'Wali Kelas (Pilih Dropdown)',
-            'G1' => 'Role (Pilih Dropdown)',
-            'H1' => 'Password (Default: guru123)',
+            'B1' => 'Nama Lengkap & Gelar',
+            'C1' => 'Wali Kelas (Pilih Dropdown)',
+            'D1' => 'Password (Opsional: Kosong = Sama dg Username)',
         ];
 
         foreach ($headers as $cell => $value) {
@@ -406,7 +390,7 @@ class UserController extends Controller
                 ],
             ],
         ];
-        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:D1')->applyFromArray($headerStyle);
         $sheet->getRowDimension(1)->setRowHeight(28);
 
         // ── Sheet 2: Referensi Daftar Kelas untuk Dropdown ──
@@ -429,43 +413,36 @@ class UserController extends Controller
         $sampleRows = [
             [
                 'no' => 1,
-                'username' => 'walikelas1',
-                'nama' => 'Wali Kelas Satu, S.Pd',
-                'nip' => '198501012010011001',
-                'email' => 'walikelas1@icb.sch.id',
+                'nama' => 'Budi Santoso, S.Pd',
                 'walas' => $classes->first() ?? '- (Bukan Walas)',
-                'role' => 'Guru',
-                'password' => 'guru123',
+                'password' => '', // Kosong = otomatis username "budi" dan password "budi"
             ],
             [
                 'no' => 2,
-                'username' => 'guru_matematika',
-                'nama' => 'Guru Matematika, M.Pd',
-                'nip' => '199002152015022002',
-                'email' => 'gurumtk@icb.sch.id',
+                'nama' => 'Siti Aminah, M.Pd',
+                'walas' => $classes->skip(1)->first() ?? '- (Bukan Walas)',
+                'password' => '', // Kosong = otomatis username "siti" dan password "siti"
+            ],
+            [
+                'no' => 3,
+                'nama' => 'Ahmad Dahlan, M.Pd',
                 'walas' => '- (Bukan Walas)',
-                'role' => 'Guru',
-                'password' => 'guru123',
+                'password' => 'guru123', // Admin menentukan password khusus
             ]
         ];
 
         $rowIdx = 2;
         foreach ($sampleRows as $row) {
             $sheet->setCellValue("A{$rowIdx}", $row['no']);
-            $sheet->setCellValue("B{$rowIdx}", $row['username']);
-            $sheet->setCellValue("C{$rowIdx}", $row['nama']);
-            $sheet->setCellValue("D{$rowIdx}", $row['nip']);
-            $sheet->setCellValue("E{$rowIdx}", $row['email']);
-            $sheet->setCellValue("F{$rowIdx}", $row['walas']);
-            $sheet->setCellValue("G{$rowIdx}", $row['role']);
-            $sheet->setCellValue("H{$rowIdx}", $row['password']);
+            $sheet->setCellValue("B{$rowIdx}", $row['nama']);
+            $sheet->setCellValue("C{$rowIdx}", $row['walas']);
+            $sheet->setCellValue("D{$rowIdx}", $row['password']);
             $rowIdx++;
         }
 
-        // Terapkan Data Validation (Dropdown) dari baris 2 hingga 200
+        // Terapkan Data Validation (Dropdown) dari baris 2 hingga 200 untuk Kolom C (Wali Kelas)
         for ($i = 2; $i <= 200; $i++) {
-            // Dropdown Kolom F (Wali Kelas)
-            $validation = $sheet->getCell("F{$i}")->getDataValidation();
+            $validation = $sheet->getCell("C{$i}")->getDataValidation();
             $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
             $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
             $validation->setAllowBlank(true);
@@ -477,32 +454,171 @@ class UserController extends Controller
             $validation->setPromptTitle('Pilih Wali Kelas');
             $validation->setPrompt('Pilih kelas binaan guru ini, atau pilih "- (Bukan Walas)".');
             $validation->setFormula1("Daftar_Kelas!\$A\$2:\$A\${$lastClassRow}");
-
-            // Dropdown Kolom G (Role)
-            $roleVal = $sheet->getCell("G{$i}")->getDataValidation();
-            $roleVal->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-            $roleVal->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
-            $roleVal->setAllowBlank(false);
-            $roleVal->setShowDropDown(true);
-            $roleVal->setErrorTitle('Role Tidak Valid');
-            $roleVal->setError('Pilih Guru atau Admin.');
-            $roleVal->setFormula1('"Guru,Admin"');
         }
 
         // Set column widths
         $sheet->getColumnDimension('A')->setWidth(8);
-        $sheet->getColumnDimension('B')->setWidth(20);
-        $sheet->getColumnDimension('C')->setWidth(30);
-        $sheet->getColumnDimension('D')->setWidth(24);
-        $sheet->getColumnDimension('E')->setWidth(28);
-        $sheet->getColumnDimension('F')->setWidth(26);
-        $sheet->getColumnDimension('G')->setWidth(16);
-        $sheet->getColumnDimension('H')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(35);
+        $sheet->getColumnDimension('C')->setWidth(28);
+        $sheet->getColumnDimension('D')->setWidth(40);
 
         // Aktifkan kembali Sheet 1 sebagai sheet aktif saat file dibuka
         $spreadsheet->setActiveSheetIndex(0);
 
-        $filename = 'Template_Import_Guru_Walas.xlsx';
+        $filename = 'Template_Import_Wali_Kelas.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    // ── Export Excel Kredensial Login Wali Kelas / Guru ───────────
+    public function exportKredensialWalas(Request $request)
+    {
+        $type = $request->input('type', 'walas'); // 'walas' atau 'all'
+
+        $query = DB::table('users as u')
+            ->leftJoin('class as c', 'u.class_id', '=', 'c.id')
+            ->leftJoin('roles as r', 'u.role_id', '=', 'r.id')
+            ->select(
+                'u.id',
+                'u.name',
+                'u.username',
+                'u.nip',
+                'u.role_id',
+                'r.role_name',
+                'c.class_name'
+            );
+
+        if ($type === 'walas') {
+            $query->where('u.role_id', 2)->whereNotNull('u.class_id');
+            $docTitle = 'DAFTAR KREDENSIAL LOGIN WALI KELAS';
+            $filename = 'Kredensial_Login_Wali_Kelas_' . date('Ymd_His') . '.xlsx';
+        } else {
+            $query->whereIn('u.role_id', [1, 2]);
+            $docTitle = 'DAFTAR KREDENSIAL LOGIN GURU & PENDIDIK';
+            $filename = 'Kredensial_Login_Guru_Pendidik_' . date('Ymd_His') . '.xlsx';
+        }
+
+        $users = $query->orderBy('c.class_name', 'asc')->orderBy('u.name', 'asc')->get();
+
+        $sekolah = \App\Services\MasterDataCache::getSchoolData();
+        $namaSekolah = $sekolah->nama_sekolah ?? 'SiNilai - Raport Digital';
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Kredensial_Akun');
+
+        // Setup halaman untuk cetak
+        $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+        $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+
+        // Judul Dokumen
+        $sheet->mergeCells('A1:G1');
+        $sheet->setCellValue('A1', $docTitle);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('0F766E'));
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells('A2:G2');
+        $sheet->setCellValue('A2', $namaSekolah . '  |  Portal Login: ' . url('/login'));
+        $sheet->getStyle('A2')->getFont()->setSize(10)->setItalic(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('555555'));
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells('A3:G3');
+        $sheet->setCellValue('A3', 'Dicetak pada: ' . Carbon::now()->isoFormat('D MMMM Y, HH:mm') . ' WIB');
+        $sheet->getStyle('A3')->getFont()->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('777777'));
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Header Tabel
+        $tableHeaders = [
+            'A5' => 'NO',
+            'B5' => 'NAMA LENGKAP',
+            'C5' => 'NIP',
+            'D5' => 'WALI KELAS',
+            'E5' => 'USERNAME LOGIN',
+            'F5' => 'KATA SANDI AWAL',
+            'G5' => 'PARAF / TANDA TERIMA',
+        ];
+
+        foreach ($tableHeaders as $cell => $val) {
+            $sheet->setCellValue($cell, $val);
+        }
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '0F766E'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '0D5C56'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A5:G5')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(5)->setRowHeight(26);
+
+        // Isi Data Baris
+        $row = 6;
+        $no = 1;
+        foreach ($users as $u) {
+            $walasLabel = !empty($u->class_name) ? $u->class_name : '- (Bukan Walas)';
+
+            $sheet->setCellValue("A{$row}", $no);
+            $sheet->setCellValue("B{$row}", $u->name);
+            $sheet->setCellValueExplicit("C{$row}", !empty($u->nip) ? (string)$u->nip : '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("D{$row}", $walasLabel);
+            $sheet->setCellValueExplicit("E{$row}", (string)$u->username, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("F{$row}", 'Sama dg Username');
+            $sheet->setCellValue("G{$row}", '');
+
+            $sheet->getRowDimension($row)->setRowHeight(22);
+            $row++;
+            $no++;
+        }
+
+        $lastRow = max(6, $row - 1);
+
+        // Styling Border & Alignment Baris Data
+        $dataBorderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D1D5DB'],
+                ],
+            ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ];
+        $sheet->getStyle("A6:G{$lastRow}")->applyFromArray($dataBorderStyle);
+
+        $sheet->getStyle("A6:A{$lastRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("C6:C{$lastRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("D6:D{$lastRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("E6:E{$lastRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("F6:F{$lastRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->getStyle("E6:E{$lastRow}")->getFont()->setBold(true);
+
+        // Lebar Kolom
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(32);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(18);
+        $sheet->getColumnDimension('E')->setWidth(22);
+        $sheet->getColumnDimension('F')->setWidth(22);
+        $sheet->getColumnDimension('G')->setWidth(24);
 
         return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
@@ -527,7 +643,7 @@ class UserController extends Controller
         try {
             $file = $request->file('file');
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
-            $sheet = $spreadsheet->getSheet(0); // Ambil sheet pertama (Data_Guru_Walas)
+            $sheet = $spreadsheet->getSheet(0); // Ambil sheet pertama (Data_Wali_Kelas)
             $rows = $sheet->toArray(null, true, true, false);
 
             if (count($rows) <= 1) {
@@ -536,6 +652,10 @@ class UserController extends Controller
                 ], 422);
             }
 
+            // Cek apakah menggunakan format ringkas (Kolom B adalah Nama Lengkap) atau format lama (Kolom B adalah Username)
+            $headerColB = strtolower(trim((string)($rows[0][1] ?? '')));
+            $isSimplifiedFormat = str_contains($headerColB, 'nama') || !str_contains($headerColB, 'username');
+
             // Peta nama kelas ke ID
             $classesMap = DB::table('class')->pluck('id', 'class_name')->toArray();
 
@@ -543,35 +663,74 @@ class UserController extends Controller
             $updated = 0;
             $skipped = 0;
             $errors = [];
+            $usedUsernames = [];
 
             // Mulai dari baris ke-2 (index 1 karena index 0 adalah header)
             for ($i = 1; $i < count($rows); $i++) {
                 $row = $rows[$i];
                 $rowNum = $i + 1;
 
-                $username = isset($row[1]) ? trim((string)$row[1]) : '';
-                $nama     = isset($row[2]) ? trim((string)$row[2]) : '';
-                $nip      = isset($row[3]) ? trim((string)$row[3]) : '';
-                $email    = isset($row[4]) ? trim((string)$row[4]) : '';
-                $walasStr = isset($row[5]) ? trim((string)$row[5]) : '';
-                $roleStr  = isset($row[6]) ? trim((string)$row[6]) : '';
-                $password = isset($row[7]) ? trim((string)$row[7]) : '';
+                if ($isSimplifiedFormat) {
+                    // Format Baru: B = Nama Lengkap, C = Wali Kelas, D = Password
+                    $nama     = isset($row[1]) ? trim((string)$row[1]) : '';
+                    $walasStr = isset($row[2]) ? trim((string)$row[2]) : '';
+                    $password = isset($row[3]) ? trim((string)$row[3]) : '';
+                    $nip      = null;
+                    $roleStr  = 'Guru';
 
-                // Lewati baris kosong
-                if (empty($username) && empty($nama) && empty($email)) {
-                    continue;
-                }
+                    if (empty($nama)) {
+                        continue;
+                    }
 
-                if (empty($username) || empty($nama)) {
-                    $errors[] = "Baris {$rowNum}: Username dan Nama Lengkap wajib diisi.";
-                    $skipped++;
-                    continue;
-                }
+                    // Ekstrak nama depan untuk username (hapus titel gelar di depan jika ada)
+                    $cleanedNama = trim(preg_replace('/^(dr\.|dra\.|drs\.|prof\.|ir\.|h\.|hj\.)\s+/i', '', $nama));
+                    $words = preg_split('/[\s,\.]+/', $cleanedNama, -1, PREG_SPLIT_NO_EMPTY);
+                    $firstName = !empty($words[0]) ? strtolower($words[0]) : 'guru';
+                    $baseUsername = preg_replace('/[^a-z0-9]/', '', $firstName);
+                    if (empty($baseUsername)) {
+                        $baseUsername = 'guru';
+                    }
 
-                // Jika email kosong, buatkan format default dari username
-                if (empty($email)) {
-                    $cleanU = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $username));
-                    $email = $cleanU . '@sekolah.id';
+                    // Cek apakah guru dengan nama ini sudah ada di database
+                    $existingByName = DB::table('users')->where('name', $nama)->where('role_id', 2)->first();
+                    if ($existingByName) {
+                        $username = $existingByName->username;
+                    } else {
+                        // Generate username unik
+                        $usernameCandidate = $baseUsername;
+                        $counter = 2;
+                        while (in_array($usernameCandidate, $usedUsernames) || DB::table('users')->where('username', $usernameCandidate)->exists()) {
+                            $usernameCandidate = $baseUsername . $counter;
+                            $counter++;
+                        }
+                        $username = $usernameCandidate;
+                    }
+                    $usedUsernames[] = $username;
+
+                    $email = null;
+                } else {
+                    // Format Lama: B = Username, C = Nama Lengkap, D = NIP, E = Email, F = Walas, G = Role, H = Password
+                    $username = isset($row[1]) ? trim((string)$row[1]) : '';
+                    $nama     = isset($row[2]) ? trim((string)$row[2]) : '';
+                    $nip      = isset($row[3]) ? trim((string)$row[3]) : '';
+                    $email    = isset($row[4]) ? trim((string)$row[4]) : null;
+                    $walasStr = isset($row[5]) ? trim((string)$row[5]) : '';
+                    $roleStr  = isset($row[6]) ? trim((string)$row[6]) : '';
+                    $password = isset($row[7]) ? trim((string)$row[7]) : '';
+
+                    if (empty($username) && empty($nama)) {
+                        continue;
+                    }
+
+                    if (empty($username) || empty($nama)) {
+                        $errors[] = "Baris {$rowNum}: Username dan Nama Lengkap wajib diisi.";
+                        $skipped++;
+                        continue;
+                    }
+
+                    if (empty($email)) {
+                        $email = null;
+                    }
                 }
 
                 // Resolusi Kelas Binaan Wali Kelas
@@ -585,26 +744,26 @@ class UserController extends Controller
                     }
                 }
 
-                // Resolusi Role
-                // Jika dijadikan wali kelas, otomatis minimal role Guru (2)
+                // Role jelas guru (role_id = 2)
                 $roleId = 2;
-                if (strcasecmp($roleStr, 'admin') === 0 && $classId === null) {
+                if (isset($roleStr) && strcasecmp($roleStr, 'admin') === 0 && $classId === null) {
                     $roleId = 1;
                 }
 
-                // Resolusi Password
-                $rawPass = !empty($password) ? $password : 'guru123';
+                // Resolusi Password: jika diisi admin pakai password tsb, jika kosong disamakan dengan username
+                $rawPass = !empty($password) ? $password : $username;
 
-                // Cek apakah user sudah ada berdasarkan username atau email
-                $existing = DB::table('users')
-                    ->where('username', $username)
-                    ->orWhere('email', $email)
-                    ->first();
+                // Cek apakah user sudah ada berdasarkan username
+                $existingQuery = DB::table('users')->where('username', $username);
+                if (!empty($email)) {
+                    $existingQuery->orWhere('email', $email);
+                }
+                $existing = $existingQuery->first();
 
                 if ($existing) {
                     $updatePayload = [
                         'name' => $nama,
-                        'nip' => !empty($nip) ? $nip : null,
+                        'nip' => !empty($nip) ? $nip : $existing->nip,
                         'email' => $email,
                         'role_id' => $roleId,
                         'class_id' => $classId,

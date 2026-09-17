@@ -33,26 +33,13 @@
                 </tr>
             @endforeach
         @else
-            <tr style="height: 28px;">
-                <td style="text-align: center; border: 1px solid #cbd5e1;">1</td>
-                <td style="text-align: center; border: 1px solid #cbd5e1;">TP 1</td>
-                <td style="text-align: left; border: 1px solid #cbd5e1;">Memahami konsep dasar dan struktur materi pembelajaran</td>
-            </tr>
-            <tr style="height: 28px;">
-                <td style="text-align: center; border: 1px solid #cbd5e1;">2</td>
-                <td style="text-align: center; border: 1px solid #cbd5e1;">TP 2</td>
-                <td style="text-align: left; border: 1px solid #cbd5e1;">Menganalisis dan mengevaluasi penerapan kaidah dalam studi kasus</td>
-            </tr>
-            <tr style="height: 28px;">
-                <td style="text-align: center; border: 1px solid #cbd5e1;">3</td>
-                <td style="text-align: center; border: 1px solid #cbd5e1;">TP 3</td>
-                <td style="text-align: left; border: 1px solid #cbd5e1;">Merancang dan mempresentasikan solusi berbasis proyek kreatif</td>
-            </tr>
-            <tr style="height: 28px;">
-                <td style="text-align: center; border: 1px solid #cbd5e1;">4</td>
-                <td style="text-align: center; border: 1px solid #cbd5e1;">TP 4</td>
-                <td style="text-align: left; border: 1px solid #cbd5e1;">Menerapkan prinsip etika dan kerja sama tim dalam penyelesaian tugas</td>
-            </tr>
+            @for ($i = 1; $i <= 8; $i++)
+                <tr style="height: 28px;">
+                    <td style="text-align: center; border: 1px solid #cbd5e1;">{{ $i }}</td>
+                    <td style="text-align: center; border: 1px solid #cbd5e1;">TP {{ $i }}</td>
+                    <td style="text-align: left; border: 1px solid #cbd5e1;">{{ $i == 1 ? 'Memahami konsep dasar dan struktur materi pembelajaran' : '' }}</td>
+                </tr>
+            @endfor
         @endif
     </tbody>
 </table>

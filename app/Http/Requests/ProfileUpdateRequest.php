@@ -11,21 +11,24 @@ class ProfileUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'string', 'max:255', Rule::unique('users')->ignore(Auth::user())],
-            'password' => ['nullable', 'string', 'confirmed', 'min:8'],
+            'name' => ['required', 'string', 'max:150'],
+            'username' => ['required', 'string', 'max:100', Rule::unique('users')->ignore(Auth::id())],
+            'nip' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'string', 'max:255', Rule::unique('users')->ignore(Auth::id())],
+            'password' => ['nullable', 'string', 'confirmed', 'min:4'],
         ];
     }
 
     public function authorize()
     {
-        return true;
+        return Auth::check();
     }
 
     protected function prepareForValidation()
     {
-        if ($this->password == null) {
+        if (empty($this->password)) {
             $this->request->remove('password');
+            $this->request->remove('password_confirmation');
         }
     }
 }

@@ -491,6 +491,26 @@ class NilaiController extends Controller
                 }
             }
 
+            // 1. Sinkronisasi Tujuan Pembelajaran jika ditemukan sheet Daftar TP
+            if ($mapelId && $fstId) {
+                foreach ($worksheets as $ws) {
+                    $wsTitle = trim($ws->getTitle());
+                    if (strcasecmp($wsTitle, 'Daftar TP') === 0 || str_contains(strtolower($wsTitle), 'daftar_tp') || str_contains(strtolower($wsTitle), 'tujuan')) {
+                        $this->syncTpsFromSheet($ws, $mapelId, $fstId);
+                    }
+                }
+            }
+
+            // 2. Import Penilaian TP Formatif jika ditemukan sheet TP_ atau Formatif_
+            if ($mapelId && $fstId) {
+                foreach ($worksheets as $ws) {
+                    $wsTitle = trim($ws->getTitle());
+                    if (str_starts_with(strtoupper($wsTitle), 'TP_') || str_starts_with(strtoupper($wsTitle), 'FORMATIF_')) {
+                        $this->importFormatifSheet($ws, $mapelId, $fstId);
+                    }
+                }
+            }
+
             $sheet = $targetSheet;
             $totalImported = 0;
             $totalSkipped  = 0;
@@ -513,25 +533,25 @@ class NilaiController extends Controller
                     $colMap['sts'] = $letter;
                 } elseif (str_contains($head, 'sas')) {
                     $colMap['sas'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*10/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*10/i', $head)) {
                     $colMap['h10'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*1/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*1(?!\d)/i', $head)) {
                     $colMap['h1'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*2/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*2(?!\d)/i', $head)) {
                     $colMap['h2'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*3/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*3(?!\d)/i', $head)) {
                     $colMap['h3'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*4/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*4(?!\d)/i', $head)) {
                     $colMap['h4'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*5/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*5(?!\d)/i', $head)) {
                     $colMap['h5'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*6/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*6(?!\d)/i', $head)) {
                     $colMap['h6'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*7/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*7(?!\d)/i', $head)) {
                     $colMap['h7'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*8/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*8(?!\d)/i', $head)) {
                     $colMap['h8'] = $letter;
-                } elseif (preg_match('/(sumatif|harian)\s*9/i', $head)) {
+                } elseif (preg_match('/(sumatif|harian|tp)\s*9(?!\d)/i', $head)) {
                     $colMap['h9'] = $letter;
                 }
             }
@@ -1280,5 +1300,203 @@ class NilaiController extends Controller
         }
         $fst = DB::table('m_fst_pembelajaran')->where('id', $fstId)->first();
         return $fst && (bool) $fst->is_locked;
+    }
+
+    /**
+     * Sinkronisasi Tujuan Pembelajaran (TP) jika ada deskripsi TP pada sheet Daftar TP.
+     */
+    private function syncTpsFromSheet($sheet, int $mapelId, int $fstId): void
+    {
+        try {
+            $highestRow = $sheet->getHighestDataRow();
+            $highestCol = $sheet->getHighestColumn();
+            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+
+            $tpColLetter = 'C';
+            for ($c = 1; $c <= $highestColIdx; $c++) {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                $header = strtolower(trim((string) $sheet->getCell("{$letter}4")->getValue()));
+                if (str_contains($header, 'deskripsi') || str_contains($header, 'tujuan') || str_contains($header, 'kompetensi')) {
+                    $tpColLetter = $letter;
+                    break;
+                }
+            }
+
+            $descriptions = [];
+            for ($row = 5; $row <= $highestRow; $row++) {
+                $desc = trim((string) $sheet->getCell("{$tpColLetter}{$row}")->getValue());
+                if (!empty($desc) && !str_starts_with($desc, 'Petunjuk:')) {
+                    $descriptions[] = $desc;
+                }
+            }
+
+            if (empty($descriptions)) {
+                return;
+            }
+
+            $existingTps = DB::table('m_tp')
+                ->where('mapel_id', $mapelId)
+                ->where('fst_id', $fstId)
+                ->pluck('tp_deskripsi')
+                ->toArray();
+
+            $now = \Carbon\Carbon::now();
+            $toInsert = [];
+            foreach ($descriptions as $desc) {
+                if (!in_array($desc, $existingTps)) {
+                    $toInsert[] = [
+                        'mapel_id'     => $mapelId,
+                        'fst_id'       => $fstId,
+                        'class_id'     => null,
+                        'tp_deskripsi' => $desc,
+                        'created_at'   => $now,
+                        'updated_at'   => $now,
+                    ];
+                    $existingTps[] = $desc;
+                }
+            }
+
+            if (!empty($toInsert)) {
+                DB::table('m_tp')->insert($toInsert);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Could not sync TP from sheet in NilaiController: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import Penilaian TP Formatif (Capaian [1/0] & Tampil di Rapor [1/0]) dari sheet TP.
+     */
+    private function importFormatifSheet($sheet, int $mapelId, int $fstId): void
+    {
+        try {
+            $sheetTitle = trim($sheet->getTitle());
+            $cleanClassName = trim(preg_replace('/^(TP_|FORMATIF_)/i', '', $sheetTitle));
+
+            $class = DB::table('class')
+                ->where('class_name', $cleanClassName)
+                ->orWhere('class_name', str_replace('_', ' ', $cleanClassName))
+                ->orWhere('class_name', str_replace('-', ' ', $cleanClassName))
+                ->first();
+
+            if (!$class) {
+                $cellVal = (string) ($sheet->getCell('D2')->getValue() ?? $sheet->getCell('B2')->getValue() ?? '');
+                if (str_contains($cellVal, 'Kelas:')) {
+                    $parsed = trim(str_replace('Kelas:', '', $cellVal));
+                    $class = DB::table('class')->where('class_name', $parsed)->first();
+                }
+            }
+
+            if (!$class) {
+                return;
+            }
+
+            $tps = DB::table('m_tp')
+                ->where('mapel_id', $mapelId)
+                ->where('fst_id', $fstId)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            if ($tps->isEmpty()) {
+                return;
+            }
+
+            $highestRow = $sheet->getHighestDataRow();
+            $highestCol = $sheet->getHighestColumn();
+            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
+
+            $colNis  = 'B';
+            $colNisn = 'C';
+            $colNama = 'D';
+
+            $tpColMap = [];
+            for ($c = 1; $c <= $highestColIdx; $c++) {
+                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                $head = strtolower(trim((string) $sheet->getCell("{$letter}4")->getValue()));
+
+                if (str_contains($head, 'nisn')) {
+                    $colNisn = $letter;
+                } elseif (str_contains($head, 'nis')) {
+                    $colNis = $letter;
+                } elseif (str_contains($head, 'nama')) {
+                    $colNama = $letter;
+                } elseif (preg_match('/tp\s*(\d+).*capaian/i', $head, $m)) {
+                    $idx = (int) $m[1] - 1;
+                    $tpColMap[$idx]['kktp_col'] = $letter;
+                } elseif (preg_match('/tp\s*(\d+).*tampil/i', $head, $m)) {
+                    $idx = (int) $m[1] - 1;
+                    $tpColMap[$idx]['tampil_col'] = $letter;
+                }
+            }
+
+            if (empty($tpColMap)) {
+                $colIdx = 5;
+                foreach ($tps as $idx => $tp) {
+                    $tpColMap[$idx] = [
+                        'kktp_col'   => \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx),
+                        'tampil_col' => \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1),
+                    ];
+                    $colIdx += 2;
+                }
+            }
+
+            $now = \Carbon\Carbon::now();
+
+            for ($row = 5; $row <= $highestRow; $row++) {
+                $nis  = trim((string) $sheet->getCell("{$colNis}{$row}")->getValue());
+                $nisn = trim((string) $sheet->getCell("{$colNisn}{$row}")->getValue());
+                $nama = trim((string) $sheet->getCell("{$colNama}{$row}")->getValue());
+
+                if (empty($nis) && empty($nisn) && empty($nama)) {
+                    continue;
+                }
+
+                $student = DB::table('students')
+                    ->where('class_id', $class->id)
+                    ->where(function ($q) use ($nis, $nisn, $nama) {
+                        if (!empty($nis)) $q->where('nis', $nis);
+                        if (!empty($nisn)) $q->orWhere('nisn', $nisn);
+                        if (empty($nis) && empty($nisn) && !empty($nama)) $q->where('nama', 'like', "%{$nama}%");
+                    })
+                    ->first();
+
+                if (!$student) {
+                    continue;
+                }
+
+                foreach ($tps as $idx => $tp) {
+                    if (!isset($tpColMap[$idx])) continue;
+
+                    $kktpCol   = $tpColMap[$idx]['kktp_col'] ?? null;
+                    $tampilCol = $tpColMap[$idx]['tampil_col'] ?? null;
+
+                    $rawKktp   = $kktpCol ? $sheet->getCell("{$kktpCol}{$row}")->getValue() : 1;
+                    $rawTampil = $tampilCol ? $sheet->getCell("{$tampilCol}{$row}")->getValue() : 1;
+
+                    $kktpVal   = (is_null($rawKktp) || $rawKktp === '') ? 1 : (int)$rawKktp;
+                    $tampilVal = (is_null($rawTampil) || $rawTampil === '') ? 1 : (int)$rawTampil;
+
+                    $kktpVal   = ($kktpVal >= 1) ? 1 : 0;
+                    $tampilVal = ($tampilVal >= 1) ? 1 : 0;
+
+                    DB::table('tpsiswas')->updateOrInsert(
+                        [
+                            'siswa_id' => $student->id,
+                            'class_id' => $class->id,
+                            'mapel_id' => $mapelId,
+                            'fst_id'   => $fstId,
+                            'tp_id'    => $tp->id,
+                        ],
+                        [
+                            'kktp'       => $kktpVal,
+                            'tampilkan'  => $tampilVal,
+                            'updated_at' => $now,
+                        ]
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Could not import formatif TP from sheet in NilaiController: " . $e->getMessage());
+        }
     }
 }

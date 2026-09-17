@@ -212,10 +212,10 @@
                     <form id="csvForm" enctype="multipart/form-data">
                         <div class="modal-body p-4">
                             <div class="alert alert-light border mb-3">
-                                <h6 class="font-weight-bold text-dark mb-1"><i class="fas fa-info-circle text-info mr-1"></i> Format Template Resmi:</h6>
-                                <p class="small text-muted mb-2">Unduh format Excel berikut yang sudah disesuaikan dengan kolom NIS, NISN, Nama, Kelas, Biodata, Orang Tua, dan Presensi.</p>
+                                <h6 class="font-weight-bold text-dark mb-1"><i class="fas fa-info-circle text-info mr-1"></i> Format Template Multi-Sheet Resmi:</h6>
+                                <p class="small text-muted mb-2">Berkas Excel otomatis tersusun dalam <strong>sheet terpisah untuk setiap kelas</strong>. Anda dapat mengisi data siswa langsung pada tab kelasnya masing-masing.</p>
                                 <a href="{{ route('student.download') }}" class="btn btn-success btn-block font-weight-bold text-decoration-none"
-                                    target="_blank"><i class="fas fa-file-excel mr-1"></i> Download Template Excel (.xlsx)</a>
+                                    target="_blank"><i class="fas fa-file-excel mr-1"></i> Download Template Excel Per Kelas (.xlsx)</a>
                             </div>
 
                             <div class="form-group mb-0">

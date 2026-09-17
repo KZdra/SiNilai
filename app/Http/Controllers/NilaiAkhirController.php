@@ -201,12 +201,18 @@ class NilaiAkhirController extends Controller
             $query .= " WHERE s.id = :studentId ";
             $bindings['studentId'] = $student_id;
         } elseif ($classId) {
-            $query .= " WHERE (s.class_id = :classId OR EXISTS (SELECT 1 FROM `values` val WHERE val.student_id = s.id AND val.class_id = :classIdVal AND val.fst_id = :fstIdVal) OR EXISTS (SELECT 1 FROM catatan_walikelas cw WHERE cw.student_id = s.id AND cw.class_id = :classIdCw AND cw.fst_id = :fstIdCw)) ";
+            $hasHistTable = \Illuminate\Support\Facades\Schema::hasTable('student_class_history');
+            $histClause = $hasHistTable ? " OR EXISTS (SELECT 1 FROM student_class_history sch WHERE sch.student_id = s.id AND sch.class_id = :classIdSch AND sch.fst_id = :fstIdSch) " : "";
+            $query .= " WHERE (s.class_id = :classId OR EXISTS (SELECT 1 FROM `values` val WHERE val.student_id = s.id AND val.class_id = :classIdVal AND val.fst_id = :fstIdVal) OR EXISTS (SELECT 1 FROM catatan_walikelas cw WHERE cw.student_id = s.id AND cw.class_id = :classIdCw AND cw.fst_id = :fstIdCw) {$histClause}) ";
             $bindings['classId'] = $classId;
             $bindings['classIdVal'] = $classId;
             $bindings['fstIdVal'] = $fstId;
             $bindings['classIdCw'] = $classId;
             $bindings['fstIdCw'] = $fstId;
+            if ($hasHistTable) {
+                $bindings['classIdSch'] = $classId;
+                $bindings['fstIdSch'] = $fstId;
+            }
         }
 
         $query .= " GROUP BY s.id, s.nama, c.class_name ORDER BY c.class_name, s.nama";

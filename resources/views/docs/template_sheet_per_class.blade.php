@@ -40,6 +40,7 @@
             <!-- Kolom Asesmen Semester (STS & SAS) -->
             <th style="font-weight: bold; text-align: center; background-color: #0f766e; color: #ffffff; border: 1px solid #94a3b8; width: 90px;">Nilai STS</th>
             <th style="font-weight: bold; text-align: center; background-color: #0f766e; color: #ffffff; border: 1px solid #94a3b8; width: 90px;">Nilai SAS</th>
+
         </tr>
     </thead>
     <tbody>

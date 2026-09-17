@@ -58,8 +58,34 @@ class MapelController extends Controller
     public function destroy($id)
     {
         try {
-            DB::table('mata_pelajarans')->where('id', '=',$id)->delete();
-            return response()->json(['message' => 'Mapel berhasil diHapus!'], 201);
+            $mapel = DB::table('mata_pelajarans')->where('id', $id)->first();
+            if (!$mapel) {
+                return response()->json(['message' => 'Data mata pelajaran tidak ditemukan!'], 404);
+            }
+
+            // 1. Cek apakah mata pelajaran ini sedang dipetakan di Mapping Mapel
+            if (DB::table('mapel_class_fst')->where('mapel_id', $id)->exists()) {
+                return response()->json([
+                    'message' => "Mata pelajaran '{$mapel->nama_mapel}' tidak dapat dihapus karena masih aktif pada menu Mapping Mapel."
+                ], 422);
+            }
+
+            // 2. Cek apakah ada riwayat nilai siswa untuk mapel ini
+            if (DB::table('values')->where('mapel_id', $id)->exists()) {
+                return response()->json([
+                    'message' => "Mata pelajaran '{$mapel->nama_mapel}' tidak dapat dihapus karena memiliki riwayat nilai siswa."
+                ], 422);
+            }
+
+            // 3. Cek apakah ada Tujuan Pembelajaran (TP) yang terdaftar
+            if (DB::table('m_tp')->where('mapel_id', $id)->exists() || DB::table('tpsiswas')->where('mapel_id', $id)->exists()) {
+                return response()->json([
+                    'message' => "Mata pelajaran '{$mapel->nama_mapel}' tidak dapat dihapus karena masih terhubung dengan data Tujuan Pembelajaran (TP)."
+                ], 422);
+            }
+
+            DB::table('mata_pelajarans')->where('id', '=', $id)->delete();
+            return response()->json(['message' => "Mata pelajaran '{$mapel->nama_mapel}' berhasil dihapus!"], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }

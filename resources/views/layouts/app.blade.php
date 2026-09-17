@@ -108,13 +108,22 @@
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
-                        {{ Auth::user()->name }}
+                    <a class="nav-link font-weight-bold" data-toggle="dropdown" href="#" aria-expanded="false">
+                        <i class="fas fa-user-circle mr-1 text-primary"></i> {{ Auth::user()->name }}
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" style="left: inherit; right: 0px;">
+                    <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" style="left: inherit; right: 0px; min-width: 220px;">
+                        <div class="px-3 py-2 border-bottom bg-light">
+                            <span class="d-block font-weight-bold text-dark text-truncate">{{ Auth::user()->name }}</span>
+                            <span class="d-block small text-muted text-truncate"><i class="fas fa-at text-muted mr-1"></i>{{ Auth::user()->username }}</span>
+                        </div>
+                        <a href="{{ route('profile.show') }}" class="dropdown-item py-2 font-weight-bold text-dark">
+                            <i class="mr-2 fas fa-user-cog text-primary"></i>
+                            {{ __('Pengaturan Akun') }}
+                        </a>
+                        <div class="dropdown-divider my-1"></div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <a href="{{ route('logout') }}" class="dropdown-item"
+                            <a href="{{ route('logout') }}" class="dropdown-item py-2 text-danger font-weight-bold"
                                 onclick="event.preventDefault(); this.closest('form').submit();">
                                 <i class="mr-2 fas fa-sign-out-alt"></i>
                                 {{ __('Log Out') }}

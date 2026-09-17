@@ -13,6 +13,13 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('panduan.index') }}" class="nav-link {{ request()->is('panduan*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-book-reader text-warning"></i>
+                    <p class="font-weight-bold">{{ __('Panduan & Alur Kerja') }}</p>
+                </a>
+            </li>
+
             @if (Auth::user()->role_id == 1 || Auth::user()->class_id !== null)
 
             <!-- ── SEKSI 1: AKADEMIK & PENILAIAN ─────────────────── -->
@@ -232,6 +239,17 @@
                     </a>
                 </li>
             @endif
+
+            <!-- ── AKUN PENGGUNA ─────────────────────────────────── -->
+            <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">
+                {{ __('Akun & Profil') }}
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('profile.show') }}" class="nav-link {{ request()->is('profile*') ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-user-cog text-info"></i>
+                    <p>{{ __('Pengaturan Akun') }}</p>
+                </a>
+            </li>
 
         </ul>
     </nav>

@@ -280,80 +280,7 @@ class SiswaController extends Controller
 
         try {
             $spreadsheet = IOFactory::load($file->getRealPath());
-            $sheet       = $spreadsheet->getActiveSheet();
-            $highestRow  = $sheet->getHighestDataRow();
-
-            if ($highestRow < 2) {
-                return response()->json(['message' => 'Berkas Excel kosong atau tidak memiliki baris data siswa.'], 400);
-            }
-
-            // Cari mapping kolom dari baris ke-1 (header) secara dinamis
-            $highestCol    = $sheet->getHighestColumn();
-            $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
-
-            $colMap = [];
-            for ($c = 1; $c <= $highestColIdx; $c++) {
-                $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                $header = strtolower(trim((string) $sheet->getCell("{$letter}1")->getValue()));
-
-                if (str_contains($header, 'nisn')) {
-                    $colMap['nisn'] = $letter;
-                } elseif ($header === 'nis' || str_starts_with($header, 'nis ')) {
-                    $colMap['nis'] = $letter;
-                } elseif (str_contains($header, 'nama peserta didik') || str_contains($header, 'nama siswa') || $header === 'nama') {
-                    $colMap['nama'] = $letter;
-                } elseif ($header === 'kelas' || str_contains($header, 'rombel')) {
-                    $colMap['kelas'] = $letter;
-                } elseif ($header === 'l/p' || str_contains($header, 'jenis kelamin') || $header === 'jk') {
-                    $colMap['jk'] = $letter;
-                } elseif (str_contains($header, 'tempat lahir')) {
-                    $colMap['tempat_lahir'] = $letter;
-                } elseif (str_contains($header, 'tanggal lahir')) {
-                    $colMap['tanggal_lahir'] = $letter;
-                } elseif (str_contains($header, 'agama')) {
-                    $colMap['agama'] = $letter;
-                } elseif (str_contains($header, 'pendidikan')) {
-                    $colMap['pendidikan'] = $letter;
-                } elseif (str_contains($header, 'alamat peserta didik') || $header === 'alamat siswa' || $header === 'alamat') {
-                    $colMap['alamat'] = $letter;
-                } elseif (str_contains($header, 'nama ayah')) {
-                    $colMap['nama_ayah'] = $letter;
-                } elseif (str_contains($header, 'nama ibu')) {
-                    $colMap['nama_ibu'] = $letter;
-                } elseif (str_contains($header, 'pekerjaan ayah')) {
-                    $colMap['pekerjaan_ayah'] = $letter;
-                } elseif (str_contains($header, 'pekerjaan ibu')) {
-                    $colMap['pekerjaan_ibu'] = $letter;
-                } elseif (str_contains($header, 'alamat orang tua')) {
-                    $colMap['alamat_orang_tua'] = $letter;
-                } elseif ($header === 's' || str_contains($header, 'sakit')) {
-                    $colMap['sakit'] = $letter;
-                } elseif ($header === 'i' || str_contains($header, 'izin')) {
-                    $colMap['izin'] = $letter;
-                } elseif ($header === 'a' || str_contains($header, 'alpa') || str_contains($header, 'alpha')) {
-                    $colMap['alpa'] = $letter;
-                }
-            }
-
-            // Fallback ke posisi kolom standar template (A s.d R sesuai urutan: NIS, NISN, Nama, Kelas, L/P, Tempat Lahir, Tgl Lahir, Agama, Pendidikan, Alamat, Ayah, Ibu, Pek Ayah, Pek Ibu, Alamat Ortu, S, I, A)
-            $colNis         = $colMap['nis']          ?? 'A';
-            $colNisn        = $colMap['nisn']         ?? 'B';
-            $colNama        = $colMap['nama']         ?? 'C';
-            $colKelas       = $colMap['kelas']        ?? 'D';
-            $colJk          = $colMap['jk']           ?? 'E';
-            $colTempatLahir = $colMap['tempat_lahir'] ?? 'F';
-            $colTglLahir    = $colMap['tanggal_lahir']?? 'G';
-            $colAgama       = $colMap['agama']        ?? 'H';
-            $colPendidikan  = $colMap['pendidikan']   ?? 'I';
-            $colAlamat      = $colMap['alamat']       ?? 'J';
-            $colNamaAyah    = $colMap['nama_ayah']    ?? 'K';
-            $colNamaIbu     = $colMap['nama_ibu']     ?? 'L';
-            $colPekAyah     = $colMap['pekerjaan_ayah']?? 'M';
-            $colPekIbu      = $colMap['pekerjaan_ibu'] ?? 'N';
-            $colAlmOrtu     = $colMap['alamat_orang_tua'] ?? 'O';
-            $colSakit       = $colMap['sakit']        ?? 'P';
-            $colIzin        = $colMap['izin']         ?? 'Q';
-            $colAlpa        = $colMap['alpa']         ?? 'R';
+            $worksheets  = $spreadsheet->getAllSheets();
 
             $totalImported = 0;
             $totalUpdated  = 0;
@@ -361,120 +288,241 @@ class SiswaController extends Controller
 
             DB::beginTransaction();
 
-            for ($row = 2; $row <= $highestRow; $row++) {
-                $cellNis = $sheet->getCell("{$colNis}{$row}");
-                $nis = trim((string) ($cellNis->getFormattedValue() ?: $cellNis->getValue()));
+            foreach ($worksheets as $sheet) {
+                $sheetTitle = trim($sheet->getTitle());
+                $highestRow = $sheet->getHighestDataRow();
 
-                $cellNisn = $sheet->getCell("{$colNisn}{$row}");
-                $nisn = trim((string) ($cellNisn->getFormattedValue() ?: $cellNisn->getValue()));
-
-                $nama = trim((string) $sheet->getCell("{$colNama}{$row}")->getValue());
-
-                // Lewati baris jika NIS dan Nama kosong
-                if (empty($nis) && empty($nama)) {
+                if ($highestRow < 2) {
                     continue;
                 }
 
-                if (empty($nis)) {
-                    $totalSkipped++;
-                    continue;
+                // Resolusi kelas dari nama sheet
+                $sheetClass = DB::table('class')
+                    ->where('class_name', $sheetTitle)
+                    ->orWhere('class_name', str_replace('_', ' ', $sheetTitle))
+                    ->orWhere('class_name', str_replace('-', ' ', $sheetTitle))
+                    ->first();
+
+                // Jika nama sheet belum cocok, coba cek di cell A2 atau B2
+                if (!$sheetClass) {
+                    $cellA2 = (string) $sheet->getCell('A2')->getValue();
+                    $cellB2 = (string) $sheet->getCell('B2')->getValue();
+                    if (str_contains($cellA2, 'Kelas:')) {
+                        $parsedName = trim(str_replace('Kelas:', '', $cellA2));
+                        $sheetClass = DB::table('class')->where('class_name', $parsedName)->first();
+                    } elseif (str_contains($cellB2, 'Kelas:')) {
+                        $parsedName = trim(str_replace('Kelas:', '', $cellB2));
+                        $sheetClass = DB::table('class')->where('class_name', $parsedName)->first();
+                    }
                 }
 
-                $className            = trim((string) $sheet->getCell("{$colKelas}{$row}")->getValue());
-                $jenis_kelamin        = trim((string) $sheet->getCell("{$colJk}{$row}")->getValue());
-                $tempat_lahir         = trim((string) $sheet->getCell("{$colTempatLahir}{$row}")->getValue());
-                $agama                = trim((string) $sheet->getCell("{$colAgama}{$row}")->getValue());
-                $pendidikan_sebelumnya= trim((string) $sheet->getCell("{$colPendidikan}{$row}")->getValue());
-                $alamat               = trim((string) $sheet->getCell("{$colAlamat}{$row}")->getValue());
-                $nama_ayah            = trim((string) $sheet->getCell("{$colNamaAyah}{$row}")->getValue());
-                $nama_ibu             = trim((string) $sheet->getCell("{$colNamaIbu}{$row}")->getValue());
-                $pekerjaan_ayah       = trim((string) $sheet->getCell("{$colPekAyah}{$row}")->getValue());
-                $pekerjaan_ibu        = trim((string) $sheet->getCell("{$colPekIbu}{$row}")->getValue());
-                $alamat_orang_tua     = trim((string) $sheet->getCell("{$colAlmOrtu}{$row}")->getValue());
+                // Cari baris header secara dinamis (antara baris 1 s.d 4)
+                $highestCol    = $sheet->getHighestColumn();
+                $highestColIdx = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestCol);
 
-                $rawSakit = $sheet->getCell("{$colSakit}{$row}")->getValue();
-                $rawIzin  = $sheet->getCell("{$colIzin}{$row}")->getValue();
-                $rawAlpa  = $sheet->getCell("{$colAlpa}{$row}")->getValue();
+                $headerRow = 1;
+                $colMap = [];
 
-                $sakit = (is_null($rawSakit) || $rawSakit === '') ? 0 : (int)$rawSakit;
-                $izin  = (is_null($rawIzin)  || $rawIzin === '')  ? 0 : (int)$rawIzin;
-                $alpa  = (is_null($rawAlpa)  || $rawAlpa === '')  ? 0 : (int)$rawAlpa;
+                for ($r = 1; $r <= min(5, $highestRow); $r++) {
+                    $foundKey = false;
+                    $tempMap = [];
+                    for ($c = 1; $c <= $highestColIdx; $c++) {
+                        $letter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                        $header = strtolower(trim((string) $sheet->getCell("{$letter}{$r}")->getValue()));
 
-                // Parsing Tanggal Lahir (Mendukung tipe tanggal Excel maupun teks tanggal biasa)
-                $tanggal_lahir = null;
-                $tglCell = $sheet->getCell("{$colTglLahir}{$row}");
-                if (!empty($tglCell->getValue())) {
-                    if (ExcelDate::isDateTime($tglCell)) {
-                        $val = $tglCell->getValue();
-                        $tanggal_lahir = Carbon::instance(ExcelDate::excelToDateTimeObject($val))->format('Y-m-d');
-                    } else {
-                        $rawDate = trim((string) $tglCell->getValue());
-                        try {
-                            $tanggal_lahir = Carbon::parse($rawDate)->format('Y-m-d');
-                        } catch (\Exception $e) {
-                            $tanggal_lahir = null;
+                        if (str_contains($header, 'nisn')) {
+                            $tempMap['nisn'] = $letter;
+                            $foundKey = true;
+                        } elseif ($header === 'nis' || str_starts_with($header, 'nis ')) {
+                            $tempMap['nis'] = $letter;
+                            $foundKey = true;
+                        } elseif (str_contains($header, 'nama')) {
+                            $tempMap['nama'] = $letter;
+                            $foundKey = true;
+                        } elseif ($header === 'kelas' || str_contains($header, 'rombel')) {
+                            $tempMap['kelas'] = $letter;
+                        } elseif ($header === 'l/p' || str_contains($header, 'jenis kelamin') || $header === 'jk') {
+                            $tempMap['jk'] = $letter;
+                        } elseif (str_contains($header, 'tempat lahir')) {
+                            $tempMap['tempat_lahir'] = $letter;
+                        } elseif (str_contains($header, 'tanggal lahir')) {
+                            $tempMap['tanggal_lahir'] = $letter;
+                        } elseif (str_contains($header, 'agama')) {
+                            $tempMap['agama'] = $letter;
+                        } elseif (str_contains($header, 'pendidikan')) {
+                            $tempMap['pendidikan'] = $letter;
+                        } elseif (str_contains($header, 'alamat peserta didik') || $header === 'alamat siswa' || $header === 'alamat') {
+                            $tempMap['alamat'] = $letter;
+                        } elseif (str_contains($header, 'nama ayah')) {
+                            $tempMap['nama_ayah'] = $letter;
+                        } elseif (str_contains($header, 'nama ibu')) {
+                            $tempMap['nama_ibu'] = $letter;
+                        } elseif (str_contains($header, 'pekerjaan ayah')) {
+                            $tempMap['pekerjaan_ayah'] = $letter;
+                        } elseif (str_contains($header, 'pekerjaan ibu')) {
+                            $tempMap['pekerjaan_ibu'] = $letter;
+                        } elseif (str_contains($header, 'alamat orang tua')) {
+                            $tempMap['alamat_orang_tua'] = $letter;
+                        } elseif ($header === 's' || str_contains($header, 'sakit')) {
+                            $tempMap['sakit'] = $letter;
+                        } elseif ($header === 'i' || str_contains($header, 'izin')) {
+                            $tempMap['izin'] = $letter;
+                        } elseif ($header === 'a' || str_contains($header, 'alpa') || str_contains($header, 'alpha')) {
+                            $tempMap['alpa'] = $letter;
                         }
                     }
-                }
 
-                // Cari ID Kelas atau buat baru jika belum ada
-                $classId = null;
-                if (!empty($className)) {
-                    $class = DB::table('class')
-                        ->where('class_name', $className)
-                        ->orWhere('class_name', 'LIKE', $className)
-                        ->first();
-
-                    if ($class) {
-                        $classId = $class->id;
-                    } else {
-                        $classId = DB::table('class')->insertGetId([
-                            'class_name' => $className,
-                            'created_at' => Carbon::now(),
-                            'updated_at' => Carbon::now(),
-                        ]);
+                    if ($foundKey && isset($tempMap['nis']) && isset($tempMap['nama'])) {
+                        $headerRow = $r;
+                        $colMap = $tempMap;
+                        break;
                     }
                 }
 
-                $studentData = [
-                    'nisn'                 => !empty($nisn) ? $nisn : null,
-                    'nama'                 => ucwords(strtolower($nama)),
-                    'class_id'             => $classId,
-                    'jenis_kelamin'        => !empty($jenis_kelamin) ? strtoupper(trim($jenis_kelamin)) : null,
-                    'tempat_lahir'         => !empty($tempat_lahir) ? ucwords(strtolower($tempat_lahir)) : null,
-                    'tanggal_lahir'        => $tanggal_lahir,
-                    'agama'                => !empty($agama) ? strtolower(trim($agama)) : null,
-                    'pendidikan_sebelumnya'=> $pendidikan_sebelumnya ?: null,
-                    'alamat'               => $alamat ?: null,
-                    'nama_ayah'            => !empty($nama_ayah) ? ucwords(strtolower($nama_ayah)) : null,
-                    'nama_ibu'             => !empty($nama_ibu) ? ucwords(strtolower($nama_ibu)) : null,
-                    'pekerjaan_ayah'       => $pekerjaan_ayah ?: null,
-                    'pekerjaan_ibu'        => $pekerjaan_ibu ?: null,
-                    'alamat_orang_tua'     => $alamat_orang_tua ?: null,
-                    'sakit'                => $sakit,
-                    'izin'                 => $izin,
-                    'alpa'                 => $alpa,
-                    'updated_at'           => Carbon::now(),
-                ];
+                // Fallback default kolom jika tidak terpetakan lengkap
+                $colNis         = $colMap['nis']          ?? 'B';
+                $colNisn        = $colMap['nisn']         ?? 'C';
+                $colNama        = $colMap['nama']         ?? 'D';
+                $colKelas       = $colMap['kelas']        ?? 'E';
+                $colJk          = $colMap['jk']           ?? 'F';
+                $colTempatLahir = $colMap['tempat_lahir'] ?? 'G';
+                $colTglLahir    = $colMap['tanggal_lahir']?? 'H';
+                $colAgama       = $colMap['agama']        ?? 'I';
+                $colPendidikan  = $colMap['pendidikan']   ?? 'J';
+                $colAlamat      = $colMap['alamat']       ?? 'K';
+                $colNamaAyah    = $colMap['nama_ayah']    ?? 'L';
+                $colNamaIbu     = $colMap['nama_ibu']     ?? 'M';
+                $colPekAyah     = $colMap['pekerjaan_ayah']?? 'N';
+                $colPekIbu      = $colMap['pekerjaan_ibu'] ?? 'O';
+                $colAlmOrtu     = $colMap['alamat_orang_tua'] ?? 'P';
+                $colSakit       = $colMap['sakit']        ?? 'Q';
+                $colIzin        = $colMap['izin']         ?? 'R';
+                $colAlpa        = $colMap['alpa']         ?? 'S';
 
-                $existingStudent = DB::table('students')->where('nis', $nis)->first();
+                for ($row = $headerRow + 1; $row <= $highestRow; $row++) {
+                    $cellNis = $sheet->getCell("{$colNis}{$row}");
+                    $nis = trim((string) ($cellNis->getFormattedValue() ?: $cellNis->getValue()));
 
-                if ($existingStudent) {
-                    DB::table('students')->where('id', $existingStudent->id)->update($studentData);
-                    $totalUpdated++;
-                } else {
-                    $studentData['nis']        = $nis;
-                    $studentData['created_at'] = Carbon::now();
-                    DB::table('students')->insert($studentData);
-                    $totalImported++;
+                    $cellNisn = $sheet->getCell("{$colNisn}{$row}");
+                    $nisn = trim((string) ($cellNisn->getFormattedValue() ?: $cellNisn->getValue()));
+
+                    $nama = trim((string) $sheet->getCell("{$colNama}{$row}")->getValue());
+
+                    // Lewati baris jika NIS dan Nama kosong
+                    if (empty($nis) && empty($nama)) {
+                        continue;
+                    }
+
+                    if (empty($nis)) {
+                        $totalSkipped++;
+                        continue;
+                    }
+
+                    $classNameVal = trim((string) $sheet->getCell("{$colKelas}{$row}")->getValue());
+                    $className    = !empty($classNameVal) ? $classNameVal : ($sheetClass ? $sheetClass->class_name : '');
+
+                    $jenis_kelamin        = trim((string) $sheet->getCell("{$colJk}{$row}")->getValue());
+                    $tempat_lahir         = trim((string) $sheet->getCell("{$colTempatLahir}{$row}")->getValue());
+                    $agama                = trim((string) $sheet->getCell("{$colAgama}{$row}")->getValue());
+                    $pendidikan_sebelumnya= trim((string) $sheet->getCell("{$colPendidikan}{$row}")->getValue());
+                    $alamat               = trim((string) $sheet->getCell("{$colAlamat}{$row}")->getValue());
+                    $nama_ayah            = trim((string) $sheet->getCell("{$colNamaAyah}{$row}")->getValue());
+                    $nama_ibu             = trim((string) $sheet->getCell("{$colNamaIbu}{$row}")->getValue());
+                    $pekerjaan_ayah       = trim((string) $sheet->getCell("{$colPekAyah}{$row}")->getValue());
+                    $pekerjaan_ibu        = trim((string) $sheet->getCell("{$colPekIbu}{$row}")->getValue());
+                    $alamat_orang_tua     = trim((string) $sheet->getCell("{$colAlmOrtu}{$row}")->getValue());
+
+                    $rawSakit = $sheet->getCell("{$colSakit}{$row}")->getValue();
+                    $rawIzin  = $sheet->getCell("{$colIzin}{$row}")->getValue();
+                    $rawAlpa  = $sheet->getCell("{$colAlpa}{$row}")->getValue();
+
+                    $sakit = (is_null($rawSakit) || $rawSakit === '') ? 0 : (int)$rawSakit;
+                    $izin  = (is_null($rawIzin)  || $rawIzin === '')  ? 0 : (int)$rawIzin;
+                    $alpa  = (is_null($rawAlpa)  || $rawAlpa === '')  ? 0 : (int)$rawAlpa;
+
+                    // Parsing Tanggal Lahir
+                    $tanggal_lahir = null;
+                    $tglCell = $sheet->getCell("{$colTglLahir}{$row}");
+                    if (!empty($tglCell->getValue())) {
+                        if (ExcelDate::isDateTime($tglCell)) {
+                            $val = $tglCell->getValue();
+                            $tanggal_lahir = Carbon::instance(ExcelDate::excelToDateTimeObject($val))->format('Y-m-d');
+                        } else {
+                            $rawDate = trim((string) $tglCell->getValue());
+                            try {
+                                $tanggal_lahir = Carbon::parse($rawDate)->format('Y-m-d');
+                            } catch (\Exception $e) {
+                                $tanggal_lahir = null;
+                            }
+                        }
+                    }
+
+                    // Cari ID Kelas atau buat baru jika belum ada
+                    $classId = $sheetClass ? $sheetClass->id : null;
+                    if (!empty($className)) {
+                        $cObj = DB::table('class')
+                            ->where('class_name', $className)
+                            ->orWhere('class_name', 'LIKE', $className)
+                            ->first();
+
+                        if ($cObj) {
+                            $classId = $cObj->id;
+                        } else {
+                            $classId = DB::table('class')->insertGetId([
+                                'class_name' => $className,
+                                'created_at' => Carbon::now(),
+                                'updated_at' => Carbon::now(),
+                            ]);
+                        }
+                    }
+
+                    $studentData = [
+                        'nisn'                 => !empty($nisn) ? $nisn : null,
+                        'nama'                 => ucwords(strtolower($nama)),
+                        'class_id'             => $classId,
+                        'jenis_kelamin'        => !empty($jenis_kelamin) ? strtoupper(trim($jenis_kelamin)) : null,
+                        'tempat_lahir'         => !empty($tempat_lahir) ? ucwords(strtolower($tempat_lahir)) : null,
+                        'tanggal_lahir'        => $tanggal_lahir,
+                        'agama'                => !empty($agama) ? strtolower(trim($agama)) : null,
+                        'pendidikan_sebelumnya'=> $pendidikan_sebelumnya ?: null,
+                        'alamat'               => $alamat ?: null,
+                        'nama_ayah'            => !empty($nama_ayah) ? ucwords(strtolower($nama_ayah)) : null,
+                        'nama_ibu'             => !empty($nama_ibu) ? ucwords(strtolower($nama_ibu)) : null,
+                        'pekerjaan_ayah'       => $pekerjaan_ayah ?: null,
+                        'pekerjaan_ibu'        => $pekerjaan_ibu ?: null,
+                        'alamat_orang_tua'     => $alamat_orang_tua ?: null,
+                        'sakit'                => $sakit,
+                        'izin'                 => $izin,
+                        'alpa'                 => $alpa,
+                        'updated_at'           => Carbon::now(),
+                    ];
+
+                    $existingStudent = DB::table('students')->where('nis', $nis)->first();
+
+                    if ($existingStudent) {
+                        DB::table('students')->where('id', $existingStudent->id)->update($studentData);
+                        $totalUpdated++;
+                    } else {
+                        $studentData['nis']        = $nis;
+                        $studentData['created_at'] = Carbon::now();
+                        DB::table('students')->insert($studentData);
+                        $totalImported++;
+                    }
                 }
             }
 
             DB::commit();
 
+            if ($totalImported === 0 && $totalUpdated === 0 && $totalSkipped === 0) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Tidak ada baris data siswa yang ditemukan pada berkas Excel.',
+                ], 422);
+            }
+
             return response()->json([
                 'status'  => 'success',
-                'message' => "Data siswa berhasil diimpor dari Excel! ({$totalImported} siswa baru ditambahkan, {$totalUpdated} siswa diperbarui).",
+                'message' => "Data siswa berhasil diimpor! ({$totalImported} siswa baru ditambahkan, {$totalUpdated} siswa diperbarui).",
             ]);
 
         } catch (\Exception $e) {
@@ -487,16 +535,27 @@ class SiswaController extends Controller
         }
     }
 
-    public function downloadTemplate()
+    public function downloadTemplate(Request $request)
     {
-        $path = public_path('down/Template_InputSiswa.xlsx');
-        if (file_exists($path)) {
-            return response()->download($path, 'Template_InputSiswa.xlsx', [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ]);
+        $classId = $request->input('class_id');
+        if (Auth::check() && Auth::user()->role_id != 1 && Auth::user()->class_id !== null) {
+            $classId = Auth::user()->class_id;
         }
 
-        abort(404, 'Berkas template siswa tidak ditemukan.');
+        if (!empty($classId) && $classId !== 'all') {
+            $classes = DB::table('class')->where('id', $classId)->get();
+            $className = $classes->first() ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $classes->first()->class_name) : 'Kelas';
+            $filename = "Template_Import_Siswa_{$className}.xlsx";
+        } else {
+            $classes = DB::table('class')->orderBy('class_name', 'asc')->get();
+            $filename = "Template_Import_Siswa_Semua_Kelas.xlsx";
+        }
+
+        if ($classes->isEmpty()) {
+            abort(404, 'Data kelas tidak ditemukan. Silakan tambahkan kelas terlebih dahulu.');
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\MultiClassStudentTemplateExport($classes), $filename);
     }
 
     public function printCover($id, Request $request)

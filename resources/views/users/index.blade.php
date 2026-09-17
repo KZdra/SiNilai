@@ -65,6 +65,22 @@
 
                                 <!-- Right Action Buttons -->
                                 <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{{ route('muser.export_kredensial_walas', ['type' => 'walas']) }}" class="btn btn-outline-info btn-sm font-weight-bold" title="Download Excel Kredensial Akun Wali Kelas">
+                                            <i class="fas fa-print mr-1"></i> Cetak Kredensial Walas
+                                        </a>
+                                        <button type="button" class="btn btn-outline-info btn-sm dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <span class="sr-only">Pilih Format Kredensial</span>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right shadow-sm border-0">
+                                            <a class="dropdown-item small py-2" href="{{ route('muser.export_kredensial_walas', ['type' => 'walas']) }}">
+                                                <i class="fas fa-user-check mr-2 text-success"></i> Khusus Wali Kelas Aktif
+                                            </a>
+                                            <a class="dropdown-item small py-2" href="{{ route('muser.export_kredensial_walas', ['type' => 'all']) }}">
+                                                <i class="fas fa-users mr-2 text-primary"></i> Semua Guru & Tenaga Pendidik
+                                            </a>
+                                        </div>
+                                    </div>
                                     <button class="btn btn-success btn-sm font-weight-bold shadow-sm" id="btnOpenImportModal">
                                         <i class="fas fa-file-excel mr-1"></i> Import Excel Guru & Walas
                                     </button>
@@ -82,7 +98,6 @@
                                             <th>Nama Lengkap</th>
                                             <th>NIP</th>
                                             <th>Wali Kelas</th>
-                                            <th>Email</th>
                                             <th>Role</th>
                                             <th style="width: 140px;" class="text-center">Aksi</th>
                                         </tr>
@@ -153,7 +168,6 @@
                                             <th>NISN / Username</th>
                                             <th>Nama Siswa</th>
                                             <th>Kelas</th>
-                                            <th>Email Terdaftar</th>
                                             <th style="width: 100px;" class="text-center">Status</th>
                                             <th style="width: 150px;" class="text-center">Aksi</th>
                                         </tr>
@@ -215,11 +229,6 @@
                                 @include('partials.select_class_options', ['classList' => $classList])
                             </select>
                             <small class="form-text text-muted">Pilih kelas jika guru ini ditugaskan sebagai Wali Kelas.</small>
-                        </div>
-
-                        <div class="form-group mb-2">
-                            <label for="email" class="font-weight-bold small text-muted text-uppercase mb-1">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="email@sekolah.sch.id" required>
                         </div>
 
                         <div class="form-group mb-1">
@@ -292,10 +301,11 @@
                                 <i class="fas fa-info-circle text-primary mr-1"></i> Panduan & Fitur Dropdown Excel:
                             </div>
                             <ol class="pl-3 mb-2 text-muted leading-relaxed" style="font-size: 0.88rem;">
-                                <li>Unduh berkas template Excel resmi di bawah.</li>
-                                <li>Pada kolom <strong>Wali Kelas</strong>, gunakan <strong>menu dropdown di Excel</strong> untuk memilih kelas binaan secara langsung tanpa perlu mengetik manual.</li>
-                                <li>Pilih role pada dropdown (<code>Guru</code> atau <code>Admin</code>). Password default: <code>guru123</code>.</li>
-                                <li>Simpan berkas Excel lalu unggah melalui form di bawah.</li>
+                                <li>Unduh format template Excel resmi di bawah. Format kolom sangat ringkas: <strong>Nama Lengkap</strong>, <strong>Wali Kelas</strong>, dan <strong>Password</strong>.</li>
+                                <li>Pada kolom <strong>Wali Kelas</strong>, gunakan menu dropdown Excel untuk memilih kelas binaan (atau pilih <code>- (Bukan Walas)</code> jika guru mapel).</li>
+                                <li><strong>Username</strong> login otomatis dibuat dari <strong>nama depan</strong> guru (contoh: <em>Budi Santoso</em> &rarr; <code>budi</code>).</li>
+                                <li><strong>Role</strong> otomatis diset sebagai <strong>Guru</strong>.</li>
+                                <li><strong>Password</strong>: Bisa diisi manual oleh admin, atau <em>kosongkan saja</em> agar otomatis disamakan dengan username (contoh: username <code>budi</code>, password <code>budi</code>).</li>
                             </ol>
                             <a href="{{ route('muser.download_template') }}" class="btn btn-success btn-sm font-weight-bold shadow-sm mt-1">
                                 <i class="fas fa-download mr-1"></i> Unduh Format Template Excel (.xlsx)
@@ -353,7 +363,6 @@
                                 : `<span class="badge badge-light border text-muted px-2 py-1">Bukan Walas</span>`;
                         }
                     },
-                    { data: 'email' },
                     {
                         data: 'role_id',
                         className: 'text-center',
@@ -380,7 +389,6 @@
                                         data-nama="${safeName}"
                                         data-nip="${row.nip || ''}"
                                         data-username="${safeUname}"
-                                        data-email="${row.email || ''}"
                                         title="Edit Profil">
                                         <i class="fas fa-pen"></i>
                                     </button>
@@ -468,15 +476,6 @@
                                 data: 'class_name',
                                 render: function(data) {
                                     return data ? `<span class="badge badge-info px-2 py-1">${data}</span>` : '-';
-                                }
-                            },
-                            { 
-                                data: 'email',
-                                render: function(data, type, row) {
-                                    if (row.is_active == 1 && data && data !== '-') {
-                                        return data;
-                                    }
-                                    return `<span class="text-muted font-italic">Belum dibuat</span>`;
                                 }
                             },
                             {
@@ -633,7 +632,6 @@
                 $('#username').val('');
                 $('#nama').val('');
                 $('#nip').val('');
-                $('#email').val('');
                 $('#password').val('');
                 $('#password').prop('required', true);
                 $('#passReqText').show();
@@ -655,7 +653,6 @@
                     username: $('#username').val().trim(),
                     nama: $('#nama').val().trim(),
                     nip: $('#nip').val().trim(),
-                    email: $('#email').val().trim(),
                     password: $('#password').val(),
                     _token: "{{ csrf_token() }}"
                 };
@@ -679,7 +676,6 @@
                 let username = $(this).data('username');
                 let nama = $(this).data('nama');
                 let nip = $(this).data('nip');
-                let email = $(this).data('email');
 
                 $('#user_id').val(id);
                 $('#class_id').val(class_id).trigger('change');
@@ -687,7 +683,6 @@
                 $('#username').val(username);
                 $('#nama').val(nama);
                 $('#nip').val(nip === '-' ? '' : nip);
-                $('#email').val(email);
                 $('#password').val('');
                 $('#password').prop('required', false);
                 $('#passReqText').hide();

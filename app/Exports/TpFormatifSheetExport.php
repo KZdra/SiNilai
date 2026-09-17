@@ -13,19 +13,19 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyles
+class TpFormatifSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyles
 {
     protected $class;
     protected $mapel;
     protected $fst;
-    protected $existingTps;
+    protected $tps;
 
-    public function __construct($class, $mapel, $fst, $existingTps = [])
+    public function __construct($class, $mapel, $fst, $tps = [])
     {
-        $this->class       = $class;
-        $this->mapel       = $mapel;
-        $this->fst         = $fst;
-        $this->existingTps = $existingTps;
+        $this->class = $class;
+        $this->mapel = $mapel;
+        $this->fst   = $fst;
+        $this->tps   = $tps;
     }
 
     public function view(): View
@@ -36,51 +36,51 @@ class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyle
             ->orderBy('nama', 'asc')
             ->get();
 
-        // Ambil nilai yang sudah ada (jika ada) untuk pre-fill
-        $existingValues = [];
+        // Ambil data tpsiswas yang sudah ada
+        $existingTpsiswas = [];
         if ($this->mapel && $this->fst) {
-            $vals = DB::table('values')
+            $rows = DB::table('tpsiswas')
                 ->where('class_id', $this->class->id)
                 ->where('mapel_id', $this->mapel->id)
                 ->where('fst_id', $this->fst->id)
                 ->get();
 
-            foreach ($vals as $v) {
-                $existingValues[$v->student_id] = $v;
+            foreach ($rows as $r) {
+                $existingTpsiswas[$r->siswa_id][$r->tp_id] = $r;
             }
         }
 
-        return view('docs.template_sheet_per_class', [
-            'class'          => $this->class,
-            'mapel'          => $this->mapel,
-            'fst'            => $this->fst,
-            'students'       => $students,
-            'existingValues' => $existingValues,
-            'existingTps'    => $this->existingTps,
+        return view('docs.template_sheet_formatif', [
+            'class'            => $this->class,
+            'mapel'            => $this->mapel,
+            'fst'              => $this->fst,
+            'students'         => $students,
+            'tps'              => $this->tps,
+            'existingTpsiswas' => $existingTpsiswas,
         ]);
     }
 
     public function title(): string
     {
-        // Bersihkan nama sheet agar valid di Excel (maksimal 31 karakter, tanpa karakter ilegal)
         $cleanName = str_replace(['\\', '/', '?', '*', ':', '[', ']'], '_', $this->class->class_name);
-        return substr($cleanName, 0, 31);
+        return substr("TP_" . $cleanName, 0, 31);
     }
 
     public function styles(Worksheet $sheet)
     {
         $highestRow = $sheet->getHighestRow();
+        $highestCol = $sheet->getHighestColumn();
 
         // 1. Judul Utama (Baris 1)
-        $sheet->getStyle('A1:Q1')->applyFromArray([
+        $sheet->getStyle("A1:{$highestCol}1")->applyFromArray([
             'font' => [
-                'bold' => true,
-                'size' => 13,
-                'color' => ['argb' => 'FF0F172A'],
+                'bold'  => true,
+                'size'  => 12,
+                'color' => ['argb' => 'FFFFFFFF'],
             ],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFF1F5F9'],
+                'startColor' => ['argb' => 'FF047857'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -88,11 +88,11 @@ class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyle
             ],
         ]);
 
-        // 2. Info Mata Pelajaran, Kelas, Periode (Baris 2)
-        $sheet->getStyle('A2:Q2')->applyFromArray([
+        // 2. Info Baris 2
+        $sheet->getStyle("A2:{$highestCol}2")->applyFromArray([
             'font' => [
-                'bold' => true,
-                'size' => 10,
+                'bold'  => true,
+                'size'  => 10,
                 'color' => ['argb' => 'FF1E293B'],
             ],
             'alignment' => [
@@ -100,8 +100,8 @@ class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyle
             ],
         ]);
 
-        // 3. Petunjuk (Baris 3)
-        $sheet->getStyle('A3:Q3')->applyFromArray([
+        // 3. Petunjuk Baris 3
+        $sheet->getStyle("A3:{$highestCol}3")->applyFromArray([
             'font' => [
                 'italic' => true,
                 'size'   => 9,
@@ -116,16 +116,12 @@ class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyle
             ],
         ]);
 
-        // 4. Header Kolom Identitas (A4:E4) -> Dark Navy Slate
-        $sheet->getStyle('A4:E4')->applyFromArray([
+        // 4. Header Kolom (Baris 4)
+        $sheet->getStyle("A4:{$highestCol}4")->applyFromArray([
             'font' => [
                 'bold'  => true,
                 'size'  => 10,
                 'color' => ['argb' => 'FFFFFFFF'],
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF1E293B'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -133,43 +129,9 @@ class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyle
             ],
         ]);
 
-        // 5. Header Kolom Sumatif 1 s.d 10 (F4:O4) -> Primary Royal Blue
-        $sheet->getStyle('F4:O4')->applyFromArray([
-            'font' => [
-                'bold'  => true,
-                'size'  => 10,
-                'color' => ['argb' => 'FFFFFFFF'],
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF2563EB'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
-            ],
-        ]);
-
-        // 6. Header Kolom STS & SAS (P4:Q4) -> Teal Emerald
-        $sheet->getStyle('P4:Q4')->applyFromArray([
-            'font' => [
-                'bold'  => true,
-                'size'  => 10,
-                'color' => ['argb' => 'FFFFFFFF'],
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF0F766E'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
-            ],
-        ]);
-
-        // 7. Border & Alignment Seluruh Tabel
+        // 5. Border seluruh isi tabel
         if ($highestRow >= 4) {
-            $sheet->getStyle("A4:Q{$highestRow}")->applyFromArray([
+            $sheet->getStyle("A4:{$highestCol}{$highestRow}")->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -181,11 +143,10 @@ class ClassSheetExport implements FromView, WithTitle, ShouldAutoSize, WithStyle
                 ],
             ]);
 
-            // Set kolom NIS (B) dan NISN (C) sebagai teks agar angka 0 di depan tidak hilang
+            // Set kolom NIS (B) dan NISN (C) sebagai format teks
             $sheet->getStyle("B5:C{$highestRow}")->getNumberFormat()->setFormatCode('@');
         }
 
-        // Atur tinggi baris agar tidak berdempetan
         $sheet->getRowDimension(1)->setRowHeight(26);
         $sheet->getRowDimension(2)->setRowHeight(20);
         $sheet->getRowDimension(3)->setRowHeight(20);

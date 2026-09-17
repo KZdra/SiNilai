@@ -76,7 +76,7 @@
                                 <select name="fst_id" id="fst_id" class="form-control" required>
                                     @foreach($fstList as $fst)
                                         <option value="{{ $fst->id }}">
-                                            Tahun Ajaran {{ $fst->tahun_ajaran }} - Semester {{ $fst->semester }} (Fase {{ $fst->fase }})
+                                            Tahun Ajaran {{ $fst->tahun_ajaran }} - Semester {{ $fst->semester }} (Fase {{ $fst->fase }})  ({{ ucwords($fst->ta) }})
                                         </option>
                                     @endforeach
                                 </select>

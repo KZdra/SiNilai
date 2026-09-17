@@ -438,10 +438,10 @@
                 <form id="csvForm" enctype="multipart/form-data">
                     <div class="modal-body py-3">
                         <div class="alert alert-light border mb-3 py-2 px-3">
-                            <strong class="d-block text-dark small font-weight-bold">Format Excel Formatif:</strong>
-                            <span class="text-muted small">Unduh berkas template untuk kelas dan mapel ini:</span>
+                            <strong class="d-block text-dark small font-weight-bold">Format Excel Formatif & TP:</strong>
+                            <span class="text-muted small">Unduh berkas template. Di dalam berkas terdapat <strong>Sheet Daftar TP</strong>, <strong>Sheet Nilai Sumatif</strong>, dan <strong>Sheet Penilaian TP (Formatif)</strong>:</span>
                             <div class="mt-2">
-                                <a href="{{ route('value.download') }}" class="btn btn-sm btn-outline-success font-weight-bold" target="_blank">
+                                <a href="{{ route('value.download') }}" id="btnDownloadTemplateFormatif" class="btn btn-sm btn-outline-success font-weight-bold" target="_blank">
                                     <i class="fas fa-download mr-1"></i> Unduh Format Excel
                                 </a>
                             </div>
@@ -1009,6 +1009,8 @@
                     Swal.fire('Perhatian', 'Silakan pilih Kelas, Periode, dan Mata Pelajaran terlebih dahulu.', 'warning');
                     return;
                 }
+                let dlUrl = `{{ route('value.download') }}?class_id=${class_id}&mapel_id=${mapel_id}&fst_id=${fst_id}`;
+                $('#btnDownloadTemplateFormatif').attr('href', dlUrl);
                 $('#csv').val(null);
                 $('#upCsvModal').modal('show');
             });

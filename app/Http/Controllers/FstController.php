@@ -76,13 +76,44 @@ class FstController extends Controller
     public function destroy(Request $r, $id)
     {
         try {
+            $fst = DB::table('m_fst_pembelajaran')->where('id', $id)->first();
+            if (!$fst) {
+                return response()->json(['message' => 'Data periode tidak ditemukan!'], 404);
+            }
+
+            // 1. Cek apakah berstatus terkunci
+            if ($fst->is_locked == 1) {
+                return response()->json([
+                    'message' => "Periode ini sedang berstatus Terkunci. Buka kunci terlebih dahulu jika memang ingin melakukan perubahan."
+                ], 422);
+            }
+
+            // 2. Cek apakah ada data nilai siswa di periode ini
+            if (DB::table('values')->where('fst_id', $id)->exists()) {
+                return response()->json([
+                    'message' => "Periode '{$fst->tahun_ajaran} ({$fst->semester})' tidak dapat dihapus karena sudah memiliki riwayat nilai siswa."
+                ], 422);
+            }
+
+            // 3. Cek apakah ada data TP atau TP siswa
+            if (DB::table('m_tp')->where('fst_id', $id)->exists() || DB::table('tpsiswas')->where('fst_id', $id)->exists()) {
+                return response()->json([
+                    'message' => "Periode ini tidak dapat dihapus karena masih terhubung dengan Tujuan Pembelajaran (TP)."
+                ], 422);
+            }
+
+            // 4. Cek apakah ada status cetak rapor atau mapping aktif
+            if (DB::table('raport_statuses')->where('fst_id', $id)->exists() || DB::table('mapel_class_fst')->where('fst_id', $id)->exists()) {
+                return response()->json([
+                    'message' => "Periode ini tidak dapat dihapus karena masih terhubung dengan status rapor atau pemetaan mata pelajaran."
+                ], 422);
+            }
+
             DB::table('m_fst_pembelajaran')->where('id', '=', $id)->delete();
             \App\Services\MasterDataCache::clearFst($id);
-            return response()->json(['message' => 'Data berhasil di Hapus!'], 201);
+            return response()->json(['message' => 'Periode berhasil dihapus!'], 200);
         } catch (\Exception $e) {
-
-            return response()->json(['message' => $e->getMessage()], 201);
-            // return response()->json(['message' => 'Terjadi Kesalahan Input atau Sistem!'], 201);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 

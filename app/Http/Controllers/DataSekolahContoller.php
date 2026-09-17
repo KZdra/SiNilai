@@ -55,13 +55,10 @@ class DataSekolahContoller extends Controller
     }
 }
 
-    public function destroy(Request $r ,$id){
-        try {
-            DB::table('data_sekolah')->where('id',$id)->delete();
-            \App\Services\MasterDataCache::clearSchoolData();
-            return response()->json(['message' => 'Data Sekolah Berhasil Di Hapus!'], 201);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
+    public function destroy(Request $r, $id)
+    {
+        return response()->json([
+            'message' => 'Data profil sekolah bersifat permanen dan tidak dapat dihapus. Silakan lakukan pembaruan data jika ada perubahan.'
+        ], 422);
     }
 }
