@@ -18,6 +18,9 @@
                         <li class="breadcrumb-item active">FST / Periode Ajaran</li>
                     </ol>
                     <div class="clearfix"></div>
+                    <button class="btn btn-outline-primary font-weight-bold shadow-sm mr-2" id="presetFstBtn">
+                        <i class="fas fa-magic mr-1"></i> Generate Preset Otomatis
+                    </button>
                     <button class="btn btn-primary font-weight-bold shadow-sm" id="inputFstBtn">
                         <i class="fas fa-plus-circle mr-1"></i> Tambah Periode Baru
                     </button>
@@ -205,6 +208,80 @@
             </div>
         </div>
 
+        <!-- Modal Generate Preset FST & Auto Map -->
+        <div class="modal fade" id="presetModal" tabindex="-1" role="dialog" aria-labelledby="presetModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content border-0 shadow" style="border-radius: 12px;">
+                    <div class="modal-header bg-primary text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                        <h5 class="modal-title font-weight-bold" id="presetModalLabel">
+                            <i class="fas fa-magic mr-2"></i>Generate Paket Periode FST & Pemetaan Kelas
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="presetForm">
+                        <div class="modal-body p-4">
+                            <div class="alert alert-info py-2 px-3 small mb-3 border-0" style="border-radius: 8px;">
+                                <i class="fas fa-info-circle mr-1"></i> <strong>Solusi Cepat:</strong> Fitur ini langsung membuat paket periode standar (Fase E & F, Tengah & Akhir) tanpa perlu input satu per satu.
+                            </div>
+
+                            <div class="form-group">
+                                <label for="preset_tahun_ajaran" class="font-weight-bold text-dark">
+                                    Tahun Ajaran <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control font-weight-bold" id="preset_tahun_ajaran" name="tahun_ajaran"
+                                    placeholder="Contoh: 2024/2025 atau 2025/2026" required>
+                                <small class="form-text text-muted">Format 4 digit garis miring (contoh: 2024/2025).</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="font-weight-bold text-dark d-block mb-2">
+                                    Pilihan Paket Semester <span class="text-danger">*</span>
+                                </label>
+                                <div class="custom-control custom-radio mb-2">
+                                    <input type="radio" id="paket_ganjil" name="paket" value="ganjil" class="custom-control-input" checked>
+                                    <label class="custom-control-label" for="paket_ganjil">
+                                        <strong>Semester Ganjil</strong> (4 Periode: Fase E & F &bull; STS & SAS)
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio mb-2">
+                                    <input type="radio" id="paket_genap" name="paket" value="genap" class="custom-control-input">
+                                    <label class="custom-control-label" for="paket_genap">
+                                        <strong>Semester Genap</strong> (4 Periode: Fase E & F &bull; STS & SAS)
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="paket_full" name="paket" value="full" class="custom-control-input">
+                                    <label class="custom-control-label" for="paket_full">
+                                        <strong>1 Tahun Penuh</strong> (8 Periode: Ganjil + Genap Lengkap)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="custom-control custom-checkbox mt-3 pt-3 border-top">
+                                <input type="checkbox" class="custom-control-input" id="preset_auto_map" name="auto_map_classes" value="1" checked>
+                                <label class="custom-control-label font-weight-bold text-dark" for="preset_auto_map">
+                                    Otomatis petakan seluruh mata pelajaran aktif ke rombel kelas yang sesuai
+                                </label>
+                                <small class="form-text text-muted">
+                                    Fase E dipetakan ke rombel Kelas X, Fase F ke rombel Kelas XI & XII. Guru dapat langsung mengisi nilai tanpa perlu mapping manual satu per satu.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                            <button type="button" class="btn btn-secondary px-3" data-dismiss="modal">
+                                <i class="fas fa-times mr-1"></i> Batal
+                            </button>
+                            <button type="submit" class="btn btn-primary px-4 font-weight-bold" id="btnSubmitPreset">
+                                <i class="fas fa-bolt mr-1"></i> Generate Sekarang
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
     <!-- /.content -->
 @endsection
@@ -322,6 +399,65 @@
                         }
                     }
                 ]
+            });
+
+            // Tampilkan Modal Generate Preset FST
+            $(document).on("click", "#presetFstBtn", function() {
+                let currentYear = new Date().getFullYear();
+                let currentMonth = new Date().getMonth(); // 0-indexed (6 = Juli)
+                let defaultTa = (currentMonth >= 6)
+                    ? `${currentYear}/${currentYear + 1}`
+                    : `${currentYear - 1}/${currentYear}`;
+
+                if (!$('#preset_tahun_ajaran').val()) {
+                    $('#preset_tahun_ajaran').val(defaultTa);
+                }
+                $('#preset_auto_map').prop('checked', true);
+                $('#presetModal').modal('show');
+            });
+
+            // Submit Form Generate Preset FST
+            $('#presetForm').submit(function(e) {
+                e.preventDefault();
+                let $btn = $('#btnSubmitPreset');
+                let originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...');
+
+                $.ajax({
+                    url: "{{ route('mfst.generatePreset') }}",
+                    method: "POST",
+                    data: {
+                        tahun_ajaran: $('#preset_tahun_ajaran').val(),
+                        paket: $('input[name="paket"]:checked').val(),
+                        auto_map_classes: $('#preset_auto_map').is(':checked') ? 1 : 0,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: response.message,
+                            confirmButtonColor: '#007bff'
+                        });
+                        $('#presetModal').modal('hide');
+                        $('#valueTable').DataTable().ajax.reload(null, false);
+                    },
+                    error: function(xhr) {
+                        let msg = xhr.responseJSON?.message || 'Terjadi kesalahan saat generate preset!';
+                        if (xhr.responseJSON?.errors) {
+                            let errList = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                            msg += `<br><small class="text-danger mt-1 d-block">${errList}</small>`;
+                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            html: msg
+                        });
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html(originalHtml);
+                    }
+                });
             });
 
             // Tampilkan Modal Input FST

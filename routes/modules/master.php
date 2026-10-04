@@ -72,6 +72,7 @@ Route::middleware(['auth', 'roleCheck:1'])->group(function () {
         Route::get('/', [FstController::class, 'index'])->name('index');
         Route::get('/get', [FstController::class, 'getData'])->name('getData');
         Route::post('/', [FstController::class, 'store'])->name('store');
+        Route::post('/preset', [FstController::class, 'generatePreset'])->name('generatePreset');
         Route::put('/{id}', [FstController::class, 'update'])->name('update');
         Route::delete('/{id}', [FstController::class, 'destroy'])->name('destroy');
         Route::post('/{id}/toggle-lock', [FstController::class, 'toggleLock'])->name('toggleLock');

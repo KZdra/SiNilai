@@ -147,4 +147,142 @@ class FstController extends Controller
             'is_locked' => $newLock,
         ]);
     }
+
+    /**
+     * Generate Paket Preset Periode FST & Otomatis Petakan Mata Pelajaran ke Kelas
+     */
+    public function generatePreset(Request $request)
+    {
+        if (Auth::user()->role_id != 1) {
+            return response()->json(['message' => 'Hanya Administrator yang memiliki akses untuk generate preset.'], 403);
+        }
+
+        $request->validate([
+            'tahun_ajaran'     => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/'],
+            'paket'            => 'required|in:ganjil,genap,full',
+            'auto_map_classes' => 'nullable|boolean',
+        ], [
+            'tahun_ajaran.regex' => 'Format tahun ajaran harus YYYY/YYYY (contoh: 2024/2025).',
+        ]);
+
+        $taInput = trim($request->tahun_ajaran);
+        $paket   = $request->paket;
+        $autoMap = $request->boolean('auto_map_classes', true);
+
+        // Susun daftar FST berdasarkan paket yang dipilih
+        $presets = [];
+        if ($paket === 'ganjil' || $paket === 'full') {
+            $presets[] = ['fase' => 'E', 'semester' => 'I (Satu)', 'ta' => 'tengah'];
+            $presets[] = ['fase' => 'E', 'semester' => 'I (Satu)', 'ta' => 'akhir'];
+            $presets[] = ['fase' => 'F', 'semester' => 'I (Satu)', 'ta' => 'tengah'];
+            $presets[] = ['fase' => 'F', 'semester' => 'I (Satu)', 'ta' => 'akhir'];
+        }
+        if ($paket === 'genap' || $paket === 'full') {
+            $presets[] = ['fase' => 'E', 'semester' => 'II (Dua)', 'ta' => 'tengah'];
+            $presets[] = ['fase' => 'E', 'semester' => 'II (Dua)', 'ta' => 'akhir'];
+            $presets[] = ['fase' => 'F', 'semester' => 'II (Dua)', 'ta' => 'tengah'];
+            $presets[] = ['fase' => 'F', 'semester' => 'II (Dua)', 'ta' => 'akhir'];
+        }
+
+        DB::beginTransaction();
+        try {
+            $createdCount  = 0;
+            $createdFstIds = [];
+
+            foreach ($presets as $item) {
+                $existing = DB::table('m_fst_pembelajaran')
+                    ->where('fase', $item['fase'])
+                    ->where('semester', $item['semester'])
+                    ->where('tahun_ajaran', $taInput)
+                    ->where('ta', $item['ta'])
+                    ->first();
+
+                if (!$existing) {
+                    $fstId = DB::table('m_fst_pembelajaran')->insertGetId([
+                        'fase'         => $item['fase'],
+                        'semester'     => $item['semester'],
+                        'tahun_ajaran' => $taInput,
+                        'ta'           => $item['ta'],
+                        'is_locked'    => 0,
+                        'created_at'   => Carbon::now(),
+                        'updated_at'   => Carbon::now(),
+                    ]);
+                    $createdCount++;
+                    $createdFstIds[] = ['id' => $fstId, 'fase' => $item['fase']];
+                } else {
+                    $createdFstIds[] = ['id' => $existing->id, 'fase' => $item['fase']];
+                }
+            }
+
+            $mappedCount = 0;
+            if ($autoMap && !empty($createdFstIds)) {
+                $mapels  = DB::table('mata_pelajarans')->pluck('id')->toArray();
+                $classes = DB::table('class')->get();
+
+                if (!empty($mapels) && $classes->isNotEmpty()) {
+                    foreach ($createdFstIds as $fstInfo) {
+                        $fstId = $fstInfo['id'];
+                        $fase  = $fstInfo['fase'];
+
+                        foreach ($classes as $cls) {
+                            $cName = trim($cls->class_name);
+                            // Klasifikasikan rombel:
+                            // Fase E untuk tingkat Kelas 10 / X
+                            // Fase F untuk tingkat Kelas 11 (XI) & Kelas 12 (XII)
+                            $isClassMatch = false;
+                            if ($fase === 'E') {
+                                if (preg_match('/^(X|10)\b/i', $cName)) {
+                                    $isClassMatch = true;
+                                }
+                            } elseif ($fase === 'F') {
+                                if (preg_match('/^(XI|XII|11|12)\b/i', $cName)) {
+                                    $isClassMatch = true;
+                                }
+                            }
+
+                            // Fallback jika format nama kelas custom: kaitkan ke semua kelas
+                            if (!preg_match('/^(X|XI|XII|10|11|12)\b/i', $cName)) {
+                                $isClassMatch = true;
+                            }
+
+                            if ($isClassMatch) {
+                                foreach ($mapels as $mId) {
+                                    DB::table('mapel_class_fst')->updateOrInsert(
+                                        [
+                                            'mapel_id' => $mId,
+                                            'class_id' => $cls->id,
+                                            'fst_id'   => $fstId,
+                                        ],
+                                        [
+                                            'is_active'  => 1,
+                                            'updated_at' => Carbon::now(),
+                                        ]
+                                    );
+                                    $mappedCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+            \App\Services\MasterDataCache::clearFst();
+
+            $msg = "Berhasil membuat {$createdCount} periode FST baru untuk Tahun Ajaran {$taInput}!";
+            if ($autoMap && $mappedCount > 0) {
+                $msg .= " Serta otomatis memetakan {$mappedCount} pengaturan mata pelajaran ke rombel kelas yang sesuai.";
+            }
+
+            return response()->json([
+                'status'        => 'success',
+                'message'       => $msg,
+                'created_count' => $createdCount,
+                'mapped_count'  => $mappedCount,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal generate preset: ' . $e->getMessage()], 500);
+        }
+    }
 }
