@@ -329,7 +329,7 @@
         </div>
 
         <div class="footer-note">
-            Sistem Informasi Penilaian & Raport (SiNilai) &copy; {{ date('Y') }} &bull; Dokumen sah dan dilindungi secara digital.
+            Sistem Informasi Penilaian & Raport (SiNilai) &copy; {{ date('Y') }} by <a href="https://kzdra.github.io" target="_blank" rel="noopener noreferrer" style="color: inherit; font-weight: bold; text-decoration: underline;">InDev.</a> &bull; Dokumen sah dan dilindungi secara digital.
         </div>
     </div>
 </body>

@@ -164,11 +164,11 @@
         <!-- Main Footer -->
         <footer class="main-footer">
             <!-- To the right -->
-            <div class="float-right d-none d-sm-inline">
-                SiNilai {{\Carbon\Carbon::now()->format('Y')}}
+            <div class="float-right d-none d-sm-inline text-muted small">
+                SiNilai &bull; Sistem Informasi Penilaian
             </div>
             <!-- Default to the left -->
-            <strong>Copyright &copy; {{\Carbon\Carbon::now()->format('Y')}} <a href="https://github.com/KZdra" target="blank">KZdra</a>.</strong>
+            <strong>Copyright &copy; {{ date('Y') }} <a href="https://kzdra.github.io" target="_blank" rel="noopener noreferrer" class="font-weight-bold">InDev.</a></strong> All rights reserved.
         </footer>
     </div>
     <!-- ./wrapper -->

@@ -20,10 +20,10 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">{{ __('About us') }}</h5>
+                            <h5 class="card-title font-weight-bold text-primary">SiNilai &bull; Sistem Informasi Penilaian & Raport</h5>
 
-                            <p class="card-text">
-                                {{ __('Sample static text page ') }}
+                            <p class="card-text mt-3">
+                                SiNilai dikembangkan oleh <a href="https://kzdra.github.io" target="_blank" rel="noopener noreferrer"><strong>InDev.</strong></a> sebagai solusi sistem penilaian dan pelaporan akademik modern berstandar Kurikulum Merdeka.
                             </p>
                         </div>
                     </div>

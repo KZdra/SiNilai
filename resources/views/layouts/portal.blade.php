@@ -248,7 +248,7 @@
     <!-- Footer -->
     <footer class="main-footer bg-white border-top text-center py-3">
         <div class="container small text-muted">
-            &copy; {{ date('Y') }} <strong>SiNilai</strong> - Portal Mandiri Akademik Siswa & Orang Tua. Dokumen Sah Berstandar Kurikulum Merdeka.
+            &copy; {{ date('Y') }} <strong>SiNilai</strong> by <a href="https://kzdra.github.io" target="_blank" rel="noopener noreferrer" class="font-weight-bold">InDev.</a> - Portal Mandiri Akademik Siswa & Orang Tua. Dokumen Sah Berstandar Kurikulum Merdeka.
         </div>
     </footer>
 </div>

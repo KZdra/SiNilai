@@ -156,6 +156,9 @@
     <div class="card border-0">
         @yield('content')
     </div>
+    <div class="text-center mt-3 text-muted small">
+        Copyright &copy; {{ date('Y') }} <a href="https://kzdra.github.io" target="_blank" rel="noopener noreferrer" class="text-muted font-weight-bold">InDev.</a> All rights reserved.
+    </div>
 </div>
 <!-- /.login-box -->
 
