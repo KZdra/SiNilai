@@ -56,16 +56,18 @@ class P5Controller extends Controller
                 ->get();
         }
 
-        // Ambil daftar master dimensi & subelemen untuk modal tambah projek
+        // Ambil daftar master dimensi & subelemen secara efisien (batch) untuk menghindari N+1 queries
+        $subelemenGrouped = DB::table('p5_subelemen')->get()->groupBy('elemen_id');
+        $elemenGrouped = DB::table('p5_elemen')->get()->map(function ($el) use ($subelemenGrouped) {
+            $el->subelemen = $subelemenGrouped->get($el->id, collect());
+            return $el;
+        })->groupBy('dimensi_id');
+
         $dimensiMaster = DB::table('p5_dimensi')
             ->orderBy('id', 'asc')
             ->get()
-            ->map(function ($dim) {
-                $elemen = DB::table('p5_elemen')->where('dimensi_id', $dim->id)->get()->map(function ($el) {
-                    $el->subelemen = DB::table('p5_subelemen')->where('elemen_id', $el->id)->get();
-                    return $el;
-                });
-                $dim->elemen = $elemen;
+            ->map(function ($dim) use ($elemenGrouped) {
+                $dim->elemen = $elemenGrouped->get($dim->id, collect());
                 return $dim;
             });
 

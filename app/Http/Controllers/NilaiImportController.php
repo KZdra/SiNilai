@@ -311,13 +311,17 @@ class NilaiImportController extends Controller
                         if (is_null($valSas)) $updateData['value_sas']       = $existing->value_sas;
                     }
 
-                    if ($existing) {
-                        DB::table('values')->where('id', $existing->id)->update($updateData);
-                    } else {
-                        $updateData['student_id'] = $student->id;
-                        $updateData['created_at'] = Carbon::now();
-                        DB::table('values')->insert($updateData);
-                    }
+                    $updateData['student_id'] = $student->id;
+                    $updateData['created_at'] = $existing ? ($existing->created_at ?? Carbon::now()) : Carbon::now();
+
+                    DB::table('values')->updateOrInsert(
+                        [
+                            'student_id' => $student->id,
+                            'mapel_id'   => $mapelId,
+                            'fst_id'     => $fstId,
+                        ],
+                        $updateData
+                    );
 
                     // Catat log audit trail mutasi nilai
                     NilaiAuditService::log(

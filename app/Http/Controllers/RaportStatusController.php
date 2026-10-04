@@ -93,6 +93,14 @@ class RaportStatusController extends Controller
         $fstId   = (int) $request->input('fst_id');
         $notes   = $request->input('notes');
 
+        $user = Auth::user();
+        if ($user->role_id != 1 && $user->class_id != $classId) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki hak untuk mengajukan rekap nilai kelas ini.',
+            ], 403);
+        }
+
         DB::table('raport_statuses')->updateOrInsert(
             ['class_id' => $classId, 'fst_id' => $fstId],
             [

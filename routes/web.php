@@ -10,7 +10,7 @@ Route::get('auth/callback', [\App\Http\Controllers\SsoController::class, 'callba
 Route::post('/sso/slo', [\App\Http\Controllers\SsoController::class, 'slo']);
 Route::get('verifikasi-raport/{token}', [\App\Http\Controllers\PublicVerificationController::class, 'verify'])->name('raport.verify');
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 

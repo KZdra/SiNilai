@@ -120,16 +120,19 @@ class SiswaController extends Controller
             'pekerjaan_ayah' => 'required|string',
             'pekerjaan_ibu' => 'required|string',
             'alamat_orang_tua' => 'required|string',
+            'foto_siswa' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         if ($request->hasFile('foto_siswa')) {
-            $student_name = str_replace(' ', '_', strtolower($request->student_name)); // Format nama
-            $folder = "foto-siswa/{$student_name}"; // Path penyimpanan
+            $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', strtolower($request->student_name));
+            $folder = "foto-siswa/{$cleanName}";
 
             $file = $request->file('foto_siswa');
-            $file_name = $student_name . '_' . $file->getClientOriginalName(); // Buat nama unik
-            $file_path = $file->storeAs($folder, $file_name, 'public'); // Simpan di storage
-
+            $safeExt = in_array(strtolower($file->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'webp'])
+                ? strtolower($file->getClientOriginalExtension())
+                : 'jpg';
+            $file_name = time() . '_' . uniqid() . '.' . $safeExt;
+            $file_path = $file->storeAs($folder, $file_name, 'public');
         } else {
             $file_name = null;
             $file_path = null;
@@ -183,6 +186,7 @@ class SiswaController extends Controller
             'pekerjaan_ayah' => 'required|string',
             'pekerjaan_ibu' => 'required|string',
             'alamat_orang_tua' => 'required|string',
+            'foto_siswa' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
         $student = DB::table('students')->where('id', $id)->first();
         if (!$student) {
@@ -193,12 +197,15 @@ class SiswaController extends Controller
         $file_path = $student->foto_siswa_path;
 
         if ($request->hasFile('foto_siswa')) {
-            $student_name = str_replace(' ', '_', strtolower($request->student_name)); // Format nama
-            $folder = "foto-siswa/{$student_name}"; // Path penyimpanan
+            $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', strtolower($request->student_name));
+            $folder = "foto-siswa/{$cleanName}";
 
             $file = $request->file('foto_siswa');
-            $new_file_name = $student_name . '_' . $file->getClientOriginalName(); // Buat nama unik
-            $new_file_path = $file->storeAs($folder, $new_file_name, 'public'); // Simpan di storage
+            $safeExt = in_array(strtolower($file->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'webp'])
+                ? strtolower($file->getClientOriginalExtension())
+                : 'jpg';
+            $new_file_name = time() . '_' . uniqid() . '.' . $safeExt;
+            $new_file_path = $file->storeAs($folder, $new_file_name, 'public');
 
             // Hapus foto lama jika ada
             if ($file_path) {

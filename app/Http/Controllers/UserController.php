@@ -222,6 +222,10 @@ class UserController extends Controller
     public function destroy($id)
     {
         try {
+            if ((int) $id === (int) Auth::id()) {
+                return response()->json(['message' => 'Anda tidak dapat menghapus akun Anda sendiri saat sedang login!'], 422);
+            }
+
             DB::table('users')->where('id', $id)->delete();
             return response()->json(['message' => 'Pengguna berhasil dihapus!'], 200);
         } catch (\Exception $e) {

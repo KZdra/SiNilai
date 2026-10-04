@@ -119,6 +119,7 @@ class NilaiAkhirController extends Controller
         $inMapelIds = count($activeMapelIds) > 0 ? implode(',', $activeMapelIds) : '0';
 
         foreach ($mapels as $mapel) {
+            $escapedMapel = str_replace('`', '``', $mapel->nama_mapel);
             $columns[] = "ROUND(COALESCE(AVG(CASE WHEN v.mapel_id = {$mapel->id} THEN
                 (
                     COALESCE(
@@ -143,7 +144,7 @@ class NilaiAkhirController extends Controller
                     IF(COALESCE(v.value_sts, v.value_sas) IS NOT NULL, 1, 0), 
                     0
                 )
-                END), 0), 2) AS `{$mapel->nama_mapel}`";
+                END), 0), 2) AS `{$escapedMapel}`";
         }
 
         // Tambahkan kolom rata-rata semua nilai
@@ -173,8 +174,8 @@ class NilaiAkhirController extends Controller
             )
         ), 0), 2) AS avg_nilai_semua_mapel";
 
-        $selectedClassIdSql = $classId ? "{$classId} AS class_id" : "COALESCE(s.class_id, 0) AS class_id";
-        $joinClassSql = $classId ? "LEFT JOIN class AS c ON c.id = {$classId}" : "LEFT JOIN class AS c ON s.class_id = c.id";
+        $selectedClassIdSql = $classId ? ((int)$classId . " AS class_id") : "COALESCE(s.class_id, 0) AS class_id";
+        $joinClassSql = $classId ? ("LEFT JOIN class AS c ON c.id = " . (int)$classId) : "LEFT JOIN class AS c ON s.class_id = c.id";
 
         // Buat query dasar
         $query = "
@@ -184,19 +185,20 @@ class NilaiAkhirController extends Controller
                 s.nama AS student_name,
                 s.nis AS student_nis,
                 s.foto_siswa_path,
-                s.sakit,
-                s.alpa,
-                s.izin,
+                MAX(COALESCE(cw_pres.sakit, s.sakit, 0)) AS sakit,
+                MAX(COALESCE(cw_pres.alpa, s.alpa, 0)) AS alpa,
+                MAX(COALESCE(cw_pres.izin, s.izin, 0)) AS izin,
                 COALESCE(c.class_name, 'Alumni / Lulus') AS class_name,
                 " . implode(', ', $columns) . "
             FROM students AS s
             {$joinClassSql}
             LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id =:fstId AND v.mapel_id IN ($inMapelIds)
             LEFT JOIN mata_pelajarans AS mp ON v.mapel_id = mp.id
+            LEFT JOIN catatan_walikelas AS cw_pres ON s.id = cw_pres.student_id AND cw_pres.fst_id =:fstIdPres
         ";
 
         // Filter berdasarkan student_id dan class_id
-        $bindings = ['fstId' => $fstId];
+        $bindings = ['fstId' => $fstId, 'fstIdPres' => $fstId];
         if ($student_id) {
             $query .= " WHERE s.id = :studentId ";
             $bindings['studentId'] = $student_id;
@@ -238,6 +240,7 @@ class NilaiAkhirController extends Controller
         $inMapelIds = count($activeMapelIds) > 0 ? implode(',', $activeMapelIds) : '0';
 
         foreach ($mapels as $mapel) {
+            $escapedMapel = str_replace('`', '``', $mapel->nama_mapel);
             $columns[] = "ROUND(COALESCE(AVG(CASE WHEN v.mapel_id = {$mapel->id} THEN
                 (
                     COALESCE(
@@ -262,11 +265,11 @@ class NilaiAkhirController extends Controller
                     IF(COALESCE(v.value_sts, v.value_sas) IS NOT NULL, 1, 0), 
                     0
                 )
-                END), 0), 2) AS `{$mapel->nama_mapel}`";
+                END), 0), 2) AS `{$escapedMapel}`";
         }
 
-        $selectedClassIdSql = $classId ? "{$classId} AS class_id" : "s.class_id";
-        $joinClassSql = $classId ? "JOIN class AS c ON c.id = {$classId}" : "JOIN class AS c ON s.class_id = c.id";
+        $selectedClassIdSql = $classId ? ((int)$classId . " AS class_id") : "s.class_id";
+        $joinClassSql = $classId ? ("JOIN class AS c ON c.id = " . (int)$classId) : "JOIN class AS c ON s.class_id = c.id";
 
         // Buat query dasar
         $query = "
@@ -283,14 +286,14 @@ class NilaiAkhirController extends Controller
             LEFT JOIN mata_pelajarans AS mp ON v.mapel_id = mp.id
         ";
 
-        $bindings = $classId ? [
-            'classId' => $classId,
-            'fstId' => $fstId,
-            'classIdVal' => $classId,
-            'fstIdVal' => $fstId,
-            'classIdCw' => $classId,
-            'fstIdCw' => $fstId,
-        ] : [];
+        $bindings = ['fstId' => $fstId];
+        if ($classId) {
+            $bindings['classId'] = $classId;
+            $bindings['classIdVal'] = $classId;
+            $bindings['fstIdVal'] = $fstId;
+            $bindings['classIdCw'] = $classId;
+            $bindings['fstIdCw'] = $fstId;
+        }
 
         // Filter berdasarkan class_id jika diberikan
         if ($classId) {
@@ -743,6 +746,11 @@ class NilaiAkhirController extends Controller
 
     public function exportPDF(Request $request)
     {
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mencetak rapor kelas ini.');
+        }
+
         $result = $this->generateSingleRaportPdf(
             $request->student_id,
             $request->class_id,
@@ -780,6 +788,11 @@ class NilaiAkhirController extends Controller
         $type      = $request->input('type', 'all');
         $tgl_print = $request->input('tgl_print', now()->toDateString());
         $keputusan = $request->input('keputusan', null);
+
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$classId) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengekspor rapor kelas ini.'], 403);
+        }
 
         $class = DB::table('class')->where('id', $classId)->first();
         if (!$class) {
@@ -829,6 +842,11 @@ class NilaiAkhirController extends Controller
         $keputusan = $request->input('keputusan', null);
         $offset    = (int) $request->input('offset', 0);
         $limit     = (int) $request->input('limit', 4);
+
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== $classId) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengemas rapor kelas ini.'], 403);
+        }
 
         $students = DB::table('students')->where('class_id', $classId)->orderBy('nama', 'asc')->get();
         if ($students->isEmpty() && \Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
@@ -883,6 +901,11 @@ class NilaiAkhirController extends Controller
     {
         $classId = (int) $request->input('class_id');
         $fstId   = (int) $request->input('fst_id');
+
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== $classId) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengemas rapor kelas ini.'], 403);
+        }
 
         $class = DB::table('class')->where('id', $classId)->first();
         $fst   = DB::table('m_fst_pembelajaran')->where('id', $fstId)->first();
@@ -948,6 +971,11 @@ class NilaiAkhirController extends Controller
         $tglPrint  = $request->input('tgl_print', now()->toDateString());
         $keputusan = $request->input('keputusan', null);
 
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== $classId) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengemas rapor kelas ini.'], 403);
+        }
+
         \App\Jobs\GenerateClassRaportZipJob::dispatch(
             $classId,
             $fstId,
@@ -988,6 +1016,11 @@ class NilaiAkhirController extends Controller
 
     public function ExportNilaiAkhirExcel(Request $request)
     {
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengekspor nilai kelas ini.');
+        }
+
         $students = $this->getStudentsAllScores($request->class_id,$request->fst_id); // Ambil data berdasarkan filter class_id (jika ada)
         $className= DB::table('class')->select('class_name')->where('id', $request->class_id)->first();
         $formattedStudents = [];
@@ -1018,6 +1051,11 @@ class NilaiAkhirController extends Controller
 
     public function exportRankingExcel(Request $request)
     {
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengekspor ranking kelas ini.');
+        }
+
         $data = $this->getStudentAvgScores($request->class_id, $request->fst_id);
         
         // Convert to array and sort descending by average
@@ -1035,6 +1073,11 @@ class NilaiAkhirController extends Controller
     {
         $classId = $request->class_id;
         $fstId = $request->fst_id;
+
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$classId) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengekspor leger kelas ini.');
+        }
 
         $class = DB::table('class')->where('id', $classId)->first();
         $className = $class ? $class->class_name : 'Kelas';

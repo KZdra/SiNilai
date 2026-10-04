@@ -148,12 +148,15 @@ class CatatanWalasController extends Controller
                 ]
             );
 
-            // Synchronize to student table for legacy backward compatibility
-            DB::table('students')->where('id', $request->student_id)->update([
-                'sakit' => $sakit,
-                'izin'  => $izin,
-                'alpa'  => $alpa,
-            ]);
+            // Synchronize to student table only if editing the current active semester
+            $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first();
+            if ($activeFst && (int)$request->fst_id === (int)$activeFst->id) {
+                DB::table('students')->where('id', $request->student_id)->update([
+                    'sakit' => $sakit,
+                    'izin'  => $izin,
+                    'alpa'  => $alpa,
+                ]);
+            }
 
             DB::commit();
 
@@ -237,11 +240,15 @@ class CatatanWalasController extends Controller
                     ]
                 );
 
-                DB::table('students')->where('id', $studentId)->update([
-                    'sakit' => $sakit,
-                    'izin'  => $izin,
-                    'alpa'  => $alpa,
-                ]);
+                // Synchronize to student table only if editing current active semester
+                $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first();
+                if ($activeFst && (int)$request->fst_id === (int)$activeFst->id) {
+                    DB::table('students')->where('id', $studentId)->update([
+                        'sakit' => $sakit,
+                        'izin'  => $izin,
+                        'alpa'  => $alpa,
+                    ]);
+                }
 
                 $savedCount++;
             }

@@ -27,8 +27,24 @@ class DataSekolahContoller extends Controller
         return view('mdsekolah.index',compact('sekolah'));
     }
     public function store(Request $r)
-{
-    $id = 1;
+    {
+        $r->validate([
+            'nama_sekolah'        => 'required|string|max:255',
+            'npsn'                => 'nullable|string|max:50',
+            'nss'                 => 'nullable|string|max:50',
+            'alamat_sekolah'      => 'nullable|string|max:500',
+            'kode_pos'            => 'nullable|string|max:10',
+            'desa_kelurahan'      => 'nullable|string|max:100',
+            'kecamatan'           => 'nullable|string|max:100',
+            'kabupaten_kota'      => 'nullable|string|max:100',
+            'provinsi'            => 'nullable|string|max:100',
+            'website'             => 'nullable|string|max:255',
+            'email'               => 'nullable|email|max:255',
+            'nama_kepala_sekolah' => 'nullable|string|max:255',
+            'nip_kepala_sekolah'  => 'nullable|string|max:50',
+        ]);
+
+        $id = 1;
     try {
         DB::table('data_sekolah')->updateOrInsert(
             ['id' => $r->id ? $r->id : $id],

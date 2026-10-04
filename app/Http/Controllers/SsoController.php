@@ -44,9 +44,9 @@ class SsoController extends Controller
         $settings = $this->getSettings();
         $state = $request->session()->pull('state');
 
-        // Bypass check jika state di session hilang karena cross-port cookie
-        if (!empty($state) && $state !== $request->state) {
-            return redirect('/login')->withErrors(['username' => 'State mismatch. Please try again.']);
+        // Validasi State OAuth CSRF Protection
+        if (empty($state) || !hash_equals((string) $state, (string) $request->state)) {
+            return redirect('/login')->withErrors(['username' => 'Verifikasi keamanan sesi SSO gagal (State mismatch). Silakan coba lagi.']);
         }
 
         $serverUrl = rtrim($settings['sso_server_url'], '/');
@@ -130,6 +130,15 @@ class SsoController extends Controller
 
     public function slo(Request $request)
     {
+        $settings = $this->getSettings();
+        $secret = $request->input('secret') ?? $request->bearerToken();
+        $expectedSecret = $settings['sso_client_secret'];
+
+        if (empty($expectedSecret) || empty($secret) || !hash_equals((string) $expectedSecret, (string) $secret)) {
+            \Illuminate\Support\Facades\Log::warning('SLO Unauthorized access attempt from IP: ' . $request->ip());
+            return response()->json(['message' => 'Unauthorized: Invalid secret.'], 401);
+        }
+
         $username = $request->input('username');
         \Illuminate\Support\Facades\Log::info('SLO Hit for username: ' . $username);
         if (!$username) {

@@ -116,10 +116,14 @@ class KenaikanKelasController extends Controller
             $totalPromoted = 0;
             $details = [];
 
-            // Siswa yang berstatus 'Tinggal Kelas' di catatan walikelas
+            $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first()
+                      ?? DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+
+            // Siswa yang berstatus 'Tinggal Kelas' di catatan walikelas pada semester aktif (BUG-03 fix)
             $retainedStudentIds = [];
-            if ($skipTinggalKelas) {
+            if ($skipTinggalKelas && $activeFst) {
                 $retainedStudentIds = DB::table('catatan_walikelas')
+                    ->where('fst_id', $activeFst->id)
                     ->where(function($q) {
                         $q->where('status_kenaikan', 'like', '%tinggal%')
                           ->orWhere('status_kenaikan', 'like', '%tidak naik%');
@@ -127,9 +131,6 @@ class KenaikanKelasController extends Controller
                     ->pluck('student_id')
                     ->toArray();
             }
-
-            $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first()
-                      ?? DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
 
             // Eksekusi secara Top-Down (XII -> XI -> X) untuk menghindari benturan rombel
             foreach ($mapping as $map) {
@@ -171,6 +172,8 @@ class KenaikanKelasController extends Controller
                     $query->whereNotIn('id', $retainedStudentIds);
                 }
 
+                $affectedStudentIds = (clone $query)->pluck('id')->toArray();
+
                 if ($map['action_type'] === 'graduate') {
                     $count = $query->update([
                         'class_id'    => null,
@@ -178,6 +181,12 @@ class KenaikanKelasController extends Controller
                         'tahun_lulus' => date('Y'),
                         'updated_at'  => now(),
                     ]);
+                    if (!empty($affectedStudentIds)) {
+                        DB::table('users')->whereIn('student_id', $affectedStudentIds)->update([
+                            'class_id'   => null,
+                            'updated_at' => now(),
+                        ]);
+                    }
                     $totalGraduated += $count;
                 } else {
                     $count = $query->update([
@@ -185,6 +194,12 @@ class KenaikanKelasController extends Controller
                         'status'     => 'aktif',
                         'updated_at' => now(),
                     ]);
+                    if (!empty($affectedStudentIds)) {
+                        DB::table('users')->whereIn('student_id', $affectedStudentIds)->update([
+                            'class_id'   => $map['target_class_id'],
+                            'updated_at' => now(),
+                        ]);
+                    }
                     $totalPromoted += $count;
                 }
 
@@ -365,6 +380,14 @@ class KenaikanKelasController extends Controller
                 ->whereIn('id', $request->student_ids)
                 ->where('class_id', $request->source_class_id)
                 ->update($updateData);
+
+            // Sinkronkan class_id pada akun pengguna siswa (BUG-04 fix)
+            DB::table('users')
+                ->whereIn('student_id', $request->student_ids)
+                ->update([
+                    'class_id'   => $targetClassId,
+                    'updated_at' => now(),
+                ]);
 
             $targetName = $targetClass ? $targetClass->class_name : 'Alumni / Lulus';
             $sourceName = $sourceClass ? $sourceClass->class_name : "ID {$request->source_class_id}";

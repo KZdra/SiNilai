@@ -60,8 +60,12 @@ class HomeController extends Controller
         $allstudentCounts = $stats['allstudentCounts'];
         $allMapelCounts = $stats['allMapelCounts'];
 
-        // Cache Analytics: Top 5 Siswa dengan Rata-rata Tertinggi (otomatis terhapus saat nilai diupdate)
-        $topStudents = \Illuminate\Support\Facades\Cache::remember("dashboard_top5_{$ver}_{$roleId}_{$classId}", 120, function () use ($roleId, $classId) {
+        $activeFst = DB::table('m_fst_pembelajaran')->where('is_locked', false)->orderBy('id', 'desc')->first()
+                  ?? DB::table('m_fst_pembelajaran')->orderBy('id', 'desc')->first();
+        $fstId = $activeFst ? $activeFst->id : 0;
+
+        // Cache Analytics: Top 5 Siswa dengan Rata-rata Tertinggi pada Semester Aktif
+        $topStudents = \Illuminate\Support\Facades\Cache::remember("dashboard_top5_{$ver}_{$roleId}_{$classId}_{$fstId}", 120, function () use ($roleId, $classId, $fstId) {
             $whereClause = ($roleId != 1 && $classId !== null) ? "WHERE s.class_id = " . intval($classId) : "";
             $topStudentsQuery = "
                 SELECT 
@@ -94,13 +98,13 @@ class HomeController extends Controller
             ), 0), 2) AS average_score
                 FROM students AS s
                 JOIN class AS c ON s.class_id = c.id
-                LEFT JOIN `values` AS v ON s.id = v.student_id
+                LEFT JOIN `values` AS v ON s.id = v.student_id AND v.fst_id = :fstId
                 $whereClause
                 GROUP BY s.id, s.nama, c.class_name
                 ORDER BY average_score DESC
                 LIMIT 5
             ";
-            return DB::select($topStudentsQuery);
+            return DB::select($topStudentsQuery, ['fstId' => $fstId]);
         });
 
         // Master Data Setup Readiness Checklist (untuk admin saat baru deploy)

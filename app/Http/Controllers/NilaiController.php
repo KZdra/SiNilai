@@ -124,10 +124,18 @@ class NilaiController extends Controller
 
         $request->validate([
             'student_id' => 'required|integer',
-            'value_daily' => 'nullable|max:100',
-            'value_daily_2' => 'nullable|max:100',
-            'value_sts' => 'nullable|max:100',
-            'value_sas' => 'nullable|max:100',
+            'value_daily' => 'nullable|numeric|min:0|max:100',
+            'value_daily_2' => 'nullable|numeric|min:0|max:100',
+            'value_daily_3' => 'nullable|numeric|min:0|max:100',
+            'value_daily_4' => 'nullable|numeric|min:0|max:100',
+            'value_daily_5' => 'nullable|numeric|min:0|max:100',
+            'value_daily_6' => 'nullable|numeric|min:0|max:100',
+            'value_daily_7' => 'nullable|numeric|min:0|max:100',
+            'value_daily_8' => 'nullable|numeric|min:0|max:100',
+            'value_daily_9' => 'nullable|numeric|min:0|max:100',
+            'value_daily_10' => 'nullable|numeric|min:0|max:100',
+            'value_sts' => 'nullable|numeric|min:0|max:100',
+            'value_sas' => 'nullable|numeric|min:0|max:100',
         ]);
 
         if ($this->isSemesterLocked($request->fst_id)) {
@@ -302,10 +310,18 @@ class NilaiController extends Controller
 
         $request->validate([
             'student_id' => 'required|integer',
-            'value_daily' => 'nullable',
-            'value_daily_2' => 'nullable',
-            'value_sts' => 'nullable|max:100',
-            'value_sas' => 'nullable|max:100',
+            'value_daily' => 'nullable|numeric|min:0|max:100',
+            'value_daily_2' => 'nullable|numeric|min:0|max:100',
+            'value_daily_3' => 'nullable|numeric|min:0|max:100',
+            'value_daily_4' => 'nullable|numeric|min:0|max:100',
+            'value_daily_5' => 'nullable|numeric|min:0|max:100',
+            'value_daily_6' => 'nullable|numeric|min:0|max:100',
+            'value_daily_7' => 'nullable|numeric|min:0|max:100',
+            'value_daily_8' => 'nullable|numeric|min:0|max:100',
+            'value_daily_9' => 'nullable|numeric|min:0|max:100',
+            'value_daily_10' => 'nullable|numeric|min:0|max:100',
+            'value_sts' => 'nullable|numeric|min:0|max:100',
+            'value_sas' => 'nullable|numeric|min:0|max:100',
         ]);
 
         if ($this->isSemesterLocked($request->fst_id)) {
