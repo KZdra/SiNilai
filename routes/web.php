@@ -16,8 +16,6 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('ho
 
 Route::middleware('auth')->get('/panduan', [\App\Http\Controllers\PanduanController::class, 'index'])->name('panduan.index');
 
-// Endpoint debug/test (bisa dihapus di production)
-Route::get('es', [\App\Http\Controllers\PeskulController::class, 'getdata']);
 
 // ─────────────────────────────────────────────
 // Module Routes (semua di-load di sini)

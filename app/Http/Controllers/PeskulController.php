@@ -35,6 +35,12 @@ class PeskulController extends Controller
         $class_id = $request->class_id;
         $fst_id = $request->fst_id;
 
+        // Cegah guru walas mengakses data kelas lain
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$class_id) {
+            return response()->json(['data' => []], 403);
+        }
+
         $data = DB::table('students as s')
             ->join('class as c', 's.class_id', '=', 'c.id')
             ->leftJoin('nilai_eskuls as v', function ($join) use ($fst_id) {
@@ -77,10 +83,24 @@ class PeskulController extends Controller
     }
     public function store(Request $request)
     {
+        $request->validate([
+            'student_id' => 'required|integer|exists:students,id',
+            'eskul_id' => 'required|integer|exists:m_eskul,id',
+            'fst_id' => 'required|integer|exists:m_fst_pembelajaran,id',
+            'nilai' => 'required|string|max:50',
+        ]);
+
         $fst_id = $request->input('fst_id');
         $eskul_id = $request->input('eskul_id');
         $student_id = $request->input('student_id');
         $nilai = $request->input('nilai');
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $student = DB::table('students')->where('id', $student_id)->first();
+        $user = Auth::user();
+        if ($student && $user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$student->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk kelas ini.'], 403);
+        }
         DB::beginTransaction();
         try {
             DB::table('nilai_eskuls')->insert([
@@ -100,8 +120,20 @@ class PeskulController extends Controller
     }
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'student_id' => 'required|integer|exists:students,id',
+            'nilai' => 'required|string|max:50',
+        ]);
+
         $student_id = $request->input('student_id');
         $nilai = $request->input('nilai');
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $student = DB::table('students')->where('id', $student_id)->first();
+        $user = Auth::user();
+        if ($student && $user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$student->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk kelas ini.'], 403);
+        }
         DB::beginTransaction();
         try {
             DB::table('nilai_eskuls')->where('id', $id)->where('student_id', $student_id)->update([
@@ -119,6 +151,13 @@ class PeskulController extends Controller
     public function destroy(Request $request, $id)
     {
         $student_id = $request->input('student_id');
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $student = DB::table('students')->where('id', $student_id)->first();
+        $user = Auth::user();
+        if ($student && $user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$student->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk kelas ini.'], 403);
+        }
         DB::beginTransaction();
         try {
             DB::table('nilai_eskuls')->where('id', $id)->where('student_id', $student_id)->delete();
@@ -131,9 +170,21 @@ class PeskulController extends Controller
     }
     public function storeBulk(Request $request)
     {
+        $request->validate([
+            'class_id' => 'required|integer|exists:class,id',
+            'fst_id' => 'required|integer|exists:m_fst_pembelajaran,id',
+            'students' => 'nullable|array',
+        ]);
+
         $class_id = $request->input('class_id');
         $fst_id = $request->input('fst_id');
         $students = $request->input('students', []); // format: { student_id: [ {eskul_id: 1, nilai_eskul: 'Baik'}, ... ] }
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk kelas ini.'], 403);
+        }
 
         DB::beginTransaction();
         try {

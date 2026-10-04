@@ -49,6 +49,12 @@ class CatatanWalasController extends Controller
         $classId = (int) $request->class_id;
         $fstId   = (int) $request->fst_id;
 
+        // Cegah guru walas mengakses data kelas lain
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== $classId) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk melihat data kelas ini.'], 403);
+        }
+
         $fst = DB::table('m_fst_pembelajaran')->where('id', $fstId)->first();
         $isLocked = $fst ? (bool) $fst->is_locked : false;
 
@@ -103,6 +109,12 @@ class CatatanWalasController extends Controller
                 'status'  => 'error',
                 'message' => 'Semester ini telah dikunci oleh kurikulum. Data tidak dapat diubah.',
             ], 403);
+        }
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengubah catatan kelas ini.'], 403);
         }
 
         $existing = DB::table('catatan_walikelas')
@@ -181,6 +193,12 @@ class CatatanWalasController extends Controller
                 'status'  => 'error',
                 'message' => 'Semester ini telah dikunci oleh kurikulum. Data tidak dapat diubah.',
             ], 403);
+        }
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak memiliki hak akses untuk mengubah catatan kelas ini.'], 403);
         }
 
         DB::beginTransaction();

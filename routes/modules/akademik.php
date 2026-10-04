@@ -16,9 +16,9 @@ use App\Http\Controllers\RaportStatusController;
  * Semua route yang berkaitan dengan penilaian, nilai akhir,
  * formatif, P5, eskul, catatan walas, dan audit trail nilai.
  *
- * Middleware: auth + checkClass
+ * Middleware: auth + roleCheck:1,2 + checkClass
  */
-Route::middleware(['auth', 'checkClass'])->group(function () {
+Route::middleware(['auth', 'roleCheck:1,2', 'checkClass'])->group(function () {
 
     // ── Nilai (Sumatif) ────────────────────────────────────────
     Route::prefix('nilai')->name('value.')->group(function () {

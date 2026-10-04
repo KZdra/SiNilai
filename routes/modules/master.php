@@ -8,15 +8,22 @@ use App\Http\Controllers\MapelMappingController;
 use App\Http\Controllers\EskulController;
 use App\Http\Controllers\FstController;
 use App\Http\Controllers\DataSekolahContoller;
+use App\Http\Controllers\ProfileController;
 
 /**
  * Modul Master Data
- * Berisi manajemen data induk: kelas, siswa, mapel,
- * eskul, FST (Fase/Semester/Tahun Ajaran), data sekolah.
  *
- * Middleware: auth
+ * Pembagian Hak Akses (RBAC):
+ * 1. Khusus Administrator (role_id = 1):
+ *    - Kelas, Mapel, Mapel Mapping, Eskul, FST (Periode Ajaran), Data Sekolah.
+ * 2. Administrator & Wali Kelas (role_id = 1, 2) terikat checkClass:
+ *    - Data Siswa (student.*)
+ * 3. Seluruh Pengguna Login (auth):
+ *    - Profil Pengguna (profile.*)
  */
-Route::middleware('auth')->group(function () {
+
+// ── 1. Rute Khusus Administrator (role_id = 1) ─────────────────
+Route::middleware(['auth', 'roleCheck:1'])->group(function () {
 
     // ── Kelas ──────────────────────────────────────────────────
     Route::prefix('kelas')->name('class.')->group(function () {
@@ -25,20 +32,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [ClassController::class, 'store'])->name('store');
         Route::put('/{id}', [ClassController::class, 'update'])->name('update');
         Route::delete('/{id}', [ClassController::class, 'destroy'])->name('destroy');
-    });
-
-    // ── Siswa ──────────────────────────────────────────────────
-    // Middleware checkClass ditambahkan karena siswa terikat kelas aktif
-    Route::middleware('checkClass')->prefix('siswa')->name('student.')->group(function () {
-        Route::get('/', [SiswaController::class, 'index'])->name('index');
-        Route::get('/data', [SiswaController::class, 'getData'])->name('getData');
-        Route::post('/', [SiswaController::class, 'store'])->name('store');
-        Route::get('/template', [SiswaController::class, 'downloadTemplate'])->name('download');
-        Route::post('/import', [SiswaController::class, 'import'])->name('import');
-        Route::put('/{id}', [SiswaController::class, 'update'])->name('update');
-        Route::delete('/{id}', [SiswaController::class, 'destroy'])->name('destroy');
-        Route::get('/print-cover/{id}', [SiswaController::class, 'printCover'])->name('print_cover');
-        Route::get('/print-cover-class', [SiswaController::class, 'printCoverClass'])->name('print_cover_class');
     });
 
     // ── Mata Pelajaran ─────────────────────────────────────────
@@ -91,10 +84,23 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [DataSekolahContoller::class, 'destroy'])->name('destroy');
     });
 
-    // ── Profile ────────────────────────────────────────────────
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\ProfileController::class, 'show'])->name('show');
-        Route::put('/', [\App\Http\Controllers\ProfileController::class, 'update'])->name('update');
-    });
+});
 
+// ── 2. Rute Data Siswa (Admin & Wali Kelas) ─────────────────────
+Route::middleware(['auth', 'roleCheck:1,2', 'checkClass'])->prefix('siswa')->name('student.')->group(function () {
+    Route::get('/', [SiswaController::class, 'index'])->name('index');
+    Route::get('/data', [SiswaController::class, 'getData'])->name('getData');
+    Route::post('/', [SiswaController::class, 'store'])->name('store');
+    Route::get('/template', [SiswaController::class, 'downloadTemplate'])->name('download');
+    Route::post('/import', [SiswaController::class, 'import'])->name('import');
+    Route::put('/{id}', [SiswaController::class, 'update'])->name('update');
+    Route::delete('/{id}', [SiswaController::class, 'destroy'])->name('destroy');
+    Route::get('/print-cover/{id}', [SiswaController::class, 'printCover'])->name('print_cover');
+    Route::get('/print-cover-class', [SiswaController::class, 'printCoverClass'])->name('print_cover_class');
+});
+
+// ── 3. Rute Profil Pengguna (Seluruh User Login) ────────────────
+Route::middleware('auth')->prefix('profile')->name('profile.')->group(function () {
+    Route::get('/', [ProfileController::class, 'show'])->name('show');
+    Route::put('/', [ProfileController::class, 'update'])->name('update');
 });

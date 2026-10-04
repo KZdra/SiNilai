@@ -41,6 +41,13 @@ class NilaiController extends Controller
         $id = $request->class_id;
         $mp_id = $request->mapel_id;
         $fst_id = $request->fst_id;
+
+        // Cegah guru walas mengakses data nilai kelas lain
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null) {
+            $id = $user->class_id;
+        }
+
         $data = DB::table('students as s')->select(
             's.id as student_id',
             's.nama as student_name',
@@ -127,6 +134,12 @@ class NilaiController extends Controller
             return response()->json(['message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat diubah.'], 403);
         }
 
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk mengubah nilai kelas ini.'], 403);
+        }
+
         DB::beginTransaction();
         try {
             DB::table('values')->insert([
@@ -183,6 +196,12 @@ class NilaiController extends Controller
 
         if ($this->isSemesterLocked($request->fst_id)) {
             return response()->json(['message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat diubah.'], 403);
+        }
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk mengubah nilai kelas ini.'], 403);
         }
 
         DB::beginTransaction();
@@ -293,6 +312,12 @@ class NilaiController extends Controller
             return response()->json(['message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat diubah.'], 403);
         }
 
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$request->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk mengubah nilai kelas ini.'], 403);
+        }
+
         DB::beginTransaction();
         try {
             $existing = DB::table('values')->where('id', '=', $id)->first();
@@ -344,23 +369,35 @@ class NilaiController extends Controller
 
     public function destroy(Request $request, $id)
     {
+        $val = DB::table('values')->where('id', '=', $id)->first();
+        if (!$val) {
+            return response()->json(['message' => 'Data nilai tidak ditemukan!'], 404);
+        }
+
+        if ($this->isSemesterLocked($val->fst_id)) {
+            return response()->json(['message' => 'Semester ini telah dikunci oleh Kurikulum. Nilai tidak dapat dihapus.'], 403);
+        }
+
+        // Validasi hak akses kelas bagi guru non-admin
+        $user = Auth::user();
+        if ($user && $user->role_id != 1 && $user->class_id !== null && (int)$user->class_id !== (int)$val->class_id) {
+            return response()->json(['message' => 'Anda tidak memiliki hak akses untuk menghapus nilai kelas ini.'], 403);
+        }
+
         DB::beginTransaction();
         try {
-            $val = DB::table('values')->where('id', '=', $id)->first();
-            if ($val) {
-                NilaiAuditService::log(
-                    $val->student_id,
-                    $val->mapel_id,
-                    $val->fst_id,
-                    'DELETE',
-                    (array)$val,
-                    null
-                );
-            }
+            NilaiAuditService::log(
+                $val->student_id,
+                $val->mapel_id,
+                $val->fst_id,
+                'DELETE',
+                (array)$val,
+                null
+            );
             DB::table('values')->where('id', '=', $id)->delete();
             DB::commit();
             \App\Services\MasterDataCache::clearDashboardCache();
-            return response()->json(['message' => 'Nilai berhasil diHapus!'], 201);
+            return response()->json(['message' => 'Nilai berhasil diHapus!'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
