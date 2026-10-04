@@ -800,6 +800,25 @@ class NilaiAkhirController extends Controller
         }
 
         $students = DB::table('students')->where('class_id', $classId)->orderBy('nama', 'asc')->get();
+        if ($students->isEmpty() && \Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
+            $students = DB::table('student_class_history as h')
+                ->join('students as s', 'h.student_id', '=', 's.id')
+                ->where('h.class_id', $classId)
+                ->where('h.fst_id', $fstId)
+                ->select('s.*')
+                ->orderBy('s.nama', 'asc')
+                ->get();
+        }
+        if ($students->isEmpty()) {
+            $students = DB::table('values as v')
+                ->join('students as s', 'v.student_id', '=', 's.id')
+                ->where('v.class_id', $classId)
+                ->where('v.fst_id', $fstId)
+                ->select('s.*')
+                ->distinct()
+                ->orderBy('s.nama', 'asc')
+                ->get();
+        }
         if ($students->isEmpty()) {
             return response()->json(['status' => 'error', 'message' => 'Tidak ada siswa pada kelas ini.'], 400);
         }

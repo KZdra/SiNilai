@@ -48,14 +48,25 @@ class PortalSiswaController extends Controller
         $historicalClassId = null;
 
         if ($fstId) {
-            // Cek di catatan walikelas untuk semester ini
-            $historicalClassId = DB::table('catatan_walikelas')
-                ->where('student_id', $studentId)
-                ->where('fst_id', $fstId)
-                ->whereNotNull('class_id')
-                ->value('class_id');
+            // 0. Cek dari student_class_history (Paling Akurat & Resmi)
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
+                $historicalClassId = DB::table('student_class_history')
+                    ->where('student_id', $studentId)
+                    ->where('fst_id', $fstId)
+                    ->whereNotNull('class_id')
+                    ->value('class_id');
+            }
 
-            // Jika belum ada catatan walikelas, cek dari riwayat nilai mapel
+            // 1. Cek di catatan walikelas untuk semester ini
+            if (!$historicalClassId) {
+                $historicalClassId = DB::table('catatan_walikelas')
+                    ->where('student_id', $studentId)
+                    ->where('fst_id', $fstId)
+                    ->whereNotNull('class_id')
+                    ->value('class_id');
+            }
+
+            // 2. Jika belum ada catatan walikelas, cek dari riwayat nilai mapel
             if (!$historicalClassId) {
                 $historicalClassId = DB::table('values')
                     ->where('student_id', $studentId)
@@ -64,7 +75,7 @@ class PortalSiswaController extends Controller
                     ->value('class_id');
             }
 
-            // Jika belum ada, cek dari penilaian P5
+            // 3. Jika belum ada, cek dari penilaian P5
             if (!$historicalClassId) {
                 $historicalClassId = DB::table('p5_penilaian as pp')
                     ->join('p5_projek as pr', 'pp.projek_id', '=', 'pr.id')
@@ -75,6 +86,25 @@ class PortalSiswaController extends Controller
         }
 
         $classId = $historicalClassId ?: $currentClassId;
+
+        // Fallback khusus alumni (class_id null): ambil kelas terakhir yang tercatat di arsip
+        if (!$classId) {
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_class_history')) {
+                $classId = DB::table('student_class_history')
+                    ->where('student_id', $studentId)
+                    ->whereNotNull('class_id')
+                    ->orderBy('fst_id', 'desc')
+                    ->value('class_id');
+            }
+            if (!$classId) {
+                $classId = DB::table('values')
+                    ->where('student_id', $studentId)
+                    ->whereNotNull('class_id')
+                    ->orderBy('fst_id', 'desc')
+                    ->value('class_id');
+            }
+        }
+
         return DB::table('class')->where('id', $classId)->first();
     }
 
